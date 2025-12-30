@@ -12,7 +12,7 @@
      clj -M -m cljp.main -r                    # start REPL"
   (:require [cljp.analyze :as ana]
             [cljp.ast :as ast]
-            [cljp.emit :as emit]
+            [clojure.php.emit :as emit]
             [cljp.infer :as infer]
             [clojure.java.io :as io]
             [clojure.string :as str]
@@ -119,7 +119,7 @@
 (defn compile-files
   "Compile input files to {:php \"...\" :source-map [...]}."
   [files options]
-  (let [core-lib (io/file "src/cljp/core.cljc")
+  (let [core-lib (io/file "src/clojure/core.cljc")
         all-files (if (.exists core-lib)
                     (cons (str core-lib) files)
                     files)

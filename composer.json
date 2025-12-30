@@ -1,0 +1,32 @@
+{
+    "name": "cljp/cljp",
+    "description": "Clojure to PHP compiler",
+    "type": "library",
+    "require": {
+        "php": "^8.3",
+        "phel-lang/phel-lang": "^0.14"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "vimeo/psalm": "^5.26",
+        "laravel/pint": "^1.13",
+        "nikic/php-parser": "^4.19",
+        "phpbench/phpbench": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Clojure\\": "src/clojure/php/runtime/Clojure/",
+            "Cljp\\": "src/clojure/php/runtime/Cljp/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "platform": {
+            "php": "8.3.26"
+        }
+    }
+}
