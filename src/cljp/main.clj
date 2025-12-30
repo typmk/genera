@@ -14,7 +14,6 @@
             [cljp.ast :as ast]
             [cljp.emit :as emit]
             [cljp.infer :as infer]
-            [cljp.lower-php :as lower]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.cli :as cli]))
@@ -43,15 +42,14 @@
 (defn compile-form
   "Compile a single form to PHP string.
    Returns {:php \"...\" :line n :col n :form \"...\"} where line/col are from source.
-   Pipeline: source → analyze (HIR) → lower (MIR) → emit (PHP)"
+   Pipeline: source → analyze (HIR) → emit (PHP)"
   [form {:keys [file typed?]}]
   (let [env (ast/make-env {:context :statement :file file})
         hir (ana/analyze env form)
         hir (if typed? (infer/infer-types hir) hir)
-        mir (lower/lower hir)
         m (meta form)]
     {:php (binding [emit/*emit-docblocks* typed?]
-            (emit/emit-php-lifted mir))
+            (emit/emit-php-lifted hir))
      :line (:line m)
      :col (:column m)
      :file file
