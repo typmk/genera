@@ -47,7 +47,7 @@
   (lower-children node))
 
 (defmethod lower-node :host-call
-  [{:keys [call-type fn-name target class args env form] :as node}]
+  [{:keys [call-type host-ns fn-name target class args env form] :as node}]
   (let [lowered-args (mapv lower args)
         lowered-target (when target (lower target))]
     (case call-type
@@ -61,7 +61,11 @@
       (mir/static-call-node env form class fn-name lowered-args)
 
       :operator
-      (mir/php-infix-node env form fn-name fn-name lowered-args))))
+      (if host-ns
+        ;; Explicit PHP operator: (php/+ a b) → php-infix
+        (mir/php-infix-node env form fn-name lowered-args)
+        ;; Clojure operator: (+ a b) → infix (handles unary minus)
+        (mir/infix-node env form fn-name fn-name lowered-args)))))
 
 (defmethod lower-node :host-new
   [{:keys [class args env form]}]

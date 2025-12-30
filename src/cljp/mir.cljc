@@ -52,14 +52,25 @@
    :args args
    :children [:args]})
 
-(defn php-infix-node
-  "PHP infix operator: (php/+ a b) → $a + $b"
+(defn infix-node
+  "Clojure infix operator: (+ a b) → $a + $b
+   Handles unary minus and multi-arity."
   [env form operator clj-operator args]
-  {:op :php-infix
+  {:op :infix
    :form form
    :env env
    :operator operator
    :clj-operator clj-operator
+   :args args
+   :children [:args]})
+
+(defn php-infix-node
+  "Explicit PHP infix operator: (php/+ a b) → $a + $b"
+  [env form operator args]
+  {:op :php-infix
+   :form form
+   :env env
+   :operator operator
    :args args
    :children [:args]})
 
