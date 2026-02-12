@@ -2,7 +2,7 @@
  * test.c — ALL Self-Tests
  *
  * ~325 tests covering every layer: base, platform, lang, emit.
- * Run via: ./moss test
+ * Run via: ./gna test
  *
  * Depends on: emit/emit.c (and everything below)
  */
@@ -1281,7 +1281,7 @@ static const EvalCase T_CC[] = {
 
 static int run_all_tests(void) {
     t_pass = t_fail = t_groups = 0;
-    pfc(C_BOLD); pf("=== moss test suite ==="); pfc(C_RESET);
+    pfc(C_BOLD); pf("=== genera test suite ==="); pfc(C_RESET);
 
     // Base layer
     test_arena();

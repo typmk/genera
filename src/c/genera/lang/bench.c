@@ -2,7 +2,7 @@
  * bench.c — ALL Benchmarks
  *
  * Covers: arena, str, intern, nanbox, hashmap, grammar, jit, cc.
- * Run via: ./moss bench
+ * Run via: ./gna bench
  *
  * Depends on: emit/emit.c (and everything below)
  */
@@ -452,7 +452,7 @@ static void bench_lang(void) {
 // ============================================================================
 
 static void run_all_bench(void) {
-    pf("=== moss benchmarks ===\n");
+    pf("=== genera benchmarks ===\n");
 
     bench_arena();
     bench_str();

@@ -2,16 +2,16 @@
  * cli.c — CLI Argument Dispatch
  *
  * Maps command-line arguments to actions:
- *   ./moss              — Interactive REPL
- *   ./moss test         — Run all tests
- *   ./moss bench        — Run all benchmarks
- *   ./moss eval "expr"  — One-shot eval
- *   ./moss jit "source" — JIT compile + execute
- *   ./moss emit "src"   — Emit C source
- *   ./moss run "src"    — Compile via gcc + run
- *   ./moss parse "src"  — Show entity tree
- *   ./moss render "src" — Render (round-trip or outline)
- *   ./moss trace "src"  — JIT compile + annotated source
+ *   ./gna              — Interactive REPL
+ *   ./gna test         — Run all tests
+ *   ./gna bench        — Run all benchmarks
+ *   ./gna eval "expr"  — One-shot eval
+ *   ./gna jit "source" — JIT compile + execute
+ *   ./gna emit "src"   — Emit C source
+ *   ./gna run "src"    — Compile via gcc + run
+ *   ./gna parse "src"  — Show entity tree
+ *   ./gna render "src" — Render (round-trip or outline)
+ *   ./gna trace "src"  — JIT compile + annotated source
  *
  * Depends on: test.c, bench.c, repl.c
  */
@@ -24,7 +24,7 @@ static int cli_run(int argc, char **argv) {
     if (argc < 2) {
         // Interactive REPL
         glass_repl_init();
-        pf("moss — Clojure runtime (lisp, try: help)\n");
+        pf("genera — Clojure runtime (lisp, try: help)\n");
         repl();
         return 0;
     }
@@ -45,7 +45,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "eval") == 0) {
-        if (argc < 3) { pf("usage: moss eval <expr>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna eval <expr>\n"); return 1; }
         Val form = gram_read(argv[2]);
         g_signal = SIGNAL_NONE; g_depth = 0;
         Val result = eval(form, g_global_env);
@@ -57,14 +57,14 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "jit") == 0) {
-        if (argc < 3) { pf("usage: moss jit <source>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna jit <source>\n"); return 1; }
         i64 result = jit_run(argv[2]);
         pf("%lld\n", (long long)result);
         return 0;
     }
 
     if (strcmp(cmd, "emit") == 0) {
-        if (argc < 3) { pf("usage: moss emit <source|file>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna emit <source|file>\n"); return 1; }
         const char *src = argv[2];
         // Check if it's a file
         FileData f = sys_read_file(src, alloc_for_file);
@@ -80,7 +80,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "run") == 0) {
-        if (argc < 3) { pf("usage: moss run <source|file>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna run <source|file>\n"); return 1; }
         const char *src = argv[2];
         FileData f = sys_read_file(src, alloc_for_file);
         const char *code = f.data ? f.data : src;
@@ -92,7 +92,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "check") == 0) {
-        if (argc < 3) { pf("usage: moss check <source|file>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna check <source|file>\n"); return 1; }
         t_pass = t_fail = t_groups = 0;
         register_test_builtins();
         const char *src = argv[2];
@@ -112,7 +112,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "parse") == 0) {
-        if (argc < 3) { pf("usage: moss parse <source>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna parse <source>\n"); return 1; }
         Lang l; lang_lisp(&l);
         Gram g = gram_new(4096);
         gram_parse(&g, &l, argv[2], strlen(argv[2]));
@@ -122,14 +122,14 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "render") == 0) {
-        if (argc < 3) { pf("usage: moss render [--outline|--c] <source|file>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna render [--outline|--c] <source|file>\n"); return 1; }
         bool outline = false, as_c = false;
         int src_arg = 2;
         for (int i = 2; i < argc; i++) {
             if (strcmp(argv[i], "--outline") == 0) { outline = true; src_arg = i + 1; }
             else if (strcmp(argv[i], "--c") == 0) { as_c = true; src_arg = i + 1; }
         }
-        if (src_arg >= argc) { pf("usage: moss render [--outline|--c] <source|file>\n"); return 1; }
+        if (src_arg >= argc) { pf("usage: gna render [--outline|--c] <source|file>\n"); return 1; }
         const char *src = argv[src_arg];
         FileData f = sys_read_file(src, alloc_for_file);
         const char *code = f.data ? f.data : src;
@@ -151,7 +151,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "trace") == 0) {
-        if (argc < 3) { pf("usage: moss trace <source|file>\n"); return 1; }
+        if (argc < 3) { pf("usage: gna trace <source|file>\n"); return 1; }
         const char *src = argv[2];
         FileData f = sys_read_file(src, alloc_for_file);
         const char *code = f.data ? f.data : src;
@@ -176,7 +176,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     pf("unknown command: %s\n", cmd);
-    pf("usage: moss [test|bench|watch|eval|jit|emit|run|check|parse|render|trace] [args]\n");
+    pf("usage: gna [test|bench|watch|eval|jit|emit|run|check|parse|render|trace] [args]\n");
     return 1;
 }
 
