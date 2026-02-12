@@ -58,16 +58,29 @@ typedef struct {
     bool opgrp;
 } Lang;
 
+// Semantic views — derived bitmasks over GNode tree
+enum {
+    V_DEF=0, V_REF, V_CALL,            // Pass 1: scope + binding
+    V_TAIL, V_PURE, V_CONST, V_DEAD,   // Pass 2-3: type + flow
+    V_INT, V_VEC, V_MAP, V_FN,         // Pass 2: type tags
+    V_COUNT
+};
+static const char *V_NAME[] = {
+    "def","ref","call","tail","pure","const","dead","int","vec","map","fn"
+};
+
 typedef struct {
     const char *src;
     u32 src_len;
     GNode *nodes;
     u32 n, cap;
     u32 mw;
-    u64 *m[NK_COUNT];
+    u64 *m[NK_COUNT];       // structural (kind-per-node)
     u64 *m_group;
     u64 *m_leaf;
     u64 *m_first;
+    u64 *v[V_COUNT];        // semantic views (analysis passes)
+    bool analyzed;
 } Gram;
 
 // ============================================================================
@@ -385,7 +398,36 @@ static void gram_index(Gram *g) {
 }
 
 // ============================================================================
-// 6. Query API
+// 6. Semantic Views — analyze() allocates + runs passes
+// ============================================================================
+
+static void gram_analyze(Gram *g) {
+    if (!g->mw) gram_index(g);
+    u32 mw = g->mw;
+    // Allocate view bitmasks (once per gram_new, cleared per analyze)
+    for (u32 i = 0; i < V_COUNT; i++) {
+        if (!g->v[i]) g->v[i] = bm_new(mw);
+        else memset(g->v[i], 0, mw * 8);
+    }
+    // Passes fill views (steps 3-5 will add pass_scope, pass_type, pass_flow)
+    g->analyzed = true;
+}
+
+// View query: is node i in view v?
+ALWAYS_INLINE bool view_is(Gram *g, u32 vid, u32 i) {
+    return BM_GET(g->v[vid], i);
+}
+// View query: does subtree rooted at i contain any node in view v?
+ALWAYS_INLINE bool view_has(Gram *g, u32 vid, u32 i) {
+    return bm_any_range(g->v[vid], i + 1, g->nodes[i].end);
+}
+// View query: how many nodes in subtree i are in view v?
+ALWAYS_INLINE u32 view_count(Gram *g, u32 vid, u32 i) {
+    return bm_pop_range(g->v[vid], i + 1, g->nodes[i].end);
+}
+
+// ============================================================================
+// 7. Query API
 // ============================================================================
 
 ALWAYS_INLINE u32   gn_child(Gram *g, u32 i)  { return g->nodes[i].child; }
@@ -435,7 +477,7 @@ static void gram_print(Gram *g, u32 id) {
 }
 
 // ============================================================================
-// 7. Symbols — interned once, compared as integers
+// 8. Symbols — interned once, compared as integers
 // ============================================================================
 
 static StrId S_NIL, S_TRUE, S_FALSE;
@@ -457,7 +499,7 @@ ALWAYS_INLINE bool is_special(StrId s) { return s < 64 && (g_special_mask & (1UL
 ALWAYS_INLINE bool is_builtin(StrId s) { return s < 64 && (g_builtin_mask & (1ULL << s)); }
 
 // ============================================================================
-// 8. Classification — separate defn/def/main forms
+// 9. Classification — separate defn/def/main forms
 // ============================================================================
 
 typedef struct { StrId name; Val params; Val body; u32 n_params; } DefnInfo;
@@ -484,7 +526,7 @@ static bool has_recur(Val form) {
 }
 
 // ============================================================================
-// 9. Entity Bridge — GNode entities → Val cons lists
+// 10. Entity Bridge — GNode entities → Val cons lists
 // ============================================================================
 //
 // Connects the universal grammar to emitters + classify.
@@ -601,7 +643,7 @@ static void entity_classify(Gram *g) {
 }
 
 // ============================================================================
-// 10. Convenience — gram_read, gram_classify
+// 11. Convenience — gram_read, gram_classify
 // ============================================================================
 
 static Gram g_gram_scratch;
@@ -631,7 +673,7 @@ static void gram_classify(const char *source) {
 }
 
 // ============================================================================
-// 11. Init
+// 12. Init
 // ============================================================================
 
 static void grammar_init(void) {
