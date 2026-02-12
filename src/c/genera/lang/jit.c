@@ -146,6 +146,12 @@ static void cg_if(Comp *cc, u32 test) {
     u32 then = g->nodes[test].next;
     u32 els  = then ? g->nodes[then].next : 0;
 
+    // Dead branch elimination via views
+    if (g->analyzed) {
+        if (then && BM_GET(g->v[V_DEAD], then)) { if (els) cg_expr(cc, els); else x_imm(cc->cb, RAX, 0); return; }
+        if (els  && BM_GET(g->v[V_DEAD], els))  { cg_expr(cc, then); return; }
+    }
+
     // Fused compare optimization
     if (g->nodes[test].kind == NK_LIST && g->nodes[test].child) {
         u32 tfc = g->nodes[test].child;
@@ -350,6 +356,14 @@ static void cg_expr(Comp *cc, u32 id) {
     Gram *g = cc->g;
     GNode *n = &g->nodes[id];
 
+    // View-driven: dead code elimination + constant folding
+    if (g->analyzed) {
+        if (BM_GET(g->v[V_DEAD], id)) { x_imm(cc->cb, RAX, 0); return; }
+        if (BM_GET(g->v[V_CONST], id) && BM_GET(g->v[V_INT], id)) {
+            x_imm(cc->cb, RAX, g->const_val[id]); return;
+        }
+    }
+
     if (n->kind == NK_NUM)  { x_imm(cc->cb, RAX, gn_parse_int(g, id)); return; }
     if (n->kind == NK_IDENT) {
         StrId name = gn_intern(g, id);
@@ -528,6 +542,7 @@ static u32 compile_program(const char *source) {
     Gram *g = &g_gram_scratch;
     gram_parse(g, &lisp, source, (u32)strlen(source));
     gram_index(g);
+    gram_analyze(g);
 
     // Classify top-level forms directly from GNode tree
     u32 defn_ids[256]; u32 n_defns = 0;

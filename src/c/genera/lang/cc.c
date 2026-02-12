@@ -140,6 +140,11 @@ static void emg_if(u32 test, int d) {
     Gram *g = g_cc;
     u32 then = g->nodes[test].next;
     u32 els  = then ? g->nodes[then].next : 0;
+    // Dead branch elimination via views
+    if (g->analyzed) {
+        if (then && BM_GET(g->v[V_DEAD], then)) { if (els) emg_expr(els, d); else out("0"); return; }
+        if (els  && BM_GET(g->v[V_DEAD], els))  { emg_expr(then, d); return; }
+    }
     out("("); emg_expr(test, d); out(" ? ");
     emg_expr(then, d); out(" : ");
     if (els) emg_expr(els, d); else out("0");
@@ -274,6 +279,14 @@ static void emg_loop(u32 bv, int d) {
 static void emg_expr(u32 id, int d) {
     Gram *g = g_cc;
     GNode *n = &g->nodes[id];
+
+    // View-driven: dead code elimination + constant folding
+    if (g->analyzed) {
+        if (BM_GET(g->v[V_DEAD], id)) { out("0"); return; }
+        if (BM_GET(g->v[V_CONST], id) && BM_GET(g->v[V_INT], id)) {
+            out("%lld", (long long)g->const_val[id]); return;
+        }
+    }
 
     if (n->kind == NK_NUM) { out("%lld", (long long)gn_parse_int(g, id)); return; }
     if (n->kind == NK_IDENT) {
@@ -465,6 +478,7 @@ static void cc_emit(const char *source) {
     Gram *g = &g_gram_scratch;
     gram_parse(g, &lisp, source, (u32)strlen(source));
     gram_index(g);
+    gram_analyze(g);
     g_cc = g;
 
     u32 defn_ids[256]; u32 n_defns = 0;
