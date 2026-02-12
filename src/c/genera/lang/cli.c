@@ -89,6 +89,26 @@ static int cli_run(int argc, char **argv) {
         return rc;
     }
 
+    if (strcmp(cmd, "check") == 0) {
+        if (argc < 3) { pf("usage: moss check <source|file>\n"); return 1; }
+        t_pass = t_fail = t_groups = 0;
+        register_test_builtins();
+        const char *src = argv[2];
+        FileData f = sys_read_file(src, alloc_for_file);
+        if (f.data) {
+            g_signal = SIGNAL_NONE; g_depth = 0;
+            eval_string(f.data, g_global_env);
+            if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+            sys_free(f.data, f.len + 1);
+        } else {
+            g_signal = SIGNAL_NONE; g_depth = 0;
+            eval_string(src, g_global_env);
+            if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+        }
+        pf("%d passed, %d failed\n", t_pass, t_fail);
+        return t_fail ? 1 : 0;
+    }
+
     if (strcmp(cmd, "parse") == 0) {
         if (argc < 3) { pf("usage: moss parse <source>\n"); return 1; }
         Lang l; lang_lisp(&l);
@@ -100,7 +120,7 @@ static int cli_run(int argc, char **argv) {
     }
 
     pf("unknown command: %s\n", cmd);
-    pf("usage: moss [test|bench|watch|eval|jit|emit|run|parse] [args]\n");
+    pf("usage: moss [test|bench|watch|eval|jit|emit|run|check|parse] [args]\n");
     return 1;
 }
 

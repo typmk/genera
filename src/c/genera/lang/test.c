@@ -900,28 +900,194 @@ static void test_pass_flow(void) {
 }
 
 // ============================================================================
-// 12. Data-Driven Tests — tests ARE data, grammar+eval IS the runner
+// 12. Assert Builtins — (is expected actual), (group "name")
+//
+// These make eval tests self-checking programs in the language:
+//   (group "collections")
+//   (is [1 2 3] [1 2 3])
+//   (is 6 (+ 1 2 3))
+// ============================================================================
+
+static Val bi_is(Val args) {
+    Val expected = car(args);
+    Val actual = car(cdr(args));
+    const char *exp_s = print_val(expected);
+    char exp_buf[4096];
+    u32 elen = (u32)strlen(exp_s);
+    if (elen >= sizeof(exp_buf)) elen = sizeof(exp_buf) - 1;
+    memcpy(exp_buf, exp_s, elen); exp_buf[elen] = 0;
+    const char *got_s = print_val(actual);
+    if (strcmp(exp_buf, got_s) == 0) { t_pass++; return val_true(); }
+    t_fail++;
+    pfc(C_RED); pf("    FAIL"); pfc(C_RESET);
+    pf(": got "); pfc(C_YELLOW); pf("'%s'", got_s); pfc(C_RESET);
+    pf(", expected "); pfc(C_GREEN); pf("'%s'", exp_buf); pfc(C_RESET);
+    pf("\n");
+    return val_false();
+}
+
+static Val bi_group(Val args) {
+    Val v = car(args);
+    if (val_is_str(v)) {
+        Str *s = val_as_str(v);
+        char buf[256];
+        u32 len = s->len < 255 ? s->len : 255;
+        memcpy(buf, s->data, len); buf[len] = 0;
+        describe(buf);
+    }
+    return val_nil();
+}
+
+static void register_test_builtins(void) {
+    env_set(g_global_env, INTERN("is"), make_builtin(INTERN("is"), bi_is));
+    env_set(g_global_env, INTERN("group"), make_builtin(INTERN("group"), bi_group));
+}
+
+// ============================================================================
+// 13. Self-Checking Tests — programs in the language
+//
+// Each (is expected actual) evaluates both sides and compares via print_val.
+// Each (group "name") starts a new test group.
+// ============================================================================
+
+static const char *T_ASSERT =
+    // eval: basic
+    "(group \"eval: basic\")\n"
+    "(is 42 42)\n"
+    "(is -7 -7)\n"
+    "(is true true)\n"
+    "(is nil nil)\n"
+    "(is 6 (+ 1 2 3))\n"
+    "(is 1 (if true 1 2))\n"
+    "(is 2 (if false 1 2))\n"
+    "(is 30 (let [x 10 y 20] (+ x y)))\n"
+    "(is 25 ((fn [x] (* x x)) 5))\n"
+    "(defn sq [x] (* x x)) (is 49 (sq 7))\n"
+    "(is 3 (and 1 2 3))\n"
+    "(is 5 (or false nil 5))\n"
+    // collections
+    "(group \"collections\")\n"
+    "(is [1 2 3] [1 2 3])\n"
+    "(is [] [])\n"
+    "(is [[1 2] [3 4]] [[1 2] [3 4]])\n"
+    "(is {:a 1 :b 2} {:a 1 :b 2})\n"
+    "(is {} {})\n"
+    "(is :foo :foo)\n"
+    "(is 1 (get {:a 1 :b 2} :a))\n"
+    "(is 20 (get [10 20 30] 1))\n"
+    "(is nil (get {:a 1} :z))\n"
+    "(is 2 (get (assoc {:a 1} :b 2) :b))\n"
+    "(is 99 (get (assoc [10 20 30] 1 99) 1))\n"
+    "(is [1 2 3] (conj [1 2] 3))\n"
+    "(is 1 (first (conj (list 2 3) 1)))\n"
+    "(is 30 (nth [10 20 30] 2))\n"
+    "(is 20 (nth (list 10 20 30) 1))\n"
+    "(is 3 (count [1 2 3]))\n"
+    "(is 2 (count {:a 1 :b 2}))\n"
+    "(is 4 (count (list 1 2 3 4)))\n"
+    "(is [1 2 3] (vec (list 1 2 3)))\n"
+    "(is true (empty? []))\n"
+    "(is false (empty? [1]))\n"
+    // collections: advanced
+    "(group \"collections: advanced\")\n"
+    "(is 3 (count (keys {:a 1 :b 2 :c 3})))\n"
+    "(is 3 (count (vals {:a 1 :b 2 :c 3})))\n"
+    "(is true (contains? {:a 1} :a))\n"
+    "(is false (contains? {:a 1} :b))\n"
+    "(is true (vector? [1 2]))\n"
+    "(is true (map? {:a 1}))\n"
+    "(is true (keyword? :foo))\n"
+    "(is false (vector? 42))\n"
+    "(is [1 2 3] (into [] (list 1 2 3)))\n"
+    "(is 10 (get (hash-map :x 10 :y 20) :x))\n"
+    // core forms
+    "(group \"core forms\")\n"
+    "(is \"yes\" (cond (< 5 3) \"no\" (> 5 3) \"yes\"))\n"
+    "(is 42 (cond false 1 :else 42))\n"
+    "(is nil (cond false 1))\n"
+    "(is 42 (when (> 5 3) 42))\n"
+    "(is nil (when (< 5 3) 42))\n"
+    "(is 3 (when true 1 2 3))\n"
+    "(is \"hello world\" (str \"hello\" \" \" \"world\"))\n"
+    "(is \"x=42\" (str \"x=\" 42))\n"
+    "(is 5 (count (range 5)))\n"
+    "(is 0 (first (range 5)))\n"
+    "(is 3 (first (range 3 7)))\n"
+    "(is 4 (count (range 3 7)))\n"
+    "(is 45 (loop [i 0 s 0] (if (= i 10) s (recur (inc i) (+ s i)))))\n"
+    "(is [0 1 2 3 4] (loop [v [] i 0] (if (= i 5) v (recur (conj v i) (inc i)))))\n"
+    "(is 3 (loop [i 0 t 0] (if (= i 3) t (recur (inc i) (+ t (loop [j 0 s 0] (if (= j i) s (recur (inc j) (+ s 1)))))))))\n"
+    "(is 42 (inc 41))\n"
+    "(is 42 (dec 43))\n"
+    "(is true (zero? 0))\n"
+    "(is true (pos? 5))\n"
+    "(is true (neg? -3))\n"
+    "(is 4.0 (+ 1.5 2.5))\n"
+    "(is 7.0 (* 2 3.5))\n"
+    "(is true (< 1.5 2.0))\n"
+    // coll protocol
+    "(group \"coll protocol\")\n"
+    "(is 10 (first [10 20 30]))\n"
+    "(is 20 (first (rest [10 20 30])))\n"
+    "(is true (nil? (first [])))\n"
+    "(is 45 (reduce + 0 (range 10)))\n"
+    "(is 6 (first (map (fn [x] (* x 2)) (list 3 4 5))))\n"
+    "(is 3 (count (filter (fn [x] (> x 2)) (list 1 2 3 4 5))))\n"
+    // transient
+    "(group \"transient\")\n"
+    "(is 3 (let [m {:a 1 :b 2}] (let [t (transient m)] (let [t2 (assoc! t :c 3)] (get (persistent! t2) :c)))))\n"
+    "(is nil (let [m {:a 1 :b 2}] (let [t (transient m)] (assoc! t :c 3) (get m :c))))\n"
+    "(is 3 (let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (count (persistent! t))))\n"
+    "(is 99 (let [t (transient {:a 1})] (assoc! t :a 99) (get (persistent! t) :a)))\n"
+    "(is 42 (let [t (transient {})] (assoc! t :x 42) (let [p (persistent! t)] (get p :x))))\n"
+    "(is 17 (let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (assoc! t :d 4) (assoc! t :e 5) (assoc! t :f 6) (assoc! t :g 7) (assoc! t :h 8) (assoc! t :i 9) (assoc! t :j 10) (assoc! t :k 11) (assoc! t :l 12) (assoc! t :m 13) (assoc! t :n 14) (assoc! t :o 15) (assoc! t :p 16) (assoc! t :q 17) (count (persistent! t))))\n"
+    "(is 2 (get (assoc {:a 1} :b 2) :b))\n"
+    "(is 1 (let [t (transient {})] (assoc! t :x 1) (get (persistent! t) :x)))\n"
+    "(is 1 (let [t (transient {})] (assoc! t :v [1 2 3]) (first (get (persistent! t) :v))))\n"
+    "(is 3 (let [m (persistent! (let [t (transient {:a 1})] (assoc! t :b 2) t))] (+ (get m :a) (get m :b))))\n"
+    // hof+pvec
+    "(group \"hof+pvec\")\n"
+    "(is true (vector? (range 5)))\n"
+    "(is 2 (get (range 5) 2))\n"
+    "(is 45 (reduce + 0 (range 10)))\n"
+    "(is 4950 (reduce + 0 (range 100)))\n"
+    "(is 6 (first (map (fn [x] (* x 2)) [3 4 5])))\n"
+    "(is 30 (reduce + 0 (map (fn [x] (* x x)) (range 5))))\n"
+    "(is 3 (count (filter (fn [x] (> x 2)) [1 2 3 4 5])))\n"
+    "(is 49 (count (filter (fn [x] (> x 50)) (range 100))))\n"
+    "(is 5 (count (into [] (range 5))))\n"
+    "(is 20 (reduce + 0 (filter (fn [x] (= 0 (mod x 2))) (range 10))))\n"
+;
+
+static void run_assert_tests(const char *src) {
+    g_signal = SIGNAL_NONE; g_depth = 0;
+    eval_string(src, g_global_env);
+    if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+}
+
+// Error-path tests (signal/overflow — can't use assertions)
+static void test_error_cases(void) {
+    describe("error cases");
+    arena_reset(&g_req);
+    g_signal = SIGNAL_NONE; g_depth = 0;
+    Val r = eval_string("((fn [x] (x x)) (fn [x] (x x)))", g_global_env);
+    if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+    it_eq_str("overflow", print_val(r), "nil");
+}
+
+// ============================================================================
+// 14. Compiler Tests — JIT + CC (data-driven, C-level)
 // ============================================================================
 
 typedef struct { const char *name; const char *src; const char *exp; } EvalCase;
 typedef struct { const char *name; const char *src; i64 exp; } JitCase;
 
-static void run_eval_suite(const char *group, const EvalCase *t, u32 n) {
-    describe(group);
-    for (u32 i = 0; i < n; i++) {
-        arena_reset(&g_req);
-        g_sig = SIG_NONE; g_depth = 0;
-        Val result = eval_string(t[i].src, g_global_env);
-        if (g_sig) { g_sig = SIG_NONE; print_flush(); }
-        it_eq_str(t[i].name, print_val(result), t[i].exp);
-    }
-}
+#define SUITE(arr) (arr), (sizeof(arr)/sizeof(arr[0]))
 
 static void run_jit_suite(const JitCase *t, u32 n) {
     describe("x86 jit");
-    for (u32 i = 0; i < n; i++) {
+    for (u32 i = 0; i < n; i++)
         it_eq_i64(t[i].name, jit_run(t[i].src), t[i].exp);
-    }
 }
 
 static void run_cc_suite(const EvalCase *t, u32 n) {
@@ -934,126 +1100,6 @@ static void run_cc_suite(const EvalCase *t, u32 n) {
             it_eq_str(t[i].name, g_captured, t[i].exp);
     }
 }
-
-#define SUITE(arr) (arr), (sizeof(arr)/sizeof(arr[0]))
-
-// --- Eval test data ---
-
-static const EvalCase T_EVAL[] = {
-    {"int", "42", "42"},
-    {"neg", "-7", "-7"},
-    {"bool", "true", "true"},
-    {"nil", "nil", "nil"},
-    {"add", "(+ 1 2 3)", "6"},
-    {"if-t", "(if true 1 2)", "1"},
-    {"if-f", "(if false 1 2)", "2"},
-    {"let", "(let [x 10 y 20] (+ x y))", "30"},
-    {"fn", "((fn [x] (* x x)) 5)", "25"},
-    {"defn", "(defn sq [x] (* x x)) (sq 7)", "49"},
-    {"and", "(and 1 2 3)", "3"},
-    {"or", "(or false nil 5)", "5"},
-};
-
-static const EvalCase T_COLL[] = {
-    {"vec-lit", "[1 2 3]", "[1 2 3]"},
-    {"vec-empty", "[]", "[]"},
-    {"vec-nested", "[[1 2] [3 4]]", "[[1 2] [3 4]]"},
-    {"map-lit", "{:a 1 :b 2}", "{:a 1 :b 2}"},
-    {"map-empty", "{}", "{}"},
-    {"kw", ":foo", ":foo"},
-    {"get-map", "(get {:a 1 :b 2} :a)", "1"},
-    {"get-vec", "(get [10 20 30] 1)", "20"},
-    {"get-miss", "(get {:a 1} :z)", "nil"},
-    {"assoc-map", "(get (assoc {:a 1} :b 2) :b)", "2"},
-    {"assoc-vec", "(get (assoc [10 20 30] 1 99) 1)", "99"},
-    {"conj-vec", "(conj [1 2] 3)", "[1 2 3]"},
-    {"conj-list", "(first (conj (list 2 3) 1))", "1"},
-    {"nth-vec", "(nth [10 20 30] 2)", "30"},
-    {"nth-list", "(nth (list 10 20 30) 1)", "20"},
-    {"count-vec", "(count [1 2 3])", "3"},
-    {"count-map", "(count {:a 1 :b 2})", "2"},
-    {"count-list", "(count (list 1 2 3 4))", "4"},
-    {"vec-from-list", "(vec (list 1 2 3))", "[1 2 3]"},
-    {"emptyq", "(empty? [])", "true"},
-    {"not-emptyq", "(empty? [1])", "false"},
-};
-
-static const EvalCase T_COLL_ADV[] = {
-    {"keys", "(count (keys {:a 1 :b 2 :c 3}))", "3"},
-    {"vals", "(count (vals {:a 1 :b 2 :c 3}))", "3"},
-    {"contains-t", "(contains? {:a 1} :a)", "true"},
-    {"contains-f", "(contains? {:a 1} :b)", "false"},
-    {"vecq", "(vector? [1 2])", "true"},
-    {"mapq", "(map? {:a 1})", "true"},
-    {"kwq", "(keyword? :foo)", "true"},
-    {"not-vecq", "(vector? 42)", "false"},
-    {"into-vec", "(into [] (list 1 2 3))", "[1 2 3]"},
-    {"hash-map", "(get (hash-map :x 10 :y 20) :x)", "10"},
-};
-
-static const EvalCase T_FORMS[] = {
-    {"cond-1", "(cond (< 5 3) \"no\" (> 5 3) \"yes\")", "\"yes\""},
-    {"cond-else", "(cond false 1 :else 42)", "42"},
-    {"cond-nil", "(cond false 1)", "nil"},
-    {"when-t", "(when (> 5 3) 42)", "42"},
-    {"when-f", "(when (< 5 3) 42)", "nil"},
-    {"when-body", "(when true 1 2 3)", "3"},
-    {"str-cat", "(str \"hello\" \" \" \"world\")", "\"hello world\""},
-    {"str-mix", "(str \"x=\" 42)", "\"x=42\""},
-    {"range-1", "(count (range 5))", "5"},
-    {"range-2", "(first (range 5))", "0"},
-    {"range-start", "(first (range 3 7))", "3"},
-    {"range-len", "(count (range 3 7))", "4"},
-    {"loop-sum", "(loop [i 0 s 0] (if (= i 10) s (recur (inc i) (+ s i))))", "45"},
-    {"loop-vec", "(loop [v [] i 0] (if (= i 5) v (recur (conj v i) (inc i))))", "[0 1 2 3 4]"},
-    {"loop-nested", "(loop [i 0 t 0] (if (= i 3) t (recur (inc i) (+ t (loop [j 0 s 0] (if (= j i) s (recur (inc j) (+ s 1))))))))", "3"},
-    {"inc", "(inc 41)", "42"},
-    {"dec", "(dec 43)", "42"},
-    {"zero?-t", "(zero? 0)", "true"},
-    {"pos?-t", "(pos? 5)", "true"},
-    {"neg?-t", "(neg? -3)", "true"},
-    {"overflow", "((fn [x] (x x)) (fn [x] (x x)))", "nil"},
-    {"add-f64", "(+ 1.5 2.5)", "4.0"},
-    {"mul-mix", "(* 2 3.5)", "7.0"},
-    {"lt-f64", "(< 1.5 2.0)", "true"},
-};
-
-static const EvalCase T_PROTO[] = {
-    {"vec-first", "(first [10 20 30])", "10"},
-    {"vec-rest", "(first (rest [10 20 30]))", "20"},
-    {"vec-seq-nil", "(nil? (first []))", "true"},
-    {"reduce-range", "(reduce + 0 (range 10))", "45"},
-    {"map-vec", "(first (map (fn [x] (* x 2)) (list 3 4 5)))", "6"},
-    {"filter-list", "(count (filter (fn [x] (> x 2)) (list 1 2 3 4 5)))", "3"},
-};
-
-static const EvalCase T_TRANSIENT[] = {
-    {"t-basic", "(let [m {:a 1 :b 2}] (let [t (transient m)] (let [t2 (assoc! t :c 3)] (get (persistent! t2) :c))))", "3"},
-    {"t-immutable", "(let [m {:a 1 :b 2}] (let [t (transient m)] (assoc! t :c 3) (get m :c)))", "nil"},
-    {"t-batch", "(let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (count (persistent! t)))", "3"},
-    {"t-update", "(let [t (transient {:a 1})] (assoc! t :a 99) (get (persistent! t) :a))", "99"},
-    {"t-persist-get", "(let [t (transient {})] (assoc! t :x 42) (let [p (persistent! t)] (get p :x)))", "42"},
-    {"t-promote", "(let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (assoc! t :d 4) (assoc! t :e 5) (assoc! t :f 6) (assoc! t :g 7) (assoc! t :h 8) (assoc! t :i 9) (assoc! t :j 10) (assoc! t :k 11) (assoc! t :l 12) (assoc! t :m 13) (assoc! t :n 14) (assoc! t :o 15) (assoc! t :p 16) (assoc! t :q 17) (count (persistent! t)))", "17"},
-    {"t-persist-assoc", "(get (assoc {:a 1} :b 2) :b)", "2"},
-    {"t-empty", "(let [t (transient {})] (assoc! t :x 1) (get (persistent! t) :x))", "1"},
-    {"t-nested-val", "(let [t (transient {})] (assoc! t :v [1 2 3]) (first (get (persistent! t) :v)))", "1"},
-    {"t-chain", "(let [m (persistent! (let [t (transient {:a 1})] (assoc! t :b 2) t))] (+ (get m :a) (get m :b)))", "3"},
-};
-
-static const EvalCase T_HOF[] = {
-    {"range-vec", "(vector? (range 5))", "true"},
-    {"range-get", "(get (range 5) 2)", "2"},
-    {"reduce-pvec", "(reduce + 0 (range 10))", "45"},
-    {"reduce-pvec-100", "(reduce + 0 (range 100))", "4950"},
-    {"map-pvec", "(first (map (fn [x] (* x 2)) [3 4 5]))", "6"},
-    {"map-range", "(reduce + 0 (map (fn [x] (* x x)) (range 5)))", "30"},
-    {"filter-pvec", "(count (filter (fn [x] (> x 2)) [1 2 3 4 5]))", "3"},
-    {"filter-range", "(count (filter (fn [x] (> x 50)) (range 100)))", "49"},
-    {"into-from-pvec", "(count (into [] (range 5)))", "5"},
-    {"compose-fr", "(reduce + 0 (filter (fn [x] (= 0 (mod x 2))) (range 10)))", "20"},
-};
-
-// --- JIT test data ---
 
 static const JitCase T_JIT[] = {
     {"int", "42", 42}, {"neg", "-7", -7}, {"zero", "0", 0},
@@ -1088,8 +1134,6 @@ static const JitCase T_JIT[] = {
     {"cond-else", "(cond 0 99 1 42)", 42}, {"cond-none", "(cond 0 1 0 2)", 0},
     {"when-t", "(when 1 42)", 42}, {"when-f", "(when 0 42)", 0},
 };
-
-// --- C emitter test data ---
 
 static const EvalCase T_CC[] = {
     {"add", "(println (+ 1 2))", "3"}, {"mul", "(println (* 6 7))", "42"},
@@ -1156,14 +1200,10 @@ static int run_all_tests(void) {
     test_pass_type();
     test_pass_flow();
 
-    // Lang layer: eval (data-driven)
-    run_eval_suite("eval: basic",          SUITE(T_EVAL));
-    run_eval_suite("collections",          SUITE(T_COLL));
-    run_eval_suite("collections: advanced", SUITE(T_COLL_ADV));
-    run_eval_suite("core forms",           SUITE(T_FORMS));
-    run_eval_suite("coll protocol",        SUITE(T_PROTO));
-    run_eval_suite("transient",            SUITE(T_TRANSIENT));
-    run_eval_suite("hof+pvec",             SUITE(T_HOF));
+    // Self-checking eval tests (programs in the language)
+    register_test_builtins();
+    run_assert_tests(T_ASSERT);
+    test_error_cases();
 
     // Emit layer (data-driven)
     run_jit_suite(SUITE(T_JIT));
