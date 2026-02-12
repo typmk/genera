@@ -279,7 +279,7 @@ static void bench_cc(void) {
 }
 
 // ============================================================================
-// 6. Collection Benchmarks (pmap, pvec, transient)
+// 6. Collection Benchmarks (pmap, pvec, transient — C-level)
 // ============================================================================
 
 static void bench_coll(void) {
@@ -383,27 +383,68 @@ static void bench_coll(void) {
         u64 dt = now_ns() - t0;
         pf("  pvec get (1000):   "); buf_f1(&g_print_buf, (f64)dt / N); pf(" ns/op\n");
     }
+}
 
-    // Eval: reduce over range (batched — range creates pvec, burns vleaves)
-    {
-        u32 BATCH = 500, BATCHES = 20;
-        u32 save_vnodes = g_coll.vnode_count;
-        u32 save_vleaves = g_coll.vleaf_count;
-        u64 total_ns = 0;
-        for (u32 b = 0; b < BATCHES; b++) {
-            u64 t0 = now_ns();
-            for (u32 i = 0; i < BATCH; i++) {
-                arena_reset(&g_req);
-                Val r = eval_string("(reduce + 0 (range 100))", g_global_env);
-                SINK(r);
-            }
-            total_ns += now_ns() - t0;
-            g_coll.vnode_count = save_vnodes;
-            g_coll.vleaf_count = save_vleaves;
-        }
-        u32 N = BATCH * BATCHES;
-        pf("  reduce+range(100): "); buf_f1(&g_print_buf, (f64)total_ns / N / 1000.0); pf(" us/op\n");
+// ============================================================================
+// 7. Language Benchmarks — programs in the language
+//
+// (bench "name" N (fn [] body)) — times N calls, prints ns/op.
+// Pool state saved/restored between batches to prevent overflow.
+// ============================================================================
+
+static Val bi_bench(Val args) {
+    Val name_val = car(args);
+    Val n_val = car(cdr(args));
+    Val fn_val = car(cdr(cdr(args)));
+    i64 n = val_as_int(n_val);
+
+    // Save pool state — restore between batches
+    u32 sv[5] = {g_coll.vnode_count, g_coll.vleaf_count,
+                 g_coll.small_count, g_coll.leaf_count, g_coll.node_used};
+
+    u64 total = 0;
+    i64 batch = n < 500 ? n : 500;
+    i64 done = 0;
+    while (done < n) {
+        i64 count = (n - done < batch) ? n - done : batch;
+        u64 t0 = now_ns();
+        for (i64 i = 0; i < count; i++)
+            apply_fn(fn_val, val_nil());
+        total += now_ns() - t0;
+        done += count;
+        g_coll.vnode_count = sv[0]; g_coll.vleaf_count = sv[1];
+        g_coll.small_count = sv[2]; g_coll.leaf_count = sv[3];
+        g_coll.node_used = sv[4];
     }
+
+    if (val_is_str(name_val)) {
+        Str *s = val_as_str(name_val);
+        char buf[256]; u32 len = s->len < 200 ? s->len : 200;
+        memcpy(buf, s->data, len); buf[len] = 0;
+        pf("  %-20s ", buf);
+    }
+    buf_f1(&g_print_buf, (f64)total / (f64)n);
+    pf(" ns/op\n");
+    return val_nil();
+}
+
+static void register_bench_builtins(void) {
+    env_set(g_global_env, INTERN("bench"), make_builtin(INTERN("bench"), bi_bench));
+}
+
+static const char *B_LANG =
+    "(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))\n"
+    "(bench \"fib(20) eval\" 1000 (fn [] (fib 20)))\n"
+    "(bench \"reduce+range(100)\" 10000 (fn [] (reduce + 0 (range 100))))\n"
+    "(bench \"map+filter(100)\" 5000 (fn [] (reduce + 0 (filter (fn [x] (= 0 (mod x 2))) (range 100)))))\n"
+;
+
+static void bench_lang(void) {
+    pf("\n--- language ---\n");
+    register_bench_builtins();
+    g_signal = SIGNAL_NONE; g_depth = 0;
+    eval_string(B_LANG, g_global_env);
+    if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
 }
 
 // ============================================================================
@@ -423,6 +464,7 @@ static void run_all_bench(void) {
     bench_jit();
     bench_cc();
     bench_coll();
+    bench_lang();
 
     pf("\n=== done ===\n");
 }
