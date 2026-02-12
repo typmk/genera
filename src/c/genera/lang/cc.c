@@ -277,6 +277,7 @@ static void emg_loop(u32 bv, int d) {
 // --- Main dispatcher ---
 
 static void emg_expr(u32 id, int d) {
+    TAP1(TK_CC, id);
     Gram *g = g_cc;
     GNode *n = &g->nodes[id];
 

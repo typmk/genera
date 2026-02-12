@@ -353,6 +353,7 @@ static void cg_tail(Comp *cc, u32 id) {
 }
 
 static void cg_expr(Comp *cc, u32 id) {
+    TAP1(TK_JIT, id);
     Gram *g = cc->g;
     GNode *n = &g->nodes[id];
 

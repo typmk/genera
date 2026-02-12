@@ -228,7 +228,7 @@ static Gram gram_new(u32 cap) {
 }
 
 // Trace kind StrIds (initialized by grammar_init)
-static StrId TK_NODE, TK_PARSE, TK_INDEX;
+static StrId TK_NODE, TK_PARSE, TK_INDEX, TK_JIT, TK_CC;
 
 static u32 gn_add(Gram *g, u8 kind, u32 start, u16 len, u32 parent, u8 dep) {
     u32 id = g->n++;
@@ -501,7 +501,224 @@ static void gram_print(Gram *g, u32 id) {
 }
 
 // ============================================================================
-// 8. Symbols — interned once, compared as integers
+// 8. Render — structure → surface via Lang spec
+//
+// Inverse of parse. Same tree, any surface:
+//   gram_render(g, &lisp)    → (defn foo [x] (+ x 1))
+//   gram_render(g, &c_lang)  → defn(foo, [x], +(x, 1))
+//   gram_render_outline(g)   → indented tree
+// ============================================================================
+
+static void render_node(Gram *g, const Lang *l, u32 id, OutBuf *o) {
+    GNode *n = &g->nodes[id];
+
+    // Group nodes: open + children + close
+    if (n->kind >= NK_LIST && n->kind <= NK_MAP) {
+        // Find delimiter pair for this kind
+        u8 op = '(', cl = ')';
+        for (u32 d = 0; d < l->nd; d++) {
+            if (l->dkind[d] == n->kind) { op = l->open[d]; cl = l->close[d]; break; }
+        }
+        buf_c(o, op);
+        u32 c = n->child;
+        bool first = true;
+        while (c) {
+            if (!first) buf_c(o, ' ');
+            render_node(g, l, c, o);
+            c = g->nodes[c].next;
+            first = false;
+        }
+        buf_c(o, cl);
+        return;
+    }
+
+    // Root: children separated by newlines
+    if (n->kind == NK_ROOT) {
+        u32 c = n->child;
+        bool first = true;
+        while (c) {
+            if (!first) buf_c(o, '\n');
+            render_node(g, l, c, o);
+            c = g->nodes[c].next;
+            first = false;
+        }
+        return;
+    }
+
+    // Leaf nodes: emit source text
+    Str t = gn_text(g, id);
+    buf_n(o, (const char *)t.data, t.len);
+}
+
+// Render to g_print_buf and flush
+static void gram_render(Gram *g, const Lang *l) {
+    render_node(g, l, 0, &g_print_buf);
+    buf_c(&g_print_buf, '\n');
+    print_flush();
+}
+
+// Outline: indented tree with type annotations
+static void render_outline_node(Gram *g, u32 id, u32 indent, OutBuf *o) {
+    GNode *n = &g->nodes[id];
+
+    if (n->kind == NK_ROOT) {
+        u32 c = n->child;
+        while (c) { render_outline_node(g, c, indent, o); c = g->nodes[c].next; }
+        return;
+    }
+
+    // Indent
+    for (u32 i = 0; i < indent; i++) buf_s(o, "  ");
+
+    if (n->kind >= NK_LIST && n->kind <= NK_MAP) {
+        // Group: show head + kind tag, recurse children
+        static const char *GRP[] = {"()", "[]", "{}"};
+        u32 gi = n->kind - NK_LIST;
+        if (gi > 2) gi = 0;
+
+        u32 fc = n->child;
+        if (fc && g->nodes[fc].kind == NK_IDENT) {
+            // Show head ident inline: "▸ defn foo"
+            if (g_color) buf_s(o, C_CYAN);
+            buf_s(o, GRP[gi]);
+            buf_c(o, ' ');
+            if (g_color) buf_s(o, C_RESET C_BOLD);
+            Str t = gn_text(g, fc);
+            buf_n(o, (const char *)t.data, t.len);
+            if (g_color) buf_s(o, C_RESET);
+            // Show remaining leaf args inline
+            u32 c = g->nodes[fc].next;
+            while (c && g->nodes[c].kind >= NK_IDENT) {
+                buf_c(o, ' ');
+                if (g->nodes[c].kind == NK_KW && g_color) buf_s(o, C_MAGENTA);
+                else if (g->nodes[c].kind == NK_NUM && g_color) buf_s(o, C_YELLOW);
+                else if (g->nodes[c].kind == NK_STR_NODE && g_color) buf_s(o, C_GREEN);
+                Str lt = gn_text(g, c);
+                buf_n(o, (const char *)lt.data, lt.len);
+                if (g_color) buf_s(o, C_RESET);
+                c = g->nodes[c].next;
+            }
+            buf_c(o, '\n');
+            // Recurse into remaining group children
+            while (c) {
+                render_outline_node(g, c, indent + 1, o);
+                c = g->nodes[c].next;
+            }
+        } else {
+            // Anonymous group
+            if (g_color) buf_s(o, C_DIM);
+            buf_s(o, GRP[gi]);
+            if (g_color) buf_s(o, C_RESET);
+            buf_c(o, '\n');
+            u32 c = n->child;
+            while (c) { render_outline_node(g, c, indent + 1, o); c = g->nodes[c].next; }
+        }
+    } else {
+        // Leaf
+        if (g_color) {
+            if (n->kind == NK_KW) buf_s(o, C_MAGENTA);
+            else if (n->kind == NK_NUM) buf_s(o, C_YELLOW);
+            else if (n->kind == NK_STR_NODE) buf_s(o, C_GREEN);
+            else if (n->kind == NK_OP) buf_s(o, C_RED);
+            else buf_s(o, C_DIM);
+        }
+        Str t = gn_text(g, id);
+        buf_n(o, (const char *)t.data, t.len);
+        if (g_color) buf_s(o, C_RESET);
+        buf_c(o, '\n');
+    }
+}
+
+static void gram_render_outline(Gram *g) {
+    render_outline_node(g, 0, 0, &g_print_buf);
+    print_flush();
+}
+
+// Render to OutBuf (for cc emit path or capture)
+static void gram_render_buf(Gram *g, const Lang *l, OutBuf *o) {
+    render_node(g, l, 0, o);
+}
+
+// Annotated source: print source with runtime view overlay
+// hit_m = runtime bitmask (which nodes were visited), counts = hit counts (or NULL)
+// Approach: build per-byte owner map, walk source bytes with coloring
+static void gram_annotate(Gram *g, const u64 *hit_m, const u32 *counts) {
+    // Map each source byte to its owning node (leaf wins over group)
+    u32 *owner = (u32 *)arena_alloc(&g_perm, g->src_len * sizeof(u32), 4);
+    memset(owner, 0, g->src_len * sizeof(u32));
+    // First pass: groups claim their entire range
+    for (u32 i = 1; i < g->n; i++) {
+        GNode *n = &g->nodes[i];
+        if (n->kind >= NK_LIST && n->kind <= NK_MAP && n->len > 0) {
+            for (u32 p = n->start; p < n->start + n->len && p < g->src_len; p++)
+                owner[p] = i;
+        }
+    }
+    // Second pass: leaves override (more specific)
+    for (u32 i = 1; i < g->n; i++) {
+        GNode *n = &g->nodes[i];
+        if (n->kind >= NK_IDENT && n->kind <= NK_KW) {
+            for (u32 p = n->start; p < n->start + n->len && p < g->src_len; p++)
+                owner[p] = i;
+        }
+    }
+
+    u32 total = 0, hit = 0;
+    for (u32 i = 1; i < g->n; i++)
+        if (g->nodes[i].kind != NK_ROOT) total++;
+
+    pfc(C_BOLD); pf("  annotated source\n"); pfc(C_RESET);
+    pf("  ");
+
+    // Walk source bytes, color by owner's hit status
+    bool in_color = false;
+    u32 last_owner = 0;
+    for (u32 p = 0; p < g->src_len; p++) {
+        u32 o = owner[p];
+        if (o != last_owner) {
+            // Transition: end old color, start new
+            if (in_color && g_color) { buf_s(&g_print_buf, C_RESET); in_color = false; }
+            if (o && g_color) {
+                buf_s(&g_print_buf, BM_GET(hit_m, o) ? C_GREEN : C_RED);
+                in_color = true;
+            }
+            // Show hit count at start of new hit node
+            if (o && counts && BM_GET(hit_m, o) && counts[o] > 1) {
+                if (g_color) buf_s(&g_print_buf, C_DIM);
+                buf_u(&g_print_buf, counts[o]);
+                buf_c(&g_print_buf, 'x');
+                if (g_color) buf_s(&g_print_buf, C_RESET);
+                if (o && g_color) buf_s(&g_print_buf, BM_GET(hit_m, o) ? C_GREEN : C_RED);
+            }
+            last_owner = o;
+        }
+        char c = g->src[p];
+        if (c == '\n') {
+            if (in_color && g_color) { buf_s(&g_print_buf, C_RESET); in_color = false; }
+            buf_c(&g_print_buf, '\n');
+            buf_s(&g_print_buf, "  ");
+            last_owner = 0;  // force re-color after newline
+        } else {
+            buf_c(&g_print_buf, c);
+        }
+    }
+    if (in_color && g_color) buf_s(&g_print_buf, C_RESET);
+    buf_c(&g_print_buf, '\n');
+    print_flush();
+
+    // Count hits (all non-root nodes)
+    for (u32 i = 1; i < g->n; i++)
+        if (g->nodes[i].kind != NK_ROOT && BM_GET(hit_m, i)) hit++;
+
+    pfc(C_DIM);
+    pf("  %u/%u nodes visited", hit, total);
+    if (total > 0) pf(" (%u%%)", hit * 100 / total);
+    pf("\n");
+    pfc(C_RESET);
+}
+
+// ============================================================================
+// 9. Symbols — interned once, compared as integers
 // ============================================================================
 
 static StrId S_NIL, S_TRUE, S_FALSE;
@@ -1001,6 +1218,8 @@ static void grammar_init(void) {
     TK_NODE  = str_intern(STR_LIT("node"));
     TK_PARSE = str_intern(STR_LIT("parse"));
     TK_INDEX = str_intern(STR_LIT("index"));
+    TK_JIT   = str_intern(STR_LIT("jit"));
+    TK_CC    = str_intern(STR_LIT("cc"));
 
     // Symbols — interned once, compared as integers
     S_NIL = INTERN("nil"); S_TRUE = INTERN("true"); S_FALSE = INTERN("false");

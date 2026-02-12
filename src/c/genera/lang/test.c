@@ -900,6 +900,110 @@ static void test_pass_flow(void) {
 }
 
 // ============================================================================
+// 11e. Render Tests (parse → render round-trip)
+// ============================================================================
+
+// Helper: render to a static buffer and return as string
+static char g_render_buf_data[4096];
+static OutBuf g_render_buf;
+
+static const char *render_to_str(const char *src) {
+    Lang l; lang_lisp(&l);
+    Gram g = gram_new(1024);
+    gram_parse(&g, &l, src, (u32)strlen(src));
+    gram_index(&g);
+    g_render_buf = (OutBuf){g_render_buf_data, 0, sizeof(g_render_buf_data)};
+    gram_render_buf(&g, &l, &g_render_buf);
+    if (g_render_buf.pos < sizeof(g_render_buf_data))
+        g_render_buf_data[g_render_buf.pos] = '\0';
+    else
+        g_render_buf_data[sizeof(g_render_buf_data) - 1] = '\0';
+    return g_render_buf_data;
+}
+
+static void test_render(void) {
+    describe("render");
+
+    // Simple round-trip: atom
+    it_eq_str("atom", render_to_str("42"), "42");
+    it_eq_str("ident", render_to_str("foo"), "foo");
+    it_eq_str("keyword", render_to_str(":bar"), ":bar");
+    it_eq_str("string", render_to_str("\"hello\""), "\"hello\"");
+    it_eq_str("negative", render_to_str("-7"), "-7");
+
+    // Simple list
+    it_eq_str("list", render_to_str("(+ 1 2)"), "(+ 1 2)");
+
+    // Vector
+    it_eq_str("vec", render_to_str("[1 2 3]"), "[1 2 3]");
+
+    // Map
+    it_eq_str("map", render_to_str("{:a 1 :b 2}"), "{:a 1 :b 2}");
+
+    // Nested
+    it_eq_str("nested", render_to_str("(defn f [x] (+ x 1))"), "(defn f [x] (+ x 1))");
+
+    // Multiple top-level forms
+    it_eq_str("multi", render_to_str("(def a 1) (def b 2)"), "(def a 1)\n(def b 2)");
+
+    // Deep nesting
+    it_eq_str("deep", render_to_str("(if (< n 2) n (+ (f (- n 1)) (f (- n 2))))"),
+              "(if (< n 2) n (+ (f (- n 1)) (f (- n 2))))");
+
+    // Empty list
+    it_eq_str("empty-list", render_to_str("()"), "()");
+
+    // Mixed delimiters
+    it_eq_str("mixed", render_to_str("(let [x {:a 1}] x)"), "(let [x {:a 1}] x)");
+}
+
+// ============================================================================
+// 11f. Runtime View Tests (tap → bitmask)
+// ============================================================================
+
+static void test_runtime_views(void) {
+    describe("runtime views");
+
+    // TAP → bitmask round-trip
+    tap_reset(); tap_on();
+    TAP1(TK_JIT, 1);
+    TAP1(TK_JIT, 3);
+    TAP1(TK_JIT, 3);
+    TAP1(TK_JIT, 5);
+    tap_off();
+
+    u64 m[2] = {0};
+    tap_to_bitmask(TK_JIT, m, 2);
+    it("bm-set-1", (m[0] >> 1) & 1);
+    it("bm-set-3", (m[0] >> 3) & 1);
+    it("bm-set-5", (m[0] >> 5) & 1);
+    it("bm-clear-0", !((m[0] >> 0) & 1));
+    it("bm-clear-2", !((m[0] >> 2) & 1));
+
+    // Hit counts
+    u32 counts[8] = {0};
+    tap_hit_counts(TK_JIT, counts, 8);
+    it_eq_i64("count-1", counts[1], 1);
+    it_eq_i64("count-3", counts[3], 2);  // hit twice
+    it_eq_i64("count-5", counts[5], 1);
+    it_eq_i64("count-0", counts[0], 0);
+
+    // JIT compilation produces trace events
+    tap_reset(); tap_on();
+    jit_run("(+ 1 2)");
+    tap_off();
+    u32 jit_events = trace_count_kind(TK_JIT);
+    it("jit-traced", jit_events > 0);
+
+    // Build bitmask from JIT trace using g_gram_scratch (same IDs as jit_run)
+    Gram *gj = &g_gram_scratch;
+    u64 *m_jit = bm_new(gj->mw);
+    tap_to_bitmask(TK_JIT, m_jit, gj->mw);
+    u32 hit_nodes = bm_pop(m_jit, gj->mw);
+    it("jit-nodes-hit", hit_nodes > 0);
+}
+
+// ============================================================================
 // 12. Assert Builtins — (is expected actual), (group "name")
 //
 // These make eval tests self-checking programs in the language:
@@ -1199,6 +1303,8 @@ static int run_all_tests(void) {
     test_pass_scope();
     test_pass_type();
     test_pass_flow();
+    test_render();
+    test_runtime_views();
 
     // Self-checking eval tests (programs in the language)
     register_test_builtins();
