@@ -80,6 +80,8 @@ typedef struct {
     u64 *m_leaf;
     u64 *m_first;
     u64 *v[V_COUNT];        // semantic views (analysis passes)
+    u32 *bind;              // bind[ref_id] = def_id (0 = unbound)
+    u32 *scope;             // scope[id] = enclosing fn node (0 = top-level)
     bool analyzed;
 } Gram;
 
@@ -219,6 +221,8 @@ static Gram gram_new(u32 cap) {
     g.m_group = bm_new(g.mw);
     g.m_leaf  = bm_new(g.mw);
     g.m_first = bm_new(g.mw);
+    g.bind  = (u32 *)arena_alloc(&g_perm, cap * sizeof(u32), 4);
+    g.scope = (u32 *)arena_alloc(&g_perm, cap * sizeof(u32), 4);
     return g;
 }
 
@@ -401,15 +405,18 @@ static void gram_index(Gram *g) {
 // 6. Semantic Views — analyze() allocates + runs passes
 // ============================================================================
 
+static void pass_scope(Gram *g);  // forward decl (defined after symbols)
+
 static void gram_analyze(Gram *g) {
     if (!g->mw) gram_index(g);
     u32 mw = g->mw;
-    // Allocate view bitmasks (once per gram_new, cleared per analyze)
     for (u32 i = 0; i < V_COUNT; i++) {
         if (!g->v[i]) g->v[i] = bm_new(mw);
         else memset(g->v[i], 0, mw * 8);
     }
-    // Passes fill views (steps 3-5 will add pass_scope, pass_type, pass_flow)
+    memset(g->bind,  0, g->n * sizeof(u32));
+    memset(g->scope, 0, g->n * sizeof(u32));
+    pass_scope(g);      // Pass 1: V_DEF, V_REF, V_CALL, bind[], scope[]
     g->analyzed = true;
 }
 
@@ -497,6 +504,147 @@ static u64 g_builtin_mask;
 
 ALWAYS_INLINE bool is_special(StrId s) { return s < 64 && (g_special_mask & (1ULL << s)); }
 ALWAYS_INLINE bool is_builtin(StrId s) { return s < 64 && (g_builtin_mask & (1ULL << s)); }
+
+// ============================================================================
+// 8b. Pass 1: Scope + Binding
+//
+// Single tree walk fills V_DEF, V_REF, V_CALL, bind[], scope[].
+// Scope chain: flat array of {name, def_id} with save/restore for nesting.
+// ============================================================================
+
+typedef struct { StrId name; u32 def_id; } ScopeBind;
+static ScopeBind g_sb[512];
+static u32 g_sn;   // binding count
+static u32 g_sf;   // current enclosing fn/defn node (0 = top-level)
+
+static void p1_walk(Gram *g, u32 id);
+
+static void p1_kids(Gram *g, u32 id) {
+    u32 c = g->nodes[id].child;
+    while (c) { p1_walk(g, c); c = g->nodes[c].next; }
+}
+
+static void p1_body(Gram *g, u32 start) {
+    while (start) { p1_walk(g, start); start = g->nodes[start].next; }
+}
+
+// Mark param idents in [a b c] as V_DEF + push to scope chain
+static void p1_params(Gram *g, u32 vec) {
+    u32 p = g->nodes[vec].child;
+    while (p) {
+        g->scope[p] = g_sf;
+        if (g->nodes[p].kind == NK_IDENT) {
+            BM_SET(g->v[V_DEF], p);
+            g_sb[g_sn++] = (ScopeBind){gn_intern(g, p), p};
+        }
+        p = g->nodes[p].next;
+    }
+}
+
+// Mark alternating names in [x 1 y 2] as V_DEF, walk value exprs
+static void p1_let(Gram *g, u32 vec) {
+    u32 p = g->nodes[vec].child;
+    bool is_name = true;
+    while (p) {
+        g->scope[p] = g_sf;
+        if (is_name && g->nodes[p].kind == NK_IDENT) {
+            BM_SET(g->v[V_DEF], p);
+            g_sb[g_sn++] = (ScopeBind){gn_intern(g, p), p};
+        } else if (!is_name) {
+            p1_walk(g, p);
+        }
+        is_name = !is_name;
+        p = g->nodes[p].next;
+    }
+}
+
+static void p1_walk(Gram *g, u32 id) {
+    g->scope[id] = g_sf;
+    GNode *n = &g->nodes[id];
+
+    if (n->kind == NK_LIST) {
+        u32 fc = n->child;
+        if (!fc) return;
+        g->scope[fc] = g_sf;
+
+        if (g->nodes[fc].kind == NK_IDENT) {
+            StrId sym = gn_intern(g, fc);
+
+            if (sym == S_DEFN) {
+                // (defn name [params] body...) — name in outer scope
+                u32 nm = g->nodes[fc].next;  if (!nm) return;
+                g->scope[nm] = g_sf;
+                BM_SET(g->v[V_DEF], nm);
+                g_sb[g_sn++] = (ScopeBind){gn_intern(g, nm), nm};
+                u32 pv = g->nodes[nm].next;  if (!pv) return;
+                u32 sv = g_sn, of = g_sf;  g_sf = id;
+                g->scope[pv] = g_sf;
+                if (g->nodes[pv].kind == NK_VEC) p1_params(g, pv);
+                p1_body(g, g->nodes[pv].next);
+                g_sn = sv; g_sf = of;
+                return;
+            }
+            if (sym == S_DEF) {
+                // (def name value)
+                u32 nm = g->nodes[fc].next;  if (!nm) return;
+                g->scope[nm] = g_sf;
+                BM_SET(g->v[V_DEF], nm);
+                g_sb[g_sn++] = (ScopeBind){gn_intern(g, nm), nm};
+                u32 val = g->nodes[nm].next;
+                if (val) p1_walk(g, val);
+                return;
+            }
+            if (sym == S_FN) {
+                // (fn [params] body...)
+                u32 pv = g->nodes[fc].next;  if (!pv) return;
+                u32 sv = g_sn, of = g_sf;  g_sf = id;
+                g->scope[pv] = g_sf;
+                if (g->nodes[pv].kind == NK_VEC) p1_params(g, pv);
+                p1_body(g, g->nodes[pv].next);
+                g_sn = sv; g_sf = of;
+                return;
+            }
+            if (sym == S_LET || sym == S_LOOP) {
+                // (let [x 1 y 2] body...) / (loop [i 0] body...)
+                u32 bv = g->nodes[fc].next;  if (!bv) return;
+                u32 sv = g_sn;
+                g->scope[bv] = g_sf;
+                if (g->nodes[bv].kind == NK_VEC) p1_let(g, bv);
+                p1_body(g, g->nodes[bv].next);
+                g_sn = sv;
+                return;
+            }
+            if (sym == S_QUOTE) return;  // quoted data — don't walk
+            if (is_special(sym)) { p1_kids(g, id); return; }
+        }
+
+        // Regular function call
+        BM_SET(g->v[V_CALL], id);
+        p1_kids(g, id);
+        return;
+    }
+
+    if (n->kind == NK_IDENT) {
+        if (BM_GET(g->v[V_DEF], id)) return;
+        StrId sym = gn_intern(g, id);
+        if (sym == S_NIL || sym == S_TRUE || sym == S_FALSE) return;
+        if (is_special(sym)) return;
+        // Head position of call → not a value reference
+        u32 par = n->parent;
+        if (g->nodes[par].kind == NK_LIST && g->nodes[par].child == id) return;
+        BM_SET(g->v[V_REF], id);
+        for (i32 i = (i32)g_sn - 1; i >= 0; i--)
+            if (g_sb[i].name == sym) { g->bind[id] = g_sb[i].def_id; break; }
+        return;
+    }
+
+    p1_kids(g, id);
+}
+
+static void pass_scope(Gram *g) {
+    g_sn = 0; g_sf = 0;
+    p1_kids(g, 0);
+}
 
 // ============================================================================
 // 9. Classification — separate defn/def/main forms

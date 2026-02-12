@@ -473,29 +473,159 @@ static void test_views(void) {
     for (u32 i = 0; i < V_COUNT; i++)
         it(V_NAME[i], g.v[i] != 0);
 
-    // All views start empty (passes not yet wired)
-    u32 total = 0;
-    for (u32 i = 0; i < V_COUNT; i++)
-        total += bm_pop(g.v[i], g.mw);
-    it("views-empty-before-passes", total == 0);
+    // Pass 1 fills V_DEF/V_REF/V_CALL; later passes leave V_TAIL..V_FN empty
+    it("pass1-filled", bm_pop(g.v[V_DEF], g.mw) > 0);
+    it("later-empty", bm_pop(g.v[V_TAIL], g.mw) == 0);
 
-    // Manual set + query round-trip
-    BM_SET(g.v[V_DEF], 1);
-    BM_SET(g.v[V_DEF], 3);
-    it("view_is-set", view_is(&g, V_DEF, 1));
-    it("view_is-unset", !view_is(&g, V_DEF, 2));
+    // Manual set + query round-trip (use V_TAIL — untouched by pass_scope)
+    BM_SET(g.v[V_TAIL], 1);
+    BM_SET(g.v[V_TAIL], 3);
+    it("view_is-set", view_is(&g, V_TAIL, 1));
+    it("view_is-unset", !view_is(&g, V_TAIL, 2));
 
     // Subtree queries via view_has/view_count
-    // Node 0 is root — subtree [1..end) should contain nodes 1 and 3
-    it("view_has-root", view_has(&g, V_DEF, 0));
-    it_eq_i64("view_count-root", view_count(&g, V_DEF, 0), 2);
+    it("view_has-root", view_has(&g, V_TAIL, 0));
+    it_eq_i64("view_count-root", view_count(&g, V_TAIL, 0), 2);
 
     // Compose views: AND two views
-    BM_SET(g.v[V_REF], 1);  // node 1 is both DEF and REF (synthetic)
+    BM_SET(g.v[V_DEAD], 1);  // node 1 in both TAIL and DEAD (synthetic)
     u64 both[64] = {0};
-    bm_and(both, g.v[V_DEF], g.v[V_REF], g.mw);
+    bm_and(both, g.v[V_TAIL], g.v[V_DEAD], g.mw);
     it("view-and-compose", BM_GET(both, 1));
     it("view-and-excludes", !BM_GET(both, 3));
+}
+
+// ============================================================================
+// 11c. Pass 1: Scope + Binding Tests
+// ============================================================================
+
+static void test_pass_scope(void) {
+    describe("pass 1: scope");
+    Lang l; lang_lisp(&l);
+
+    // defn: name + params → V_DEF, body refs → V_REF, call → V_CALL
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(defn add [a b] (+ a b))", 24);
+        gram_analyze(&g);
+        it_eq_i64("defn-defs", bm_pop(g.v[V_DEF], g.mw), 3);   // add, a, b
+        it_eq_i64("defn-refs", bm_pop(g.v[V_REF], g.mw), 2);   // a, b in body
+        it_eq_i64("defn-calls", bm_pop(g.v[V_CALL], g.mw), 1); // (+ a b)
+    }
+
+    // def: name → V_DEF
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(def x 42)", 10);
+        gram_analyze(&g);
+        it_eq_i64("def-defs", bm_pop(g.v[V_DEF], g.mw), 1);
+    }
+
+    // let: bindings → V_DEF, body refs → V_REF
+    {
+        Gram g = gram_new(256);
+        const char *src = "(let [x 1 y 2] (+ x y))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("let-defs", bm_pop(g.v[V_DEF], g.mw), 2);   // x, y
+        it_eq_i64("let-refs", bm_pop(g.v[V_REF], g.mw), 2);   // x, y in body
+        it_eq_i64("let-calls", bm_pop(g.v[V_CALL], g.mw), 1); // (+ x y)
+    }
+
+    // fn: params → V_DEF
+    {
+        Gram g = gram_new(256);
+        const char *src = "(fn [x] (+ x 1))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("fn-defs", bm_pop(g.v[V_DEF], g.mw), 1);    // x
+        it_eq_i64("fn-refs", bm_pop(g.v[V_REF], g.mw), 1);    // x in body
+    }
+
+    // binding resolution: all refs bound
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (let [y 1] (+ x y)))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 bound = 0, unbound = 0;
+        for (u32 i = 0; i < g.n; i++) {
+            if (BM_GET(g.v[V_REF], i)) {
+                if (g.bind[i]) bound++; else unbound++;
+            }
+        }
+        it_eq_i64("nested-bound", bound, 2);      // x, y
+        it_eq_i64("nested-unbound", unbound, 0);
+    }
+
+    // closure: inner fn sees outer params
+    {
+        Gram g = gram_new(256);
+        const char *src = "(fn [a] (fn [b] (+ a b)))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 bound = 0;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_REF], i) && g.bind[i]) bound++;
+        it_eq_i64("closure-bound", bound, 2);      // a and b both resolved
+    }
+
+    // special forms not marked V_CALL
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(if true 1 2)", 13);
+        gram_analyze(&g);
+        it_eq_i64("if-no-call", bm_pop(g.v[V_CALL], g.mw), 0);
+    }
+
+    // recursive defn: name visible in own body
+    {
+        Gram g = gram_new(512);
+        const char *src = "(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("recur-defs", bm_pop(g.v[V_DEF], g.mw), 2); // fib, n
+        it_eq_i64("recur-refs", bm_pop(g.v[V_REF], g.mw), 4); // n × 4
+        it_eq_i64("recur-calls", bm_pop(g.v[V_CALL], g.mw), 6);
+    }
+
+    // scope[] points to enclosing fn
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (+ x 1))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 defn_node = g.nodes[0].child;
+        bool ok = true;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_REF], i) && g.scope[i] != defn_node) ok = false;
+        it("scope-to-fn", ok);
+    }
+
+    // sequential defs: later sees earlier
+    {
+        Gram g = gram_new(256);
+        const char *src = "(def x 1) (def y x)";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 bound = 0;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_REF], i) && g.bind[i]) bound++;
+        it_eq_i64("seq-def-bound", bound, 1);   // y's value x resolves to def x
+    }
+
+    // loop: bindings visible in body
+    {
+        Gram g = gram_new(256);
+        const char *src = "(loop [i 0] (recur (+ i 1)))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("loop-defs", bm_pop(g.v[V_DEF], g.mw), 1);  // i
+        u32 bound = 0;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_REF], i) && g.bind[i]) bound++;
+        it_eq_i64("loop-bound", bound, 1);  // i in body
+    }
 }
 
 // ============================================================================
@@ -740,6 +870,7 @@ static int run_all_tests(void) {
     test_grammar_c();
     test_grammar_query();
     test_views();
+    test_pass_scope();
 
     // Lang layer: eval (data-driven)
     run_eval_suite("eval: basic",          SUITE(T_EVAL));
