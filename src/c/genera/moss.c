@@ -5,16 +5,15 @@
  * Build: gcc -O3 -march=native -nostdlib -static -o moss src/c/moss.c
  *
  * Dependency chain:
- *   moss.c → glass/ → emit/ → lang/ → platform/ → base/
+ *   moss.c → lang/ → std/ → sys/
  */
 
-#include "glass/glass.c"
+#include "lang/lang.c"
 
 int main(int argc, char **argv) {
     // Init all layers
     base_init();
     proto_init();
-    init_syms();
     grammar_init();
     coll_init();
     coll_register_protos();

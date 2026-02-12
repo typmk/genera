@@ -1,13 +1,14 @@
 /**
- * grammar.c — Universal Grammar + Entity Bridge
+ * grammar.c — Universal Grammar, Symbols, Entity Bridge
  *
  * One engine, any language. Source text IS the tree.
  * 256-byte char class table + delimiter pairs = complete language spec.
  * Flat node array + bitmask indexes = O(1) classification queries.
  *
- * Entity bridge: GNode entities → Val cons lists for compiler backends.
+ * Also: interned symbols, form classification, entity bridge.
+ * Shared by all backends (eval, JIT, C emitter).
  *
- * Depends on: platform/, lang/read.c (for bridge: S_NIL, S_TRUE, S_FALSE)
+ * Depends on: platform/ (proto, coll)
  */
 #ifndef GRAMMAR_C_INCLUDED
 #define GRAMMAR_C_INCLUDED
@@ -126,6 +127,12 @@ static u32 bm_next(const u64 *m, u32 nw, u32 pos) {
     return bits ? w * 64 + (u32)CTZ(bits) : ~0u;
 }
 
+static u64 *bm_new(u32 nw) {
+    u64 *m = (u64 *)arena_alloc(&g_perm, nw * 8, 8);
+    memset(m, 0, nw * 8);
+    return m;
+}
+
 // ============================================================================
 // 3. Language Specs
 // ============================================================================
@@ -193,6 +200,12 @@ static Gram gram_new(u32 cap) {
     Gram g = {0};
     g.cap = cap;
     g.nodes = (GNode *)arena_alloc(&g_perm, cap * sizeof(GNode), 8);
+    // Pre-allocate bitmask arrays (reused across gram_index calls)
+    g.mw = (cap + 63) / 64;
+    for (u32 k = 0; k < NK_COUNT; k++) g.m[k] = bm_new(g.mw);
+    g.m_group = bm_new(g.mw);
+    g.m_leaf  = bm_new(g.mw);
+    g.m_first = bm_new(g.mw);
     return g;
 }
 
@@ -290,6 +303,10 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
             (pos == 0 || (l->cc[(u8)src[pos-1]] & (CL_WS | CL_DELIM)))) {
             u32 s = pos++;
             while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+            if (pos < len && src[pos] == '.' && pos+1 < len && (l->cc[(u8)src[pos+1]] & CL_DIG)) {
+                pos++;
+                while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+            }
             u32 id = gn_add(g, NK_NUM, s, (u16)(pos - s), cur, dep + 1);
             LINK(g, last, cur, id);
             continue;
@@ -299,6 +316,10 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
         if (cl & CL_DIG) {
             u32 s = pos;
             while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+            if (pos < len && src[pos] == '.' && pos+1 < len && (l->cc[(u8)src[pos+1]] & CL_DIG)) {
+                pos++;
+                while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+            }
             u32 id = gn_add(g, NK_NUM, s, (u16)(pos - s), cur, dep + 1);
             LINK(g, last, cur, id);
             continue;
@@ -343,20 +364,16 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
 // 5. Index Builder — all queries become bit ops
 // ============================================================================
 
-static u64 *bm_new(u32 nw) {
-    u64 *m = (u64 *)arena_alloc(&g_perm, nw * 8, 8);
-    memset(m, 0, nw * 8);
-    return m;
-}
-
 static void gram_index(Gram *g) {
     TAP2(TK_INDEX, g->n, g->src_len);
-    g->mw = (g->n + 63) / 64;
-    for (u32 k = 0; k < NK_COUNT; k++) g->m[k] = bm_new(g->mw);
-    g->m_group = bm_new(g->mw);
-    g->m_leaf  = bm_new(g->mw);
-    g->m_first = bm_new(g->mw);
-
+    u32 mw = (g->n + 63) / 64;
+    g->mw = mw;
+    // Clear pre-allocated bitmasks
+    for (u32 k = 0; k < NK_COUNT; k++) memset(g->m[k], 0, mw * 8);
+    memset(g->m_group, 0, mw * 8);
+    memset(g->m_leaf,  0, mw * 8);
+    memset(g->m_first, 0, mw * 8);
+    // Fill
     for (u32 i = 0; i < g->n; i++) {
         u8 k = g->nodes[i].kind;
         BM_SET(g->m[k], i);
@@ -418,7 +435,56 @@ static void gram_print(Gram *g, u32 id) {
 }
 
 // ============================================================================
-// 7. Entity Bridge — GNode entities → Val cons lists
+// 7. Symbols — interned once, compared as integers
+// ============================================================================
+
+static StrId S_NIL, S_TRUE, S_FALSE;
+static StrId S_DEF, S_DEFN, S_FN, S_IF, S_LET, S_DO, S_LOOP, S_RECUR, S_QUOTE;
+static StrId S_AND, S_OR, S_COND, S_WHEN;
+static StrId S_ADD, S_SUB, S_MUL, S_DIV, S_MOD;
+static StrId S_EQ, S_LT, S_GT, S_LTE, S_GTE;
+static StrId S_NOT, S_INC, S_DEC, S_PRINTLN;
+static StrId S_ZEROQ, S_POSQ, S_NEGQ;
+static StrId S_ELSE;
+
+#define INTERN(s) str_intern(STR_LIT(s))
+
+// Bitmap classification: O(1) "is this a special form?" / "is this a builtin?"
+static u64 g_special_mask;
+static u64 g_builtin_mask;
+
+ALWAYS_INLINE bool is_special(StrId s) { return s < 64 && (g_special_mask & (1ULL << s)); }
+ALWAYS_INLINE bool is_builtin(StrId s) { return s < 64 && (g_builtin_mask & (1ULL << s)); }
+
+// ============================================================================
+// 8. Classification — separate defn/def/main forms
+// ============================================================================
+
+typedef struct { StrId name; Val params; Val body; u32 n_params; } DefnInfo;
+typedef struct { StrId name; Val value; } DefInfo;
+
+static DefnInfo g_defns[256]; static u32 g_defn_count;
+static DefInfo  g_defs[256];  static u32 g_def_count;
+static Val      g_mains[1024]; static u32 g_main_count;
+
+// Recur detection — shared by TCO in both backends
+static bool has_recur(Val form) {
+    if (!val_is_cons(form)) return false;
+    Val h = car(form);
+    if (val_is_sym(h)) {
+        if (val_as_sym(h) == S_RECUR) return true;
+        if (val_as_sym(h) == S_LOOP) return false;
+    }
+    Val f = form;
+    while (val_is_cons(f)) {
+        if (has_recur(car(f))) return true;
+        f = cdr(f);
+    }
+    return false;
+}
+
+// ============================================================================
+// 9. Entity Bridge — GNode entities → Val cons lists
 // ============================================================================
 //
 // Connects the universal grammar to emitters + classify.
@@ -427,9 +493,7 @@ static void gram_print(Gram *g, u32 id) {
 static Val entity_to_val(Gram *g, u32 id) {
     GNode *n = &g->nodes[id];
     switch (n->kind) {
-        case NK_LIST:
-        case NK_VEC:
-        case NK_MAP: {
+        case NK_LIST: {
             Val head = NIL;
             u32 c = n->child;
             while (c) { head = cons_new(entity_to_val(g, c), head); c = g->nodes[c].next; }
@@ -441,6 +505,28 @@ static Val entity_to_val(Gram *g, u32 id) {
             }
             return result;
         }
+        case NK_VEC: {
+            CPVec *v = arena_push(&g_req, CPVec);
+            *v = cpvec_empty();
+            u32 c = n->child;
+            while (c) { *v = cpvec_append(*v, entity_to_val(g, c)); c = g->nodes[c].next; }
+            return val_pvec(v);
+        }
+        case NK_MAP: {
+            CPMap *m = arena_push(&g_req, CPMap);
+            *m = cpmap_empty();
+            u32 c = n->child;
+            while (c) {
+                Val key = entity_to_val(g, c);
+                c = g->nodes[c].next;
+                if (!c) break;
+                Val val = entity_to_val(g, c);
+                if (val_is_kw(key))       *m = cpmap_put(*m, val_as_kw(key), val);
+                else if (val_is_sym(key)) *m = cpmap_put(*m, val_as_sym(key), val);
+                c = g->nodes[c].next;
+            }
+            return val_pmap(m);
+        }
         case NK_IDENT: {
             Str text = gn_text(g, id);
             StrId sid = str_intern(text);
@@ -451,8 +537,20 @@ static Val entity_to_val(Gram *g, u32 id) {
         }
         case NK_NUM: {
             Str text = gn_text(g, id);
-            i64 v = 0; bool neg = false; u32 i = 0;
+            bool neg = false; u32 i = 0;
             if (text.len && text.data[0] == '-') { neg = true; i++; }
+            // Check for decimal point → f64
+            bool has_dot = false;
+            for (u32 j = i; j < text.len; j++) if (text.data[j] == '.') { has_dot = true; break; }
+            if (has_dot) {
+                f64 d = 0;
+                while (i < text.len && text.data[i] != '.') d = d * 10 + (text.data[i++] - '0');
+                if (i < text.len) i++; // skip '.'
+                f64 frac = 0.1;
+                while (i < text.len) { d += (text.data[i++] - '0') * frac; frac *= 0.1; }
+                return val_f64(neg ? -d : d);
+            }
+            i64 v = 0;
             while (i < text.len) v = v * 10 + (text.data[i++] - '0');
             return val_int(neg ? -v : v);
         }
@@ -485,7 +583,7 @@ static void entity_classify(Gram *g) {
             if (sym == S_DEFN) {
                 DefnInfo *d = &g_defns[g_defn_count++];
                 d->name = val_as_sym(car(cdr(form)));
-                d->params = car(cdr(cdr(form)));
+                d->params = pvec_to_list(car(cdr(cdr(form))));
                 d->body = cdr(cdr(cdr(form)));
                 d->n_params = list_len(d->params);
                 c = g->nodes[c].next; continue;
@@ -503,13 +601,69 @@ static void entity_classify(Gram *g) {
 }
 
 // ============================================================================
-// 8. Init
+// 10. Convenience — gram_read, gram_classify
+// ============================================================================
+
+static Gram g_gram_scratch;
+
+static void gram_ensure_scratch(void) {
+    if (!g_gram_scratch.cap) g_gram_scratch = gram_new(4096);
+}
+
+// Parse single expression → Val (replaces read_str)
+static Val gram_read(const char *source) {
+    gram_ensure_scratch();
+    static Lang lisp; static bool inited;
+    if (!inited) { lang_lisp(&lisp); inited = true; }
+    gram_parse(&g_gram_scratch, &lisp, source, (u32)strlen(source));
+    u32 first = g_gram_scratch.nodes[0].child;
+    return first ? entity_to_val(&g_gram_scratch, first) : NIL;
+}
+
+// Parse + classify all top-level forms (replaces classify)
+static void gram_classify(const char *source) {
+    gram_ensure_scratch();
+    static Lang lisp; static bool inited;
+    if (!inited) { lang_lisp(&lisp); inited = true; }
+    gram_parse(&g_gram_scratch, &lisp, source, (u32)strlen(source));
+    gram_index(&g_gram_scratch);
+    entity_classify(&g_gram_scratch);
+}
+
+// ============================================================================
+// 11. Init
 // ============================================================================
 
 static void grammar_init(void) {
+    // Trace kind StrIds
     TK_NODE  = str_intern(STR_LIT("node"));
     TK_PARSE = str_intern(STR_LIT("parse"));
     TK_INDEX = str_intern(STR_LIT("index"));
+
+    // Symbols — interned once, compared as integers
+    S_NIL = INTERN("nil"); S_TRUE = INTERN("true"); S_FALSE = INTERN("false");
+    S_DEF = INTERN("def"); S_DEFN = INTERN("defn"); S_FN = INTERN("fn");
+    S_IF = INTERN("if"); S_LET = INTERN("let"); S_DO = INTERN("do");
+    S_LOOP = INTERN("loop"); S_RECUR = INTERN("recur"); S_QUOTE = INTERN("quote");
+    S_AND = INTERN("and"); S_OR = INTERN("or"); S_COND = INTERN("cond"); S_WHEN = INTERN("when");
+    S_ELSE = INTERN("else");
+    S_ADD = INTERN("+"); S_SUB = INTERN("-"); S_MUL = INTERN("*");
+    S_DIV = INTERN("/"); S_MOD = INTERN("mod");
+    S_EQ = INTERN("="); S_LT = INTERN("<"); S_GT = INTERN(">");
+    S_LTE = INTERN("<="); S_GTE = INTERN(">=");
+    S_NOT = INTERN("not"); S_INC = INTERN("inc"); S_DEC = INTERN("dec");
+    S_PRINTLN = INTERN("println");
+    S_ZEROQ = INTERN("zero?"); S_POSQ = INTERN("pos?"); S_NEGQ = INTERN("neg?");
+
+    g_special_mask = (1ULL<<S_DEF) | (1ULL<<S_DEFN) | (1ULL<<S_FN) |
+        (1ULL<<S_IF) | (1ULL<<S_LET) | (1ULL<<S_DO) |
+        (1ULL<<S_LOOP) | (1ULL<<S_RECUR) | (1ULL<<S_QUOTE) |
+        (1ULL<<S_AND) | (1ULL<<S_OR) | (1ULL<<S_COND) | (1ULL<<S_WHEN);
+    g_builtin_mask = (1ULL<<S_ADD) | (1ULL<<S_SUB) | (1ULL<<S_MUL) |
+        (1ULL<<S_DIV) | (1ULL<<S_MOD) | (1ULL<<S_EQ) | (1ULL<<S_LT) |
+        (1ULL<<S_GT) | (1ULL<<S_LTE) | (1ULL<<S_GTE) | (1ULL<<S_NOT) |
+        (1ULL<<S_INC) | (1ULL<<S_DEC) | (1ULL<<S_PRINTLN) |
+        (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ);
 }
 
 #endif // GRAMMAR_C_INCLUDED

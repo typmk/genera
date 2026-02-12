@@ -180,6 +180,79 @@ static void pr_val(Val v) {
 static const char *print_val(Val v) { pr_init(); pr_val(v); return g_pr_buf; }
 
 // ============================================================================
+// 3b. Pretty-Print — colored output to g_print_buf
+//
+// Structure (brackets, delimiters) → dim
+// Keywords → cyan, strings → green, numbers → yellow
+// nil/true/false → magenta, symbols → default, fns → dim
+// ============================================================================
+
+static void pp_val(Val v);
+
+static void pp_list(Val v) {
+    OutBuf *b = &g_print_buf;
+    if (g_color) buf_s(b, C_DIM);
+    buf_c(b, '(');
+    if (g_color) buf_s(b, C_RESET);
+    bool first = true;
+    while (val_is_cons(v)) {
+        if (!first) buf_c(b, ' ');
+        first = false;
+        pp_val(car(v));
+        v = cdr(v);
+    }
+    if (!val_is_nil(v)) { buf_s(b, " . "); pp_val(v); }
+    if (g_color) buf_s(b, C_DIM);
+    buf_c(b, ')');
+    if (g_color) buf_s(b, C_RESET);
+}
+
+static void pp_pmap_entry_color(u32 key, Val value, void *ctx) {
+    OutBuf *b = &g_print_buf;
+    bool *first = (bool *)ctx;
+    if (!*first) buf_c(b, ' ');
+    *first = false;
+    if (g_color) buf_s(b, C_CYAN);
+    buf_c(b, ':');
+    Str s = str_from_id((StrId)key);
+    buf_n(b, (const char *)s.data, s.len);
+    if (g_color) buf_s(b, C_RESET);
+    buf_c(b, ' ');
+    pp_val(value);
+}
+
+static void pp_color(const char *c) { if (g_color) buf_s(&g_print_buf, c); }
+
+static void pp_val(Val v) {
+    OutBuf *b = &g_print_buf;
+    if (val_is_nil(v))  { pp_color(C_MAGENTA); buf_s(b, "nil"); pp_color(C_RESET); return; }
+    if (val_is_bool(v)) { pp_color(C_MAGENTA); buf_s(b, val_as_bool(v) ? "true" : "false"); pp_color(C_RESET); return; }
+    if (val_is_int(v))  { pp_color(C_YELLOW); buf_i(b, val_as_int(v)); pp_color(C_RESET); return; }
+    if (val_is_f64(v))  { pp_color(C_YELLOW); buf_s(b, print_val(v)); pp_color(C_RESET); return; }
+    if (val_is_sym(v))  { Str s = str_from_id(val_as_sym(v)); buf_n(b, (const char *)s.data, s.len); return; }
+    if (val_is_kw(v))   { pp_color(C_CYAN); buf_c(b, ':'); Str s = str_from_id(val_as_kw(v)); buf_n(b, (const char *)s.data, s.len); pp_color(C_RESET); return; }
+    if (val_is_str(v))  { pp_color(C_GREEN); buf_c(b, '"'); Str *s = val_as_str(v); buf_n(b, (const char *)s->data, s->len); buf_c(b, '"'); pp_color(C_RESET); return; }
+    if (val_is_pvec(v)) {
+        pp_color(C_DIM); buf_c(b, '['); pp_color(C_RESET);
+        CPVec *pv = (CPVec *)val_as_pvec(v);
+        for (u32 i = 0; i < pv->count; i++) { if (i) buf_c(b, ' '); pp_val(cpvec_get(*pv, i)); }
+        pp_color(C_DIM); buf_c(b, ']'); pp_color(C_RESET);
+        return;
+    }
+    if (val_is_pmap(v)) {
+        pp_color(C_DIM); buf_c(b, '{'); pp_color(C_RESET);
+        CPMap *pm = (CPMap *)val_as_pmap(v);
+        bool first = true;
+        cpmap_foreach(*pm, pp_pmap_entry_color, &first);
+        pp_color(C_DIM); buf_c(b, '}'); pp_color(C_RESET);
+        return;
+    }
+    if (val_is_cons(v)) { pp_list(v); return; }
+    if (val_is_fn(v))   { pp_color(C_DIM); buf_s(b, print_val(v)); pp_color(C_RESET); return; }
+    buf_s(b, "#<unknown>");
+}
+
+// ============================================================================
 // 4. Eval / Apply
 // ============================================================================
 
@@ -349,12 +422,15 @@ static Val eval(Val form, Env *env) {
 }
 
 static Val eval_string(const char *s, Env *env) {
-    Reader r = {s, 0, (u32)strlen(s)};
+    gram_ensure_scratch();
+    static Lang lisp; static bool inited;
+    if (!inited) { lang_lisp(&lisp); inited = true; }
+    gram_parse(&g_gram_scratch, &lisp, s, (u32)strlen(s));
     Val result = NIL;
-    while (1) {
-        skip_ws(&r);
-        if (r.pos >= r.len) break;
-        result = eval(read_form(&r), env);
+    u32 c = g_gram_scratch.nodes[0].child;
+    while (c) {
+        result = eval(entity_to_val(&g_gram_scratch, c), env);
+        c = g_gram_scratch.nodes[c].next;
     }
     return result;
 }
@@ -516,39 +592,66 @@ static Val bi_prstr(Val args) {
     return val_str(sp);
 }
 
-// --- Higher-order ---
+// --- Higher-order (polymorphic: cons list + pvec) ---
 static Val bi_map(Val args) {
-    Val fn = car(args), lst = car(cdr(args));
+    Val fn = car(args), coll = car(cdr(args));
     Val result = NIL, *tail = &result;
-    while (val_is_cons(lst)) {
-        Val cell = cons_new(apply_fn(fn, cons_new(car(lst), NIL)), NIL);
+    if (val_is_pvec(coll)) {
+        CPVec *pv = (CPVec *)val_as_pvec(coll);
+        for (u32 i = 0; i < pv->count; i++) {
+            Val cell = cons_new(apply_fn(fn, cons_new(cpvec_get(*pv, i), NIL)), NIL);
+            *tail = cell;
+            tail = &((Cons *)val_as_cons(cell))->cdr;
+        }
+        return result;
+    }
+    while (val_is_cons(coll)) {
+        Val cell = cons_new(apply_fn(fn, cons_new(car(coll), NIL)), NIL);
         *tail = cell;
         tail = &((Cons *)val_as_cons(cell))->cdr;
-        lst = cdr(lst);
+        coll = cdr(coll);
     }
     return result;
 }
 
 static Val bi_filter(Val args) {
-    Val fn = car(args), lst = car(cdr(args));
+    Val fn = car(args), coll = car(cdr(args));
     Val result = NIL, *tail = &result;
-    while (val_is_cons(lst)) {
-        if (val_truthy(apply_fn(fn, cons_new(car(lst), NIL)))) {
-            Val cell = cons_new(car(lst), NIL);
+    if (val_is_pvec(coll)) {
+        CPVec *pv = (CPVec *)val_as_pvec(coll);
+        for (u32 i = 0; i < pv->count; i++) {
+            Val item = cpvec_get(*pv, i);
+            if (val_truthy(apply_fn(fn, cons_new(item, NIL)))) {
+                Val cell = cons_new(item, NIL);
+                *tail = cell;
+                tail = &((Cons *)val_as_cons(cell))->cdr;
+            }
+        }
+        return result;
+    }
+    while (val_is_cons(coll)) {
+        if (val_truthy(apply_fn(fn, cons_new(car(coll), NIL)))) {
+            Val cell = cons_new(car(coll), NIL);
             *tail = cell;
             tail = &((Cons *)val_as_cons(cell))->cdr;
         }
-        lst = cdr(lst);
+        coll = cdr(coll);
     }
     return result;
 }
 
 static Val bi_reduce(Val args) {
-    Val fn = car(args), init = car(cdr(args)), lst = car(cdr(cdr(args)));
+    Val fn = car(args), init = car(cdr(args)), coll = car(cdr(cdr(args)));
     Val acc = init;
-    while (val_is_cons(lst)) {
-        acc = apply_fn(fn, cons_new(acc, cons_new(car(lst), NIL)));
-        lst = cdr(lst);
+    if (val_is_pvec(coll)) {
+        CPVec *pv = (CPVec *)val_as_pvec(coll);
+        for (u32 i = 0; i < pv->count; i++)
+            acc = apply_fn(fn, cons_new(acc, cons_new(cpvec_get(*pv, i), NIL)));
+        return acc;
+    }
+    while (val_is_cons(coll)) {
+        acc = apply_fn(fn, cons_new(acc, cons_new(car(coll), NIL)));
+        coll = cdr(coll);
     }
     return acc;
 }
@@ -670,25 +773,32 @@ static Val bi_emptyq(Val args) {
     return val_bool(val_as_int(p_count(v)) == 0);
 }
 
+static void into_conj(Val *to, Val item) {
+    if (val_is_pvec(*to)) {
+        CPVec *pv = (CPVec *)val_as_pvec(*to);
+        CPVec *nv = arena_push(&g_req, CPVec);
+        *nv = cpvec_append(*pv, item);
+        *to = val_pvec(nv);
+    } else if (val_is_pmap(*to) && val_is_pvec(item)) {
+        CPVec *kv = (CPVec *)val_as_pvec(item);
+        if (kv->count == 2)
+            *to = p_assoc(*to, cpvec_get(*kv, 0), cpvec_get(*kv, 1));
+    } else {
+        *to = cons_new(item, *to);
+    }
+}
+
 static Val bi_into(Val args) {
     Val to = car(args), from = car(cdr(args));
-    Val seq = from;
-    // Inline conj logic for each element
-    while (val_is_cons(seq)) {
-        Val item = car(seq);
-        if (val_is_pvec(to)) {
-            CPVec *pv = (CPVec *)val_as_pvec(to);
-            CPVec *nv = arena_push(&g_req, CPVec);
-            *nv = cpvec_append(*pv, item);
-            to = val_pvec(nv);
-        } else if (val_is_pmap(to) && val_is_pvec(item)) {
-            CPVec *kv = (CPVec *)val_as_pvec(item);
-            if (kv->count == 2)
-                to = p_assoc(to, cpvec_get(*kv, 0), cpvec_get(*kv, 1));
-        } else {
-            to = cons_new(item, to);
-        }
-        seq = cdr(seq);
+    if (val_is_pvec(from)) {
+        CPVec *pv = (CPVec *)val_as_pvec(from);
+        for (u32 i = 0; i < pv->count; i++)
+            into_conj(&to, cpvec_get(*pv, i));
+        return to;
+    }
+    while (val_is_cons(from)) {
+        into_conj(&to, car(from));
+        from = cdr(from);
     }
     return to;
 }
@@ -717,7 +827,7 @@ static Val bi_mapq(Val args)  { return val_bool(val_is_pmap(car(args))); }
 static Val bi_kwq(Val args)   { return val_bool(val_is_kw(car(args))); }
 static Val bi_strq(Val args)  { return val_bool(val_is_str(car(args))); }
 
-// --- Range ---
+// --- Range (returns pvec for cache-friendly iteration) ---
 static Val bi_range(Val args) {
     i64 start = 0, end;
     if (val_is_cons(cdr(args))) {
@@ -726,10 +836,37 @@ static Val bi_range(Val args) {
     } else {
         end = val_as_int(car(args));
     }
-    Val result = NIL;
-    for (i64 i = end - 1; i >= start; i--)
-        result = cons_new(val_int(i), result);
-    return result;
+    CPVec *v = arena_push(&g_req, CPVec);
+    *v = cpvec_empty();
+    for (i64 i = start; i < end; i++)
+        *v = cpvec_append(*v, val_int(i));
+    return val_pvec(v);
+}
+
+// --- Transient operations ---
+static Val bi_transient(Val args) {
+    Val m = car(args);
+    if (!val_is_pmap(m)) return m;
+    CPMap *pm = (CPMap *)val_as_pmap(m);
+    CPMap *tm = arena_push(&g_req, CPMap);
+    *tm = cpmap_transient(*pm);
+    return val_pmap(tm);
+}
+
+static Val bi_persistent(Val args) {
+    Val m = car(args);
+    if (!val_is_pmap(m)) return m;
+    CPMap *pm = (CPMap *)val_as_pmap(m);
+    CPMap *nm = arena_push(&g_req, CPMap);
+    *nm = cpmap_persistent(*pm);
+    return val_pmap(nm);
+}
+
+static Val bi_assocbang(Val args) {
+    Val m = car(args), k = car(cdr(args)), v = car(cdr(cdr(args)));
+    if (!val_is_pmap(m)) return m;
+    // assoc! uses protocol dispatch (which detects transient)
+    return p_assoc(m, k, v);
 }
 
 // ============================================================================
@@ -758,6 +895,9 @@ static void register_builtins(Env *env) {
     REG("vector?", bi_vecq);  REG("map?", bi_mapq);
     REG("keyword?", bi_kwq);  REG("string?", bi_strq);
     REG("range", bi_range);
+    // Transient operations
+    REG("transient", bi_transient);  REG("persistent!", bi_persistent);
+    REG("assoc!", bi_assocbang);
     #undef REG
 }
 
