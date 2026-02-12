@@ -406,6 +406,8 @@ static void gram_index(Gram *g) {
 // ============================================================================
 
 static void pass_scope(Gram *g);  // forward decl (defined after symbols)
+static void pass_type(Gram *g);   // forward decl
+static void pass_flow(Gram *g);   // forward decl
 
 static void gram_analyze(Gram *g) {
     if (!g->mw) gram_index(g);
@@ -417,6 +419,8 @@ static void gram_analyze(Gram *g) {
     memset(g->bind,  0, g->n * sizeof(u32));
     memset(g->scope, 0, g->n * sizeof(u32));
     pass_scope(g);      // Pass 1: V_DEF, V_REF, V_CALL, bind[], scope[]
+    pass_type(g);       // Pass 2: V_INT, V_VEC, V_MAP, V_FN, V_PURE, V_CONST
+    pass_flow(g);       // Pass 3: V_TAIL, V_DEAD
     g->analyzed = true;
 }
 
@@ -501,9 +505,13 @@ static StrId S_ELSE;
 // Bitmap classification: O(1) "is this a special form?" / "is this a builtin?"
 static u64 g_special_mask;
 static u64 g_builtin_mask;
+static u64 g_pure_bi_mask;   // pure builtins (no I/O)
+static u64 g_int_ret_mask;   // builtins that return int when args are int
 
 ALWAYS_INLINE bool is_special(StrId s) { return s < 64 && (g_special_mask & (1ULL << s)); }
 ALWAYS_INLINE bool is_builtin(StrId s) { return s < 64 && (g_builtin_mask & (1ULL << s)); }
+ALWAYS_INLINE bool is_pure_bi(StrId s) { return s < 64 && (g_pure_bi_mask & (1ULL << s)); }
+ALWAYS_INLINE bool is_int_ret(StrId s) { return s < 64 && (g_int_ret_mask & (1ULL << s)); }
 
 // ============================================================================
 // 8b. Pass 1: Scope + Binding
@@ -644,6 +652,149 @@ static void p1_walk(Gram *g, u32 id) {
 static void pass_scope(Gram *g) {
     g_sn = 0; g_sf = 0;
     p1_kids(g, 0);
+}
+
+// ============================================================================
+// 8c. Pass 2: Type + Purity
+//
+// Backward scan (children before parents) fills V_INT, V_VEC, V_MAP, V_FN,
+// V_PURE, V_CONST. Pure builtin calls with const args → V_CONST.
+// Int-returning builtins with int args → V_INT.
+// ============================================================================
+
+static void pass_type(Gram *g) {
+    for (i32 i = (i32)g->n - 1; i >= 0; i--) {
+        GNode *n = &g->nodes[i];
+
+        // Leaf types
+        if (n->kind == NK_NUM)      { BM_SET(g->v[V_INT], i); BM_SET(g->v[V_CONST], i); continue; }
+        if (n->kind == NK_STR_NODE) { BM_SET(g->v[V_CONST], i); continue; }
+        if (n->kind == NK_VEC)      { BM_SET(g->v[V_VEC], i); continue; }
+        if (n->kind == NK_MAP)      { BM_SET(g->v[V_MAP], i); continue; }
+
+        // Constants: nil, true, false
+        if (n->kind == NK_IDENT && !BM_GET(g->v[V_DEF], i) && !BM_GET(g->v[V_REF], i)) {
+            StrId sym = gn_intern(g, i);
+            if (sym == S_NIL || sym == S_TRUE || sym == S_FALSE)
+                { BM_SET(g->v[V_CONST], i); continue; }
+        }
+
+        // fn form → V_FN
+        if (n->kind == NK_LIST && n->child &&
+            g->nodes[n->child].kind == NK_IDENT && gn_intern(g, n->child) == S_FN)
+            { BM_SET(g->v[V_FN], i); continue; }
+
+        // Calls to pure builtins → V_PURE, check const + int propagation
+        if (BM_GET(g->v[V_CALL], i) && n->kind == NK_LIST && n->child) {
+            u32 fc = n->child;
+            if (g->nodes[fc].kind == NK_IDENT) {
+                StrId sym = gn_intern(g, fc);
+                if (is_pure_bi(sym)) {
+                    BM_SET(g->v[V_PURE], i);
+                    bool all_const = true;
+                    u32 arg = g->nodes[fc].next;
+                    while (arg) {
+                        if (!BM_GET(g->v[V_CONST], arg)) { all_const = false; break; }
+                        arg = g->nodes[arg].next;
+                    }
+                    if (all_const) BM_SET(g->v[V_CONST], i);
+                    if (is_int_ret(sym)) {
+                        bool all_int = true;
+                        arg = g->nodes[fc].next;
+                        while (arg) {
+                            if (!BM_GET(g->v[V_INT], arg)) { all_int = false; break; }
+                            arg = g->nodes[arg].next;
+                        }
+                        if (all_int) BM_SET(g->v[V_INT], i);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// 8d. Pass 3: Flow + Dead Code
+//
+// Marks V_TAIL (tail position) and V_DEAD (unreachable branches).
+// pass_flow scans for defn/fn/loop, p3_tail recursively propagates.
+// ============================================================================
+
+static void p3_tail(Gram *g, u32 id) {
+    BM_SET(g->v[V_TAIL], id);
+    GNode *n = &g->nodes[id];
+    if (n->kind != NK_LIST || !n->child) return;
+
+    u32 fc = n->child;
+    if (g->nodes[fc].kind != NK_IDENT) return;
+    StrId sym = gn_intern(g, fc);
+
+    if (sym == S_IF) {
+        u32 test = g->nodes[fc].next;  if (!test) return;
+        u32 then = g->nodes[test].next; if (!then) return;
+        p3_tail(g, then);
+        u32 els = g->nodes[then].next;
+        if (els) p3_tail(g, els);
+        // Dead code: constant test
+        if (g->nodes[test].kind == NK_IDENT) {
+            StrId ts = gn_intern(g, test);
+            if (ts == S_FALSE || ts == S_NIL) BM_SET(g->v[V_DEAD], then);
+            else if (ts == S_TRUE)  { if (els) BM_SET(g->v[V_DEAD], els); }
+        }
+        return;
+    }
+    if (sym == S_DO) {
+        u32 c = g->nodes[fc].next, last = 0;
+        while (c) { last = c; c = g->nodes[c].next; }
+        if (last) p3_tail(g, last);
+        return;
+    }
+    if (sym == S_LET || sym == S_LOOP) {
+        u32 bv = g->nodes[fc].next; if (!bv) return;
+        u32 c = g->nodes[bv].next, last = 0;
+        while (c) { last = c; c = g->nodes[c].next; }
+        if (last) p3_tail(g, last);
+        return;
+    }
+    if (sym == S_COND) {
+        u32 c = g->nodes[fc].next;
+        bool is_test = true;
+        while (c) { if (!is_test) p3_tail(g, c); is_test = !is_test; c = g->nodes[c].next; }
+        return;
+    }
+    if (sym == S_WHEN || sym == S_AND || sym == S_OR) {
+        u32 c = g->nodes[fc].next, last = 0;
+        while (c) { last = c; c = g->nodes[c].next; }
+        if (last) p3_tail(g, last);
+        return;
+    }
+}
+
+static void pass_flow(Gram *g) {
+    for (u32 i = 0; i < g->n; i++) {
+        GNode *n = &g->nodes[i];
+        if (n->kind != NK_LIST || !n->child) continue;
+        u32 fc = n->child;
+        if (g->nodes[fc].kind != NK_IDENT) continue;
+        StrId sym = gn_intern(g, fc);
+
+        u32 body_start = 0;
+        if (sym == S_DEFN) {
+            u32 nm = g->nodes[fc].next; if (!nm) continue;
+            u32 pv = g->nodes[nm].next; if (!pv) continue;
+            body_start = g->nodes[pv].next;
+        } else if (sym == S_FN) {
+            u32 pv = g->nodes[fc].next; if (!pv) continue;
+            body_start = g->nodes[pv].next;
+        } else if (sym == S_LOOP) {
+            u32 bv = g->nodes[fc].next; if (!bv) continue;
+            body_start = g->nodes[bv].next;
+        } else continue;
+
+        u32 last = 0, e = body_start;
+        while (e) { last = e; e = g->nodes[e].next; }
+        if (last) p3_tail(g, last);
+    }
 }
 
 // ============================================================================
@@ -854,6 +1005,9 @@ static void grammar_init(void) {
         (1ULL<<S_GT) | (1ULL<<S_LTE) | (1ULL<<S_GTE) | (1ULL<<S_NOT) |
         (1ULL<<S_INC) | (1ULL<<S_DEC) | (1ULL<<S_PRINTLN) |
         (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ);
+    g_pure_bi_mask = g_builtin_mask & ~(1ULL << S_PRINTLN);
+    g_int_ret_mask = (1ULL<<S_ADD) | (1ULL<<S_SUB) | (1ULL<<S_MUL) |
+        (1ULL<<S_DIV) | (1ULL<<S_MOD) | (1ULL<<S_INC) | (1ULL<<S_DEC);
 }
 
 #endif // GRAMMAR_C_INCLUDED

@@ -473,24 +473,24 @@ static void test_views(void) {
     for (u32 i = 0; i < V_COUNT; i++)
         it(V_NAME[i], g.v[i] != 0);
 
-    // Pass 1 fills V_DEF/V_REF/V_CALL; later passes leave V_TAIL..V_FN empty
+    // All passes run; V_DEAD empty for this source (no dead code)
     it("pass1-filled", bm_pop(g.v[V_DEF], g.mw) > 0);
-    it("later-empty", bm_pop(g.v[V_TAIL], g.mw) == 0);
+    it("dead-empty", bm_pop(g.v[V_DEAD], g.mw) == 0);
 
-    // Manual set + query round-trip (use V_TAIL — untouched by pass_scope)
-    BM_SET(g.v[V_TAIL], 1);
-    BM_SET(g.v[V_TAIL], 3);
-    it("view_is-set", view_is(&g, V_TAIL, 1));
-    it("view_is-unset", !view_is(&g, V_TAIL, 2));
+    // Manual set + query round-trip (use V_DEAD — empty for this source)
+    BM_SET(g.v[V_DEAD], 1);
+    BM_SET(g.v[V_DEAD], 3);
+    it("view_is-set", view_is(&g, V_DEAD, 1));
+    it("view_is-unset", !view_is(&g, V_DEAD, 2));
 
     // Subtree queries via view_has/view_count
-    it("view_has-root", view_has(&g, V_TAIL, 0));
-    it_eq_i64("view_count-root", view_count(&g, V_TAIL, 0), 2);
+    it("view_has-root", view_has(&g, V_DEAD, 0));
+    it_eq_i64("view_count-root", view_count(&g, V_DEAD, 0), 2);
 
     // Compose views: AND two views
-    BM_SET(g.v[V_DEAD], 1);  // node 1 in both TAIL and DEAD (synthetic)
+    BM_SET(g.v[V_FN], 1);  // node 1 in both DEAD and FN (synthetic)
     u64 both[64] = {0};
-    bm_and(both, g.v[V_TAIL], g.v[V_DEAD], g.mw);
+    bm_and(both, g.v[V_DEAD], g.v[V_FN], g.mw);
     it("view-and-compose", BM_GET(both, 1));
     it("view-and-excludes", !BM_GET(both, 3));
 }
@@ -629,6 +629,277 @@ static void test_pass_scope(void) {
 }
 
 // ============================================================================
+// 11d. Pass 2: Type + Purity Tests
+// ============================================================================
+
+static void test_pass_type(void) {
+    describe("pass 2: type");
+    Lang l; lang_lisp(&l);
+
+    // Numbers → V_INT + V_CONST
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(+ 1 2)", 7);
+        gram_analyze(&g);
+        u32 ints = bm_pop(g.v[V_INT], g.mw);
+        it("num-int", ints >= 2);  // 1 and 2
+        u32 consts = bm_pop(g.v[V_CONST], g.mw);
+        it("num-const", consts >= 2);
+    }
+
+    // String → V_CONST
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(println \"hello\")", 17);
+        gram_analyze(&g);
+        bool found = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (g.nodes[i].kind == NK_STR_NODE && BM_GET(g.v[V_CONST], i)) found = true;
+        it("str-const", found);
+    }
+
+    // Vec literal → V_VEC
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "[1 2 3]", 7);
+        gram_analyze(&g);
+        it_eq_i64("vec-lit", bm_pop(g.v[V_VEC], g.mw), 1);
+    }
+
+    // Map literal → V_MAP
+    {
+        Gram g = gram_new(256);
+        const char *src = "{:a 1}";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("map-lit", bm_pop(g.v[V_MAP], g.mw), 1);
+    }
+
+    // fn form → V_FN
+    {
+        Gram g = gram_new(256);
+        const char *src = "(fn [x] (+ x 1))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("fn-form", bm_pop(g.v[V_FN], g.mw), 1);
+    }
+
+    // Pure builtin call → V_PURE
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(+ 1 2)", 7);
+        gram_analyze(&g);
+        it_eq_i64("pure-call", bm_pop(g.v[V_PURE], g.mw), 1);
+    }
+
+    // println is NOT pure
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(println 42)", 12);
+        gram_analyze(&g);
+        it_eq_i64("println-impure", bm_pop(g.v[V_PURE], g.mw), 0);
+    }
+
+    // Pure call with const args → V_CONST
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(+ 1 2)", 7);
+        gram_analyze(&g);
+        bool call_const = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_CONST], i)) call_const = true;
+        it("const-fold", call_const);
+    }
+
+    // Int-returning call with int args → V_INT
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(+ 1 2)", 7);
+        gram_analyze(&g);
+        bool call_int = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_INT], i)) call_int = true;
+        it("int-call", call_int);
+    }
+
+    // Nested const propagation: (+ (+ 1 2) 3) → outer is also const + int
+    {
+        Gram g = gram_new(256);
+        const char *src = "(+ (+ 1 2) 3)";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        // Root list is the outer call
+        u32 outer = g.nodes[0].child;
+        it("nested-const", BM_GET(g.v[V_CONST], outer));
+        it("nested-int", BM_GET(g.v[V_INT], outer));
+    }
+
+    // Non-const: variable arg prevents const propagation
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (+ x 1))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        // (+ x 1) — x is a ref, not const
+        bool any_const_call = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_CONST], i)) any_const_call = true;
+        it("non-const-ref", !any_const_call);
+    }
+
+    // nil/true/false → V_CONST
+    {
+        Gram g = gram_new(256);
+        const char *src = "(if true nil false)";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 consts = bm_pop(g.v[V_CONST], g.mw);
+        it("literal-const", consts >= 3);  // true, nil, false
+    }
+}
+
+// ============================================================================
+// 11e. Pass 3: Flow + Dead Code Tests
+// ============================================================================
+
+static void test_pass_flow(void) {
+    describe("pass 3: flow");
+    Lang l; lang_lisp(&l);
+
+    // defn: last body expr is V_TAIL
+    {
+        Gram g = gram_new(256);
+        gram_parse(&g, &l, "(defn f [x] (+ x 1))", 20);
+        gram_analyze(&g);
+        it("defn-tail", bm_pop(g.v[V_TAIL], g.mw) > 0);
+        // (+ x 1) should be tail
+        bool call_tail = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_TAIL], i)) call_tail = true;
+        it("call-is-tail", call_tail);
+    }
+
+    // fn: last body expr is V_TAIL
+    {
+        Gram g = gram_new(256);
+        const char *src = "(fn [x] (+ x 1))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it("fn-tail", bm_pop(g.v[V_TAIL], g.mw) > 0);
+    }
+
+    // if in tail: then and else are V_TAIL
+    {
+        Gram g = gram_new(512);
+        const char *src = "(defn f [x] (if (< x 0) 1 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 tails = bm_pop(g.v[V_TAIL], g.mw);
+        it("if-tail-branches", tails >= 3);  // if + then + else
+    }
+
+    // do in tail: only last is V_TAIL
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (do 1 2 3))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        // The number 3 (last) is tail; 1 and 2 are not
+        bool found_non_tail_num = false, found_tail_num = false;
+        for (u32 i = 0; i < g.n; i++) {
+            if (g.nodes[i].kind == NK_NUM) {
+                if (BM_GET(g.v[V_TAIL], i)) found_tail_num = true;
+                else found_non_tail_num = true;
+            }
+        }
+        it("do-last-tail", found_tail_num);
+        it("do-non-last-not", found_non_tail_num);
+    }
+
+    // let in tail: last body is V_TAIL
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (let [y 1] (+ x y)))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        bool call_tail = false;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_TAIL], i)) call_tail = true;
+        it("let-body-tail", call_tail);
+    }
+
+    // loop: last body is V_TAIL
+    {
+        Gram g = gram_new(256);
+        const char *src = "(loop [i 0] (if (< i 10) (recur (inc i)) i))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it("loop-tail", bm_pop(g.v[V_TAIL], g.mw) > 0);
+    }
+
+    // Dead code: (if true then else) → else is V_DEAD
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [] (if true 1 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("if-true-dead", bm_pop(g.v[V_DEAD], g.mw), 1);
+    }
+
+    // Dead code: (if false then else) → then is V_DEAD
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [] (if false 1 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("if-false-dead", bm_pop(g.v[V_DEAD], g.mw), 1);
+    }
+
+    // Dead code: (if nil then else) → then is V_DEAD
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [] (if nil 1 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("if-nil-dead", bm_pop(g.v[V_DEAD], g.mw), 1);
+    }
+
+    // No dead code in normal if
+    {
+        Gram g = gram_new(256);
+        const char *src = "(defn f [x] (if (< x 0) 1 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        it_eq_i64("if-normal-no-dead", bm_pop(g.v[V_DEAD], g.mw), 0);
+    }
+
+    // cond: each expr in tail
+    {
+        Gram g = gram_new(512);
+        const char *src = "(defn f [x] (cond (< x 0) 1 (> x 0) 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        // Both 1 and 2 should be tail
+        u32 tail_nums = 0;
+        for (u32 i = 0; i < g.n; i++)
+            if (g.nodes[i].kind == NK_NUM && BM_GET(g.v[V_TAIL], i)) tail_nums++;
+        it_eq_i64("cond-tails", tail_nums, 2);
+    }
+
+    // Nested fn: each has independent tail
+    {
+        Gram g = gram_new(512);
+        const char *src = "(defn f [x] (+ x 1)) (fn [y] (* y 2))";
+        gram_parse(&g, &l, src, strlen(src));
+        gram_analyze(&g);
+        u32 tail_calls = 0;
+        for (u32 i = 0; i < g.n; i++)
+            if (BM_GET(g.v[V_CALL], i) && BM_GET(g.v[V_TAIL], i)) tail_calls++;
+        it_eq_i64("multi-fn-tails", tail_calls, 2);
+    }
+}
+
+// ============================================================================
 // 12. Data-Driven Tests — tests ARE data, grammar+eval IS the runner
 // ============================================================================
 
@@ -639,7 +910,9 @@ static void run_eval_suite(const char *group, const EvalCase *t, u32 n) {
     describe(group);
     for (u32 i = 0; i < n; i++) {
         arena_reset(&g_req);
+        g_sig = SIG_NONE; g_depth = 0;
         Val result = eval_string(t[i].src, g_global_env);
+        if (g_sig) { g_sig = SIG_NONE; print_flush(); }
         it_eq_str(t[i].name, print_val(result), t[i].exp);
     }
 }
@@ -731,6 +1004,15 @@ static const EvalCase T_FORMS[] = {
     {"range-2", "(first (range 5))", "0"},
     {"range-start", "(first (range 3 7))", "3"},
     {"range-len", "(count (range 3 7))", "4"},
+    {"loop-sum", "(loop [i 0 s 0] (if (= i 10) s (recur (inc i) (+ s i))))", "45"},
+    {"loop-vec", "(loop [v [] i 0] (if (= i 5) v (recur (conj v i) (inc i))))", "[0 1 2 3 4]"},
+    {"loop-nested", "(loop [i 0 t 0] (if (= i 3) t (recur (inc i) (+ t (loop [j 0 s 0] (if (= j i) s (recur (inc j) (+ s 1))))))))", "3"},
+    {"inc", "(inc 41)", "42"},
+    {"dec", "(dec 43)", "42"},
+    {"zero?-t", "(zero? 0)", "true"},
+    {"pos?-t", "(pos? 5)", "true"},
+    {"neg?-t", "(neg? -3)", "true"},
+    {"overflow", "((fn [x] (x x)) (fn [x] (x x)))", "nil"},
     {"add-f64", "(+ 1.5 2.5)", "4.0"},
     {"mul-mix", "(* 2 3.5)", "7.0"},
     {"lt-f64", "(< 1.5 2.0)", "true"},
@@ -871,6 +1153,8 @@ static int run_all_tests(void) {
     test_grammar_query();
     test_views();
     test_pass_scope();
+    test_pass_type();
+    test_pass_flow();
 
     // Lang layer: eval (data-driven)
     run_eval_suite("eval: basic",          SUITE(T_EVAL));
