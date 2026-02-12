@@ -888,38 +888,8 @@ static void pass_flow(Gram *g) {
 }
 
 // ============================================================================
-// 9. Classification — separate defn/def/main forms
+// 9. Entity Bridge — GNode entities → Val cons lists (used by eval)
 // ============================================================================
-
-typedef struct { StrId name; Val params; Val body; u32 n_params; } DefnInfo;
-typedef struct { StrId name; Val value; } DefInfo;
-
-static DefnInfo g_defns[256]; static u32 g_defn_count;
-static DefInfo  g_defs[256];  static u32 g_def_count;
-static Val      g_mains[1024]; static u32 g_main_count;
-
-// Recur detection — shared by TCO in both backends
-static bool has_recur(Val form) {
-    if (!val_is_cons(form)) return false;
-    Val h = car(form);
-    if (val_is_sym(h)) {
-        if (val_as_sym(h) == S_RECUR) return true;
-        if (val_as_sym(h) == S_LOOP) return false;
-    }
-    Val f = form;
-    while (val_is_cons(f)) {
-        if (has_recur(car(f))) return true;
-        f = cdr(f);
-    }
-    return false;
-}
-
-// ============================================================================
-// 10. Entity Bridge — GNode entities → Val cons lists
-// ============================================================================
-//
-// Connects the universal grammar to emitters + classify.
-// GNode entity tree → Val cons lists → compile → execute.
 
 static Val entity_to_val(Gram *g, u32 id) {
     GNode *n = &g->nodes[id];
@@ -1002,37 +972,8 @@ static Val entity_to_val(Gram *g, u32 id) {
     }
 }
 
-// Convert all top-level grammar forms to classified Vals.
-// Populates g_defns/g_defs/g_mains (same as classify() but from entities).
-static void entity_classify(Gram *g) {
-    g_defn_count = g_def_count = g_main_count = 0;
-    u32 c = g->nodes[0].child;
-    while (c) {
-        Val form = entity_to_val(g, c);
-        if (val_is_cons(form) && val_is_sym(car(form))) {
-            StrId sym = val_as_sym(car(form));
-            if (sym == S_DEFN) {
-                DefnInfo *d = &g_defns[g_defn_count++];
-                d->name = val_as_sym(car(cdr(form)));
-                d->params = pvec_to_list(car(cdr(cdr(form))));
-                d->body = cdr(cdr(cdr(form)));
-                d->n_params = list_len(d->params);
-                c = g->nodes[c].next; continue;
-            }
-            if (sym == S_DEF) {
-                DefInfo *d = &g_defs[g_def_count++];
-                d->name = val_as_sym(car(cdr(form)));
-                d->value = car(cdr(cdr(form)));
-                c = g->nodes[c].next; continue;
-            }
-        }
-        g_mains[g_main_count++] = form;
-        c = g->nodes[c].next;
-    }
-}
-
 // ============================================================================
-// 11. Convenience — gram_read, gram_classify
+// 10. Convenience — gram_read, scratch gram
 // ============================================================================
 
 static Gram g_gram_scratch;
@@ -1041,7 +982,7 @@ static void gram_ensure_scratch(void) {
     if (!g_gram_scratch.cap) g_gram_scratch = gram_new(4096);
 }
 
-// Parse single expression → Val (replaces read_str)
+// Parse single expression → Val (used by eval)
 static Val gram_read(const char *source) {
     gram_ensure_scratch();
     static Lang lisp; static bool inited;
@@ -1051,18 +992,8 @@ static Val gram_read(const char *source) {
     return first ? entity_to_val(&g_gram_scratch, first) : NIL;
 }
 
-// Parse + classify all top-level forms (replaces classify)
-static void gram_classify(const char *source) {
-    gram_ensure_scratch();
-    static Lang lisp; static bool inited;
-    if (!inited) { lang_lisp(&lisp); inited = true; }
-    gram_parse(&g_gram_scratch, &lisp, source, (u32)strlen(source));
-    gram_index(&g_gram_scratch);
-    entity_classify(&g_gram_scratch);
-}
-
 // ============================================================================
-// 12. Init
+// 11. Init
 // ============================================================================
 
 static void grammar_init(void) {

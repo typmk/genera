@@ -7,8 +7,8 @@
  * Depends on: std/ → sys/
  *
  * Include order follows dependency:
- *   std → proto → coll → read → grammar → image → eval → jit → cc
- *   → test → bench → repl → cli
+ *   std → proto → coll (+ sig) → grammar → eval → jit → cc
+ *   → test → bench → watch → repl → cli
  */
 #ifndef LANG_C_INCLUDED
 #define LANG_C_INCLUDED
@@ -21,7 +21,6 @@
 
 // language core
 #include "grammar.c"
-#include "image.c"
 #include "eval.c"
 
 // code generation

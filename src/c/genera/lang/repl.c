@@ -168,44 +168,28 @@ static void cmd_reval(Str args) {
 }
 
 // ============================================================================
-// Image Commands
+// Analyze Command — uses views instead of image.c
 // ============================================================================
 
-static void cmd_image(Str args) {
-    (void)args;
-    u32 n = 0;
-    for (u32 i = 0; i < g_defn_count; i++) {
-        StrId name = g_defns[i].name;
-        ImageEntry *e = image_get(name);
-        if (!e || !e->defined) continue;
-        Str s = str_from_id(name);
-        pf("  ");
-        for (u32 j = 0; j < s.len; j++) buf_c(&g_print_buf, s.data[j]);
-        pf("  arity=%u  calls=%u  callers=%u\n", e->n_params, e->n_calls, e->n_callers);
-        n++;
+static void cmd_analyze(Str args) {
+    if (!args.len) { pf("  usage: analyze <source>\n"); return; }
+    if (!g_gram) {
+        static Gram gram = {0};
+        gram = gram_new(4096);
+        g_gram = &gram;
     }
-    for (u32 i = 0; i < g_def_count; i++) {
-        StrId name = g_defs[i].name;
-        Str s = str_from_id(name);
-        pf("  ");
-        for (u32 j = 0; j < s.len; j++) buf_c(&g_print_buf, s.data[j]);
-        pf("  (def)\n");
-        n++;
-    }
-    if (!n) pf("  (empty — classify some code first)\n");
-}
+    gram_parse(g_gram, &g_lang, (const char *)args.data, args.len);
+    gram_analyze(g_gram);
 
-static void cmd_defns(Str args) {
-    (void)args;
-    u32 n = 0;
-    for (u32 i = 0; i < g_defn_count; i++) {
-        Str s = str_from_id(g_defns[i].name);
-        pf("  ");
-        for (u32 j = 0; j < s.len; j++) buf_c(&g_print_buf, s.data[j]);
-        pf("\n");
-        n++;
-    }
-    pf("  %u defined\n", n);
+    u32 defs = bm_pop(g_gram->v[V_DEF], g_gram->mw);
+    u32 refs = bm_pop(g_gram->v[V_REF], g_gram->mw);
+    u32 calls = bm_pop(g_gram->v[V_CALL], g_gram->mw);
+    u32 pure = bm_pop(g_gram->v[V_PURE], g_gram->mw);
+    u32 consts = bm_pop(g_gram->v[V_CONST], g_gram->mw);
+    u32 dead = bm_pop(g_gram->v[V_DEAD], g_gram->mw);
+    u32 tails = bm_pop(g_gram->v[V_TAIL], g_gram->mw);
+    pf("  %u nodes  defs=%u refs=%u calls=%u\n", g_gram->n, defs, refs, calls);
+    pf("  pure=%u const=%u dead=%u tail=%u\n", pure, consts, dead, tails);
 }
 
 // ============================================================================
@@ -227,9 +211,8 @@ static void glass_repl_init(void) {
     cmd_register("emit",   cmd_emit,    "emit C source <source>");
     cmd_register("reval",  cmd_reval,   "compile via gcc + run <source>");
 
-    // Image
-    cmd_register("image",  cmd_image,   "show program image");
-    cmd_register("defns",  cmd_defns,   "list defined functions");
+    // Analysis
+    cmd_register("analyze", cmd_analyze, "analyze source (views)");
 
     // Default language
     lang_lisp(&g_lang);
