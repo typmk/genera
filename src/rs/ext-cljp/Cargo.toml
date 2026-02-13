@@ -1,0 +1,20 @@
+[package]
+name = "cljp"
+version = "0.1.0"
+edition = "2021"
+authors = ["ClojurePHP Team"]
+description = "Clojure-style persistent data structures for PHP"
+license = "MIT"
+repository = "https://github.com/anthropics/ClojurePHP"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+ext-php-rs = "0.15"
+rpds = "1.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3

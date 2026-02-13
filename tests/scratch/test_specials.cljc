@@ -1,0 +1,5 @@
+(println "Testing Special Forms")
+(println (if true "If true works" "If false broken"))
+(println (let [x "let works"] (php/strtoupper x)))
+(println ((fn [x] (php/strtoupper x)) "fn works"))
+(println (do (println "Do step 1") "Do step 2"))

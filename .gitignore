@@ -1,8 +1,43 @@
-/pom.xml
-*jar
-/lib
-/classes
-/native
-/.lein-failures
-/checkouts
-/.lein-deps-sum
+# Build output
+/build/
+
+# PHP
+/vendor/
+composer.lock
+
+# Clojure
+/.cpcache/
+/.clj-kondo/
+/.lsp/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Tools
+/.xdebug/
+/.legacy/
+/.claude/
+
+# Node/JS
+**/node_modules/
+**/dist/
+**/.shadow-cljs/
+
+# Rust
+**/target/
+
+# .NET build artifacts
+**/bin/Release/
+**/bin/Debug/
+**/obj/
+**/publish/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JVM crash logs
+hs_err_pid*.log
+replay_pid*.log

@@ -1,0 +1,164 @@
+/* ============================================
+   WSL Task Manager v2 - Design System
+   ============================================ */
+
+/* Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============================================
+   Design Tokens
+   ============================================ */
+:root {
+  /* Color Palette - OKLCH for perceptual uniformity */
+  --color-base: 0.17;
+  --color-accent-hue: 220;
+
+  /* Surfaces */
+  --surface-base: oklch(0.13 0 0);
+  --surface-raised: oklch(0.17 0 0);
+  --surface-overlay: oklch(0.20 0 0);
+  --surface-hover: oklch(0.22 0 0);
+  --surface-active: oklch(0.25 0 0);
+
+  /* Text */
+  --text-primary: oklch(0.95 0 0);
+  --text-secondary: oklch(0.70 0 0);
+  --text-muted: oklch(0.50 0 0);
+
+  /* Accent */
+  --accent: oklch(0.72 0.12 var(--color-accent-hue));
+  --accent-hover: oklch(0.65 0.14 var(--color-accent-hue));
+  --accent-subtle: oklch(0.72 0.12 var(--color-accent-hue) / 0.15);
+
+  /* Semantic Colors */
+  --color-success: oklch(0.65 0.15 145);
+  --color-warning: oklch(0.70 0.15 85);
+  --color-danger: oklch(0.65 0.18 25);
+  --color-info: oklch(0.65 0.12 220);
+
+  /* Borders */
+  --border-subtle: oklch(1 0 0 / 0.08);
+  --border-default: oklch(1 0 0 / 0.12);
+  --border-strong: oklch(1 0 0 / 0.20);
+
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Typography */
+  --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+
+  --text-xs: 10px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-lg: 15px;
+  --text-xl: 18px;
+  --text-2xl: 24px;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-md: 0 4px 12px oklch(0 0 0 / 0.4);
+  --shadow-lg: 0 8px 24px oklch(0 0 0 / 0.5);
+
+  /* Layout */
+  --titlebar-height: 48px;
+  --sidebar-width: 200px;
+  --table-row-height: 32px;
+  --table-row-height-compact: 26px;
+
+  /* Transitions */
+  --transition-fast: 100ms ease;
+  --transition-base: 150ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* Compact mode */
+:root.compact {
+  --table-row-height: var(--table-row-height-compact);
+  --space-2: 6px;
+  --space-3: 8px;
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.25);
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-subtle);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+
+.font-mono { font-family: var(--font-mono); }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,38 @@
+;; shadow-cljs configuration
+{:source-paths ["src" "src-cljs"]
+
+ :dependencies
+ [[reagent "1.2.0"]
+  [re-frame "1.4.3"]
+  [metosin/malli "0.16.4"]
+  [tick "0.7.5"]
+  [binaryage/devtools "1.0.7"]
+  [djblue/portal "0.58.2"]]
+
+ :dev-http {8280 "public"}
+
+ :builds
+ {:app
+  {:target :browser
+   :output-dir "public/js"
+   :asset-path "/js"
+
+   :modules
+   {:main {:init-fn observatory.app/init}}
+
+   :devtools
+   {:http-root "public"
+    :http-port 8280
+    :preloads [devtools.preload]}
+
+   :compiler-options
+   {:optimizations :advanced
+    :source-map true}}
+
+  ;; For REPL-driven development
+  :workbench
+  {:target :browser
+   :output-dir "public/js/workbench"
+   :asset-path "/js/workbench"
+   :modules {:main {:init-fn observatory.workbench/init}}
+   :devtools {:http-port 8281}}}}

@@ -1,0 +1,11 @@
+(ns test-read)
+
+(def content "(println \"Hello\")")
+(println "Content:" content)
+(println "With brackets:" (str "[" content "]"))
+(def result (read-string (str "[" content "]")))
+(println "Read:") (prn result)
+(println "Type of result:" (type result))
+(println "First form:" (first result))
+(println "Args of first form:" (rest (first result)))
+(println "Type of first arg:" (type (second (first result))))

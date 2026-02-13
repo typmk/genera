@@ -1,0 +1,1855 @@
+
+╭─── Claude Code v2.0.64 ──────────────────────────────────────────────────────╮
+│                           │ Tips for getting started                         │
+│    Welcome back Apollo!   │ Run /init to create a CLAUDE.md file with instr… │
+│                           │ ──────────────────────────────────────────────── │
+│          ▐▛███▜▌          │ Recent activity                                  │
+│         ▝▜█████▛▘         │ No recent activity                               │
+│           ▘▘ ▝▝           │                                                  │
+│                           │                                                  │
+│   Opus 4.5 · Claude Max   │                                                  │
+│   C:\GitHub\ClojurePHP    │                                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+> /clear 
+  ⎿  (no content)
+
+> @docs\changelog.md @docs\parity.md @docs\php-target.md 
+@docs\unified-vision.md 
+  ⎿  Read docs\changelog.md (94 lines)
+  ⎿  Read docs\parity.md (463 lines)
+  ⎿  Read docs\php-target.md (701 lines)
+  ⎿  Read docs\unified-vision.md (651 lines)
+
+● I've reviewed the documentation files you've shared. This is the
+  ClojurePHP project - a Clojure-to-PHP compiler. Here's a quick summary:
+
+  Current State (v0.21.0)
+  - Lazy sequences implemented (lazy-seq, LazySeq, Cons, ArraySeq, EmptySeq)
+  - Core Clojure features: 86% special forms, 64% macros, ~24% core
+  functions
+  - Protocols, multimethods, destructuring, multi-arity functions all
+  working
+  - Built on Phel's persistent data structures
+
+  Architecture
+  - HIR (High-level IR) with ~21 node types
+  - Emit multimethods dispatch on :op
+  - Runtime in PHP under Clojure\Lang namespace
+  - Targets PHP 8.4+ (8.5 for pipe operator |>)
+
+  Vision
+  - Unified Clojure compiler with pluggable backends (PHP, Native/Rust,
+  WASM, JS, JVM)
+  - One semantic core, many deployment targets
+  - Full platform interop while avoiding fragmentation
+
+  What would you like to work on?
+
+> and @docs\slime-dx-vision.md 
+  ⎿  Read docs\slime-dx-vision.md (1529 lines)
+
+● Got it. The SLIME DX vision document outlines the path to a self-hosted
+  ClojurePHP with full interactive development:
+
+  Core Philosophy
+  - ClojurePHP should be easier than plain PHP, not harder
+  - Bidirectional integration: cljp() from PHP, (php "...") from Clojure
+  - Eventually self-hosted (like SBCL) - no JVM in production
+
+  Key Components
+  - Unified error system using ExceptionInfo with structured data
+  (:cljp.error/* keys)
+  - Hook-based REPL (clojure.main pattern with :read/:eval/:print/:caught)
+  - Two-phase CLI dispatch (init options → main option)
+  - nREPL for editor integration (CIDER, Calva, Conjure)
+
+  Implementation Phases
+  1. Rich Errors ✓ (source maps done, ExceptionInfo pending)
+  2. Basic REPL
+  3. CLI Architecture
+  4. nREPL Compatibility
+  5. Test Framework (clojure.test)
+  6. Self-Hosting (LispReader.php is the bootstrap barrier)
+  7. Advanced Features (inspector, macroexpand, watch mode)
+  8. PHP Symbiosis (cljp(), php/methods, analysis tools)
+  9. MCP Integration (LLM-powered development via live image)
+
+  Bootstrap Path
+  - Port LispReader.java (~1400 lines) to PHP
+  - JVM compiles the ClojurePHP compiler to PHP
+  - Result: single PHP image with compiler + runtime + REPL
+
+  What would you like to work on?
+
+> remaining work overall? 
+
+● Based on the documentation, here's the remaining work:
+
+  Language Parity
+
+  | Category        | Done           | Remaining
+              |
+  |-----------------|----------------|--------------------------------------
+  ------------|
+  | Special Forms   | 19/22 (86%)    | binding, monitor-enter/exit
+              |
+  | Core Macros     | 45/70 (64%)    | defn-, defonce, declare, etc.
+              |
+  | Core Functions  | ~120/493 (24%) | iterate, cycle, trampoline, symbol,
+  format, etc. |
+  | Data Structures | 8/14 (57%)     | TreeMap, TreeSet, Queue, Var, Ratio
+              |
+  | Concurrency     | 4/40 (10%)     | Futures, agents, core.async (needs
+  Swoole)       |
+
+  PHP Target Features
+
+  - --php-version CLI flag (8.4 vs 8.5)
+  - Pipe operator |> emission for ->, ->>
+  - ?-> for some-> / some->>
+  - Native union types in signatures
+  - match expression for equality cond
+
+  Developer Experience (9 Phases)
+
+  | Phase            | Status | Key Items                             |
+  |------------------|--------|---------------------------------------|
+  | 1. Rich Errors   | ~60%   | ExceptionInfo, ex-triage, hints       |
+  | 2. Basic REPL    | 0%     | TCP eval, *1/*2/*3/*e, hot reload     |
+  | 3. CLI           | 0%     | -r, -m, -c, -w flags                  |
+  | 4. nREPL         | 0%     | Bencode, CIDER compatibility          |
+  | 5. clojure.test  | 0%     | deftest, is, testing                  |
+  | 6. Self-Hosting  | 0%     | LispReader.php (~1400 lines)          |
+  | 7. Advanced      | 0%     | Inspector, macroexpand, Xdebug bridge |
+  | 8. PHP Symbiosis | 0%     | cljp() function, php/methods          |
+  | 9. MCP           | 0%     | LLM integration via live image        |
+
+  Standard Library
+
+  - clojure.string (partial)
+  - clojure.set
+  - clojure.walk
+  - clojure.edn
+  - clojure.pprint
+  - clojure.data
+
+  Multi-Backend Vision
+
+  Per unified-vision.md, PHP is one target of many. Future backends:
+  - Native/Rust (primary dev environment)
+  - WASM
+  - JS
+  - JVM
+  - .NET
+
+  Rough estimate: Core language ~70% done, DX infrastructure ~10% done,
+  multi-backend ~5% done.
+
+  What area interests you?
+
+> how are we currently handling source maps? 
+
+● Let me check the current implementation:
+
+● Search(pattern: "source.?map|\.xdebug|line.*col", glob: "*.{clj,cljc,php}")
+  ⎿  Found 10 files (ctrl+o to expand)
+
+● Search(pattern: "**/.xdebug/*")
+  ⎿  Found 6 files (ctrl+o to expand)
+
+● Search(pattern: "**/ErrorHandler*.php")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+● Read(src\clojure\php\runtime\Cljp\ErrorHandler.php)
+  ⎿  Read 259 lines
+
+● Read(.xdebug\out.php.json)
+  ⎿  Read 1 line
+
+● Read(.xdebug\out.php.map)
+  ⎿  Read 27 lines
+
+● Now let me check where source maps are generated:
+
+● Search(pattern: "source-map|:clj_line|:php_line|emit-source-map", glob:
+        "*.{clj,cljc}")
+  ⎿  Found 4 files (ctrl+o to expand)
+
+● Read(src\clojure\php\main.clj)
+  ⎿  Read 272 lines
+
+● Here's the current source map implementation:
+
+  Generation (Clojure side)
+
+  src/clojure/php/main.clj
+
+  1. Read phase - Uses LineNumberingPushbackReader which attaches :line and
+  :column metadata to each form
+  2. Compile phase - compile-form preserves metadata through the pipeline:
+  source form → analyze (HIR) → emit (PHP)
+  2. Returns {:php "..." :line n :col n :file "..." :form "(defn ...)"}
+  3. Tracking - compile-file tracks PHP line numbers as it concatenates
+  output, building entries:
+  {:php-line 42, :clj-line 15, :clj-col 1, :file "app.cljc", :form "(defn 
+  foo ...)"}
+  4. Output - Writes two formats:
+    - .xdebug/out.php.json - Rich JSON array with all metadata
+    - .xdebug/out.php.map - Simple out.php:N=file.cljc:M format (legacy)
+
+  Consumption (PHP side)
+
+  src/clojure/php/runtime/Cljp/ErrorHandler.php
+
+  1. Exception handler registered via set_exception_handler()
+  2. Map loading - Lazy-loads JSON source maps on first error, indexes by
+  PHP line
+  3. Location mapping - mapLocation() finds exact match or scans backwards
+  up to 5 lines
+  4. Rich display:
+    - ANSI-colored output
+    - Source context (surrounding lines with >> marker)
+    - Original form
+    - ExceptionInfo data (:cljp.error/phase, :cljp.error/type,
+  :cljp.error/hint)
+    - Stack trace with mapped locations
+    - Cause chain
+
+  Limitations
+
+  - Top-level only - Source maps track top-level forms, not sub-expressions
+  - No column in PHP - PHP errors only report line numbers
+  - Forward-only - No reverse lookup (PHP→Clojure works, Clojure→PHP
+  doesn't)
+
+  Sample Output
+
+  ArityError: Wrong number of args (3) passed to user/process-data
+  in src/app.cljc:12:1 (execution)
+
+       10| (defn process-data [x]
+   >>  12|   (some-call a b c))
+       13|
+
+  Form: (some-call a b c)
+
+  Data:
+    :cljp.error/type :arity
+    :cljp.error/expected 2
+
+  Stack:
+    0. src/app.cljc:42 (defn main [] ...)
+
+  Want me to dig into any specific aspect?
+
+> is there... a more elegant approach to source maps? 
+
+● Good question. The current approach has issues:
+
+  1. Separate file - Source maps are detached from the PHP output
+  2. Top-level granularity - Only tracks form start, not sub-expressions
+  3. Manual line counting - Fragile string concatenation with count-lines
+  4. Lookup overhead - Runtime JSON parsing, backwards scanning
+
+  Here are some alternatives:
+
+  Option 1: Inline Comments
+
+  Embed source info directly in PHP:
+
+  // @cljp app.cljc:12:5 (defn foo [x] ...)
+  $foo = function($x) {
+      // @cljp app.cljc:13:3 (+ x 1)
+      return ($x + 1);
+  };
+
+  Pros: Self-contained, human-readable, no separate file, works with any PHP
+   viewer
+  Cons: Slight code bloat, need to parse comments at runtime
+
+  Option 2: Expression-Level Tracking
+
+  Propagate source location through emit, not just at top-level:
+
+  ;; Every HIR node already has :env with source location
+  (defn emit* [hir]
+    (let [{:keys [line column file]} (:env hir)]
+      ;; Emit with location context
+      ...))
+
+  Track column positions during emit using a writer that knows its position,
+   not string concatenation.
+
+  Option 3: Standard Source Map Format
+
+  Use the https://sourcemaps.info/spec.html (same as JavaScript):
+
+  {
+    "version": 3,
+    "file": "out.php",
+    "sources": ["app.cljc", "runtime.cljc"],
+    "mappings": "AAAA;AACA;AACA,SAAS..."
+  }
+
+  Pros: Industry standard, IDE tooling could potentially support it
+  Cons: PHP tooling doesn't understand it (yet)
+
+  Option 4: Debug Mode Wrapping
+
+  In development, wrap expressions:
+
+  \Cljp\Runtime::track("app.cljc", 12, 5, fn() => ($x + 1))
+
+  Pros: Perfect sub-expression tracking, can capture locals
+  Cons: Runtime overhead, changes execution semantics
+
+  ---
+  My Recommendation: Inline Comments + Streaming Emit
+
+  (defprotocol IWriter
+    (write! [w s])
+    (position [w]))  ; returns {:line :col}
+
+  (defn emit-with-location [w hir]
+    (when-let [loc (:env hir)]
+      (write! w (format "// @cljp %s:%d:%d\n" (:file loc) (:line loc)
+  (:column loc))))
+    (emit* w hir))
+
+  Then ErrorHandler.php scans backwards from the error line for // @cljp:
+
+  private static function findSourceLocation(string $file, int $line): 
+  ?array {
+      $lines = file($file);
+      for ($i = $line - 1; $i >= 0; $i--) {
+          if (preg_match('|// @cljp (.+):(\d+):(\d+)|', $lines[$i], $m)) {
+              return ['file' => $m[1], 'line' => (int)$m[2], 'col' =>
+  (int)$m[3]];
+          }
+      }
+      return null;
+  }
+
+  Benefits:
+  - No separate map file
+  - Expression-level possible (not just top-level)
+  - Self-documenting PHP output
+  - Strip comments for production with --release flag
+  - Zero runtime overhead until error occurs
+
+  Want to explore this direction?
+
+> and this is the most performant approach? 
+
+● No, you're right to push back. Let me reconsider.
+
+  Performance Analysis
+
+  | Approach             | Normal Exec           | Error Path      | File
+  Size      | Elegance |
+  |----------------------|-----------------------|-----------------|--------
+  --------|----------|
+  | Inline comments      | Zero (OPcache strips) | File scan O(n)  | +30
+  bytes/form | Medium   |
+  | Separate JSON        | Zero                  | JSON parse O(n) |
+  Separate file  | Low      |
+  | Separate PHP array   | Zero                  | O(1) lookup     |
+  Separate file  | Medium   |
+  | No maps (production) | Zero                  | Zero            | Zero
+          | High     |
+
+  The Actually Performant Approach
+
+  PHP array literal - OPcache can cache it:
+
+  // .xdebug/out.php.map.php
+  <?php return [
+      42 => ['f' => 'app.cljc', 'l' => 12, 'c' => 5],
+      45 => ['f' => 'app.cljc', 'l' => 15, 'c' => 1],
+  ];
+
+  // ErrorHandler.php
+  $map = require $mapPath;  // OPcache'd - parsed ONCE ever
+  $loc = $map[$phpLine] ?? null;  // O(1) hash lookup
+
+  Why this wins:
+  - OPcache compiles the array to opcodes once
+  - Subsequent require is a memory read, not file parse
+  - Hash table lookup is O(1)
+  - No JSON parsing, no regex, no file scanning
+
+  But Actually...
+
+  The most elegant and performant approach is none of this at error time.
+
+  Compile the source location into the exception itself:
+
+  // Emitted PHP
+  throw new \Cljp\Error("Division by zero", [
+      'file' => 'app.cljc',
+      'line' => 12,
+      'col' => 5,
+      'form' => '(/ x 0)',
+  ]);
+
+  Zero lookup cost - the location is already in the exception. No maps
+  needed.
+
+  For non-throw errors (PHP runtime errors), you still need a map. But those
+   are rare compared to application-level exceptions.
+
+  The Hybrid
+
+  1. Emitted code carries its own location in exceptions/errors it throws
+  2. PHP runtime errors (rare) use the PHP array map with O(1) lookup
+  3. Production strips all of it - errors show PHP locations (acceptable)
+
+  Want me to prototype the emit-side changes for baking locations into
+  thrown exceptions?
+
+> source maps are a clojure concern or a platform concern? both? 
+
+● Great architectural question. Thinking through the unified vision:
+
+  Both — With a Clean Split
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CLOJURE CONCERN (shared across all backends)               │
+  │                                                             │
+  │  • Reader attaches {:line :column :file} to forms           │
+  │  • Analyzer preserves location in HIR node's :env           │
+  │  • The CONTRACT: every HIR node carries source location     │
+  │                                                             │
+  │  {:op :invoke                                               │
+  │   :env {:file "app.cljc" :line 12 :column 5}                │
+  │   :fn ...}                                                  │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                │ HIR with locations
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  PLATFORM CONCERN (per backend)                             │
+  │                                                             │
+  │  • Format: How to encode the mapping                        │
+  │  • Storage: Inline, separate file, embedded in output       │
+  │  • Consumption: How runtime/debugger reads it               │
+  │                                                             │
+  │  PHP:  .php.map.php (OPcache-friendly array)                │
+  │  JS:   .map (V3 source map, VLQ-encoded)                    │
+  │  JVM:  LineNumberTable in .class bytecode                   │
+  │  WASM: DWARF debug info or custom section                   │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  The Contract
+
+  Shared compiler guarantees:
+  ;; Every HIR node has :env with source location
+  (defn analyze [env form]
+    (let [m (meta form)]
+      {:op ...
+       :env (assoc env :line (:line m) :column (:column m) :file (:file
+  env))
+       ...}))
+
+  Backend must implement:
+  (defprotocol ISourceMapper
+    (record! [this hir output-position])
+    (finalize! [this]))
+
+  What This Means
+
+  Shared code (one implementation):
+  - reader.cljc - attaches metadata
+  - analyzer.cljc - preserves in :env
+  - hir.cljc - defines the node structure
+
+  Per-backend (each implements):
+  - emit.cljc - calls record! as it emits
+  - source-map.cljc - implements format/storage
+  - Runtime - consumes the map
+
+  Current State vs. Ideal
+
+  | Aspect        | Current                      | Ideal
+   |
+  |---------------|------------------------------|--------------------------
+  -|
+  | Reader        | ✓ Clojure's reader does this | Same
+   |
+  | HIR :env      | ✓ Preserved                  | Same
+   |
+  | Emit tracking | ✗ Post-hoc in main.clj       | In emit.cljc via protocol
+   |
+  | Format        | JSON (slow)                  | PHP array (OPcache)
+   |
+  | Location      | Separate file                | Backend decides
+   |
+
+  The fix is moving source map generation into the emitter, not as a
+  post-processing step in main.clj.
+
+  Should I sketch that refactor?
+
+> and what does xdebug integration need? 
+
+● Let me research what Xdebug actually provides:
+
+● Web Search("Xdebug DBGp protocol source map path mapping 2025")
+  ⎿  Did 1 search in 22s                                                   
+
+● Excellent timing — Xdebug 3.5.0 (December 2025) just added native path
+  mapping!
+
+● Fetch(https://xdebug.org/funding/001-native-path-mapping)
+  ⎿  Received 16.8KB (200 OK)
+
+● This is perfect. Xdebug 3.5.0 has exactly what we need.
+
+  Xdebug Native Source Maps (New in 3.5.0)
+
+  File format (.map):
+  # out.php.map
+  remote_prefix: /var/www/app
+  local_prefix: /home/dev/project
+
+  # Line range mappings: PHP lines → Clojure source
+  out.php:6-8 = src/app.cljc:12
+  out.php:10-15 = src/app.cljc:15
+  out.php:18 = src/app.cljc:20
+
+  Registration:
+  xdebug_set_source_map(__DIR__ . '/out.php.map');
+
+  What ClojurePHP Needs
+
+  1. Emit-time: Generate Xdebug-format maps
+
+  ;; backends/php/source-map.cljc
+  (defn format-xdebug-map [entries]
+    (str/join "\n"
+      (for [{:keys [php-start php-end clj-file clj-line]} entries]
+        (if (= php-start php-end)
+          (format "%s:%d = %s:%d" php-file php-start clj-file clj-line)
+          (format "%s:%d-%d = %s:%d" php-file php-start php-end clj-file
+  clj-line)))))
+
+  2. Runtime: Register maps at startup
+
+  // In bootstrap
+  if (extension_loaded('xdebug')) {
+      foreach (glob(__DIR__ . '/.xdebug/*.map') as $map) {
+          xdebug_set_source_map($map);
+      }
+  }
+
+  3. IDE: Set breakpoints in .cljc files
+
+  With Xdebug's mapping:
+  - User sets breakpoint at app.cljc:15
+  - Xdebug maps to out.php:10
+  - Execution stops
+  - Stack trace shows app.cljc:15
+
+  The Full Picture
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CLOJURE (shared)                                           │
+  │                                                             │
+  │  HIR nodes with :env {:file :line :column}                  │
+  │                                                             │
+  └──────────────────────────┬──────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  PHP BACKEND                                                │
+  │                                                             │
+  │  emit.cljc                                                  │
+  │    │                                                        │
+  │    ├──► out.php          (PHP code)                         │
+  │    ├──► out.php.map      (Xdebug format - for debugger)     │
+  │    └──► out.php.json     (Rich format - for error handler)  │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+                             │
+                             ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  RUNTIME                                                    │
+  │                                                             │
+  │  Xdebug 3.5+                     ErrorHandler.php           │
+  │    • Breakpoints                   • Exception display      │
+  │    • Stepping                      • Stack traces           │
+  │    • Stack frames                  • Source context         │
+  │    • Variable inspection           • ex-data display        │
+  │                                                             │
+  │  (uses .map)                     (uses .json or .php)       │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  Remaining Gap: Column Support
+
+  From the https://xdebug.org/funding/001-native-path-mapping:
+
+  "Extending line range maps to also include column information, although 
+  IDEs can't do anything with this yet, and neither does the DBGp protocol 
+  support this yet either."
+
+  So line-level is the best we can do with Xdebug. Column info stays in our
+  rich JSON format for error messages.
+
+  Summary
+
+  | Need                 | Solution               | Platform Concern? |
+  |----------------------|------------------------|-------------------|
+  | Debugger breakpoints | Xdebug .map format     | ✓ PHP-specific    |
+  | Debugger stepping    | Xdebug line ranges     | ✓ PHP-specific    |
+  | Error display        | Rich JSON or PHP array | ✓ PHP-specific    |
+  | Source location data | HIR :env               | ✗ Shared          |
+
+  Sources:
+  - https://xdebug.org/funding/001-native-path-mapping
+  - https://xdebug.org/docs/dbgp
+
+  Want me to prototype the Xdebug map generator?
+
+> and what are your thoughts on php-native step-debugger vs clojure debugger
+ (i.e. platform concern vs clojure concern?) 
+
+● This is a key architectural question. Let me think through it:
+
+  Two Different Concerns
+
+  | Aspect            | Platform Debugger (Xdebug) | Clojure Debugger
+      |
+  |-------------------|----------------------------|------------------------
+  ----|
+  | Sees              | PHP variables, PHP lines   | Clojure bindings, forms
+      |
+  | Steps by          | PHP statement              | Clojure form
+      |
+  | Macros            | Already expanded           | Can step through
+  expansion |
+  | Interop           | Full visibility            | Opaque unless
+  instrumented |
+  | Condition/restart | No                         | Possible (like CL)
+      |
+  | Works when        | Always (production too)    | REPL connected
+      |
+  | Backend-specific  | Yes                        | No (shared protocol)
+      |
+
+  They Solve Different Problems
+
+  Xdebug answers: "What is PHP actually doing?"
+  → Why is this Laravel method returning null?
+  → What's in this PHP object's private field?
+  → Where's the memory leak in this Composer package?
+
+  Clojure debugger answers: "What is my code doing?"
+  → What are my locals at this point in the let binding?
+  → What did this macro expand to?
+  → Why did this reduce produce the wrong result?
+
+  The SBCL Model
+
+  SBCL has both:
+  1. SLIME debugger - Lisp-level, condition/restart, inspector
+  2. GDB support - For when you need to see C-level details
+
+  They complement each other. You use the Lisp debugger 99% of the time,
+  drop to GDB for FFI issues.
+
+  Architecture
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CLOJURE CONCERN (shared)                                   │
+  │                                                             │
+  │  Debug Protocol:                                            │
+  │    • (break) - set breakpoint                               │
+  │    • (step) (step-over) (step-out) - navigation             │
+  │    • (locals) - current bindings                            │
+  │    • (eval-in-context expr) - eval with locals              │
+  │    • (inspect val) - data navigation                        │
+  │    • (macroexpand-1 form) - macro debugging                 │
+  │                                                             │
+  │  Inspector (data navigation, same everywhere)               │
+  │  Condition/Restart system (optional, aspirational)          │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                │ implemented via
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  PLATFORM CONCERN (per backend)                             │
+  │                                                             │
+  │  PHP:                                                       │
+  │    • Instrumentation: emit breakpoint checks                │
+  │    • Local capture: emit binding snapshots                  │
+  │    • Transport: nREPL over TCP                              │
+  │    • Xdebug: optional, for PHP-level debugging              │
+  │                                                             │
+  │  Native/Rust:                                               │
+  │    • Instrumentation: inline checks                         │
+  │    • Local capture: stack introspection                     │
+  │    • Transport: nREPL                                       │
+  │    • LLDB: optional, for native debugging                   │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  Instrumentation (CIDER's Approach)
+
+  CIDER rewrites code at debug time:
+
+  ;; Source
+  (defn foo [x]
+    (let [y (inc x)]
+      (* x y)))
+
+  ;; Instrumented (conceptual)
+  (defn foo [x]
+    (debug/break {:x x} "foo" 1)
+    (let [y (do (debug/break {:x x} "foo" 2)
+                (inc x))]
+      (debug/break {:x x :y y} "foo" 3)
+      (* x y)))
+
+  For PHP, emit becomes:
+
+  function foo($x) {
+      \Cljp\Debug::brk(['x' => $x], 'app.cljc', 12);
+      $y = (function() use ($x) {
+          \Cljp\Debug::brk(['x' => $x], 'app.cljc', 13);
+          return ($x + 1);
+      })();
+      \Cljp\Debug::brk(['x' => $x, 'y' => $y], 'app.cljc', 14);
+      return ($x * $y);
+  }
+
+  Debug::brk() checks if a breakpoint is set, pauses if so, waits for REPL
+  commands.
+
+  My Take
+
+  Build the Clojure debugger first. It's:
+  - Shared across backends (write once)
+  - Provides the SLIME experience users expect
+  - Handles 95% of debugging needs
+
+  Xdebug integration is a nice-to-have:
+  - Use source maps for error display (already have this)
+  - Full stepping integration is optional
+  - Valuable for PHP interop debugging, but not essential
+
+  The Clojure debugger is a Clojure concern (protocol, inspector, REPL
+  integration).
+  The instrumentation mechanism is a platform concern (how to emit
+  breakpoint checks).
+
+  Does this framing help?
+
+> how does slime/sbcl approach this? C:\GitHub\sbcl C:\GitHub\slime 
+  ⎿  Initializing…
+  ⎿  Invalid tool parameters
+
+● Explore(Explore SLIME/SBCL debugger architecture)
+  ⎿  Done (39 tool uses · 78.9k tokens · 3m 50s)                           
+
+● This is gold. Let me distill the key insights for ClojurePHP:
+
+  Key Design Patterns from SLIME/SBCL
+
+  1. Backend Abstraction (DEFINTERFACE/DEFIMPLEMENTATION)
+
+  ;; SLIME defines contracts:
+  (definterface frame-locals (frame-number)
+    "Return list of ((&key NAME ID VALUE) ...)")
+
+  ;; Each backend implements:
+  (defimplementation frame-locals (index)  ; SBCL-specific
+    ...)
+
+  For ClojurePHP: This is exactly the shared/platform split we discussed.
+
+  ;; Shared protocol (clojure/debug.cljc)
+  (defprotocol IDebugBackend
+    (frame-locals [this frame-number])
+    (eval-in-frame [this form frame-number])
+    (frame-source-location [this frame-number]))
+
+  ;; PHP implementation (backends/php/debug.cljc)
+  (extend-type PhpDebugger
+    IDebugBackend
+    (frame-locals [this frame-number] ...))
+
+  2. Condition/Restart System
+
+  SBCL's restarts are closures with captured state, dynamically bound:
+
+  (restart-case (do-something-risky)
+    (use-value (v) :report "Use a different value" v)
+    (skip () :report "Skip this item" nil))
+
+  For ClojurePHP: We can implement this in Clojure (shared), with
+  platform-specific unwinding:
+
+  ;; User code
+  (with-restarts [(use-value [v] v)
+                  (skip [] nil)]
+    (do-something-risky))
+
+  ;; On error, REPL shows:
+  ;;   0: [USE-VALUE] Use a different value
+  ;;   1: [SKIP] Skip this item
+  ;;   2: [ABORT] Return to REPL
+
+  3. Lazy Frame Fetching
+
+  SLIME only sends 20 frames initially, fetches more on demand:
+
+  *sldb-initial-frames* = 20
+  ;; Emacs can request: (backtrace start end)
+
+  For ClojurePHP: Don't eagerly compute the whole stack.
+
+  4. Debug Info in Compiled Code
+
+  SBCL embeds debug info directly in compiled code objects:
+
+  [flags] [name] [package] [id] [storage-class+offset] [live-mask]
+
+  For ClojurePHP: We can embed source locations in the PHP output (inline
+  comments or data structures), not separate files.
+
+  5. Variable Validity
+
+  Variables have states: :valid, :invalid, :unknown
+
+  (ecase (debug-var-validity var location)
+    (:valid (debug-var-value var frame))
+    ((:invalid :unknown) ':<not-available>))
+
+  For ClojurePHP: PHP closures capture by-value or by-reference. We need to
+  track which locals are actually accessible at each point.
+
+  Architecture for ClojurePHP
+
+  ┌─────────────────────────────────────────────────────────────┐
+  │  CLOJURE CONCERN (shared)                                   │
+  │                                                             │
+  │  clojure/debugger.cljc:                                     │
+  │    • IDebugBackend protocol (frame-locals, eval-in-frame)   │
+  │    • Restart system (with-restarts, invoke-restart)         │
+  │    • Inspector (navigate data, history)                     │
+  │    • SLDB loop (wait for commands, dispatch)                │
+  │    • Message protocol (:debug, :debug-activate, :sldb-return)│
+  │                                                             │
+  │  clojure/condition.cljc:                                    │
+  │    • Condition hierarchy (error, warning, etc.)             │
+  │    • signal, error, warn, cerror                            │
+  │    • Restart binding (*restart-clusters*)                   │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                │ implemented by
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │  PHP BACKEND                                                │
+  │                                                             │
+  │  backends/php/debug.cljc:                                   │
+  │    • Emit breakpoint instrumentation                        │
+  │    • Capture locals via use() clause introspection          │
+  │    • Frame representation (PHP stack + captured bindings)   │
+  │                                                             │
+  │  Runtime (PHP):                                             │
+  │    \Cljp\Debug::brk($locals, $file, $line)                  │
+  │    \Cljp\Debug::pushRestart($name, $fn)                     │
+  │    \Cljp\Debug::popRestart()                                │
+  │    \Cljp\Debug::invokeRestart($name, ...$args)              │
+  │                                                             │
+  └─────────────────────────────────────────────────────────────┘
+
+  What We Need to Build
+
+  | Component         | SLIME Equivalent                 | Effort          |
+  |-------------------|----------------------------------|-----------------|
+  | Debug protocol    | swank/backend.lisp interfaces    | Medium          |
+  | SLDB loop         | sldb-loop in swank.lisp          | Medium          |
+  | Restart system    | restart-case, *restart-clusters* | Medium          |
+  | Frame capture     | frame-locals, eval-in-frame      | High (platform) |
+  | Inspector         | istate, content format           | Medium          |
+  | Source locations  | Already have in HIR :env         | Done            |
+  | nREPL integration | Message passing                  | Medium          |
+
+  The Big Insight
+
+  SLIME's debugger is primarily a Clojure concern:
+  - The protocol (messages, commands)
+  - The SLDB loop (read command, dispatch, respond)
+  - Restarts (dynamic binding of recovery options)
+  - Inspector (data navigation)
+
+  The platform only provides:
+  - How to capture a frame's locals
+  - How to evaluate in a frame's context
+  - How to unwind the stack
+
+  This matches the unified vision perfectly. We build the debugger once,
+  each backend just implements IDebugBackend.
+
+  Want me to sketch the condition/restart system for ClojurePHP?
+
+> can you update @docs\slime-dx-vision.md with all these insights 
+  ⎿  Read docs\slime-dx-vision.md (1529 lines)
+
+● Read(docs\slime-dx-vision.md)
+  ⎿  Read 1529 lines
+
+● Now I'll add the SLIME/SBCL insights. I'll add a comprehensive new section
+   and update relevant parts:
+
+● Update(docs\slime-dx-vision.md)
+  ⎿  Updated docs\slime-dx-vision.md with 381 additions                  
+       453    
+       454    ---
+       455    
+       456 +  ## Lessons from SLIME/SBCL Architecture
+       457 +  
+       458 +  Deep analysis of the SLIME (`swank/`) and SBCL 
+           + (`src/code/debug*.lisp`) codebases reveals key design 
+           + patterns we should adopt.
+       459 +  
+       460 +  ### Backend Abstraction Pattern 
+           + (DEFINTERFACE/DEFIMPLEMENTATION)
+       461 +  
+       462 +  SLIME separates portable debugger logic from 
+           + implementation-specific code:
+       463 +  
+       464 +  ```lisp
+       465 +  ;; swank/backend.lisp - Interface contract
+       466 +  (definterface frame-locals (frame-number)
+       467 +    "Return list of ((&key NAME ID VALUE) ...)")
+       468 +  
+       469 +  (definterface eval-in-frame (form frame-number)
+       470 +    "Evaluate FORM in frame's lexical context")
+       471 +  
+       472 +  (definterface frame-source-location (frame-number)
+       473 +    "Return location for frame (file, position, snippet)")
+       474 +  
+       475 +  ;; swank/sbcl.lisp - SBCL-specific implementation
+       476 +  (defimplementation frame-locals (index)
+       477 +    (let* ((frame (nth-frame index))
+       478 +           (loc (sb-di:frame-code-location frame)))
+       479 +      ...))
+       480 +  ```
+       481 +  
+       482 +  **For ClojurePHP:** This maps directly to our 
+           + shared/platform split:
+       483 +  
+       484 +  ```clojure
+       485 +  ;; clojure/debugger.cljc (shared)
+       486 +  (defprotocol IDebugBackend
+       487 +    (frame-locals [this frame-number])
+       488 +    (eval-in-frame [this form frame-number])
+       489 +    (frame-source-location [this frame-number])
+       490 +    (compute-backtrace [this start end]))
+       491 +  
+       492 +  ;; backends/php/debug.cljc (platform-specific)
+       493 +  (extend-type PhpDebugger
+       494 +    IDebugBackend
+       495 +    (frame-locals [this frame-number]
+       496 +      ;; PHP-specific frame introspection
+       497 +      ...))
+       498 +  ```
+       499 +  
+       500 +  ### Debugger Hook Architecture
+       501 +  
+       502 +  SLIME uses a **debugger hook injection pattern**:
+       503 +  
+       504 +  ```lisp
+       505 +  (defun swank-debugger-hook (condition hook)
+       506 +    ;; Installed via (install-debugger-globally 
+           + #'swank-debugger-hook)
+       507 +    (handler-case
+       508 +        (call-with-debugger-hook #'swank-debugger-hook
+       509 +                                 (lambda () 
+           + (invoke-slime-debugger condition)))
+       510 +      (invoke-default-debugger ()
+       511 +        (invoke-default-debugger condition))))
+       512 +  ```
+       513 +  
+       514 +  **Flow:**
+       515 +  1. Condition signaled → `*DEBUGGER-HOOK*` called
+       516 +  2. `swank-debugger-hook` packages condition, calls 
+           + `invoke-slime-debugger`
+       517 +  3. `debug-in-emacs` captures state, enters `sldb-loop`
+       518 +  4. Loop: send state to Emacs, wait for commands, dispatch
+       519 +  
+       520 +  **For ClojurePHP:**
+       521 +  ```clojure
+       522 +  ;; Register hook at startup
+       523 +  (set-exception-handler! cljp-debugger-hook)
+       524 +  
+       525 +  (defn cljp-debugger-hook [exception]
+       526 +    (let [restarts (compute-restarts exception)
+       527 +          frames (compute-backtrace 0 20)]
+       528 +      (sldb-loop {:exception exception
+       529 +                  :restarts restarts
+       530 +                  :frames frames
+       531 +                  :level (inc *sldb-level*)})))
+       532 +  ```
+       533 +  
+       534 +  ### The SLDB Loop (Debugger Message Protocol)
+       535 +  
+       536 +  SLIME's debugger implements a client-server message loop:
+       537 +  
+       538 +  ```lisp
+       539 +  (defun sldb-loop (level)
+       540 +    (unwind-protect
+       541 +         (loop
+       542 +          (send-to-emacs (list* :debug thread-id level
+       543 +                                (debugger-info-for-emacs 0 
+           + *sldb-initial-frames*)))
+       544 +          (send-to-emacs (list :debug-activate thread-id 
+           + level nil))
+       545 +          (loop
+       546 +           (handler-case
+       547 +               (dcase (wait-for-event `(or (:emacs-rex . _)
+       548 +                                           (:sldb-return ,(1+
+           +  level))))
+       549 +                 ((:emacs-rex &rest args) (apply 
+           + #'eval-for-emacs args))
+       550 +                 ((:sldb-return _) (return nil)))
+       551 +             (sldb-condition (c) (handle-sldb-condition 
+           + c)))))
+       552 +      (send-to-emacs `(:debug-return ,thread-id ,level 
+           + ,*sldb-stepping-p*))))
+       553 +  ```
+       554 +  
+       555 +  **Message Protocol:**
+       556 +  | Message | Direction | Purpose |
+       557 +  |---------|-----------|---------|
+       558 +  | `:debug` | → Editor | Enter debugger (condition, 
+           + restarts, frames) |
+       559 +  | `:debug-activate` | → Editor | Activate debugger UI |
+       560 +  | `:emacs-rex` | ← Editor | RPC call (inspect, eval, etc.) 
+           + |
+       561 +  | `:sldb-return` | ← Editor | Return from debugger |
+       562 +  | `:debug-return` | → Editor | Exit debugger with status |
+       563 +  
+       564 +  ### Condition/Restart System
+       565 +  
+       566 +  SBCL's restarts are **closures with captured state**, 
+           + dynamically bound:
+       567 +  
+       568 +  ```lisp
+       569 +  (defstruct restart
+       570 +    (name (missing-arg) :type symbol :read-only t)
+       571 +    (function (missing-arg) :type function :read-only t)
+       572 +    (report-function nil :type (or null function) :read-only 
+           + t)
+       573 +    (interactive-function nil :type (or null function) 
+           + :read-only t)
+       574 +    (test-function (lambda (cond) t) :type function 
+           + :read-only t))
+       575 +  ```
+       576 +  
+       577 +  **Binding via dynamic scope:**
+       578 +  ```lisp
+       579 +  (restart-case (do-something-risky)
+       580 +    (use-value (v)
+       581 +      :report "Use a different value"
+       582 +      v)
+       583 +    (skip ()
+       584 +      :report "Skip this item"
+       585 +      nil))
+       586 +  ```
+       587 +  
+       588 +  **For ClojurePHP:**
+       589 +  ```clojure
+       590 +  ;; Shared (clojure/condition.cljc)
+       591 +  (defmacro with-restarts [restart-specs & body]
+       592 +    `(binding [*restart-clusters* (cons ~(compile-restarts 
+           + restart-specs)
+       593 +                                         *restart-clusters*)]
+       594 +       ~@body))
+       595 +  
+       596 +  (defn invoke-restart [name & args]
+       597 +    (if-let [restart (find-restart name)]
+       598 +      (apply (:function restart) args)
+       599 +      (throw (ex-info "No such restart" {:name name}))))
+       600 +  
+       601 +  ;; Usage
+       602 +  (with-restarts [(use-value [v] v)
+       603 +                  (skip [] nil)]
+       604 +    (process-risky-data))
+       605 +  
+       606 +  ;; On error, REPL shows:
+       607 +  ;;   0: [USE-VALUE] Use a different value
+       608 +  ;;   1: [SKIP] Skip this item
+       609 +  ;;   2: [ABORT] Return to REPL
+       610 +  ```
+       611 +  
+       612 +  ### Inspector Architecture
+       613 +  
+       614 +  SLIME's inspector uses **stateful navigation with 
+           + history**:
+       615 +  
+       616 +  ```lisp
+       617 +  (defstruct istate
+       618 +    object              ; Current inspected object
+       619 +    (parts ...)         ; Referenced sub-objects (vector, 
+           + indexed)
+       620 +    (actions ...)       ; Interactive actions (vector, 
+           + indexed)
+       621 +    content             ; Formatted content for display
+       622 +    next previous)      ; History navigation
+       623 +  ```
+       624 +  
+       625 +  **Content format (Emacs-compatible):**
+       626 +  - Strings → literal text
+       627 +  - `(:newline)` → line breaks
+       628 +  - `(:value OBJ [STR])` → inspectable object reference
+       629 +  - `(:action LABEL LAMBDA)` → interactive actions
+       630 +  - `(:line LABEL VALUE)` → key-value pairs
+       631 +  
+       632 +  **Key pattern:** Objects are indexed into vectors; editor 
+           + refers by index to avoid serialization overhead.
+       633 +  
+       634 +  ### Lazy Frame Fetching
+       635 +  
+       636 +  SLIME only sends initial 20 frames, fetches more on demand:
+       637 +  
+       638 +  ```lisp
+       639 +  *sldb-initial-frames* = 20
+       640 +  ;; Editor can request: (backtrace start end)
+       641 +  ```
+       642 +  
+       643 +  **For ClojurePHP:** Don't eagerly compute the entire stack.
+           +  Send 20 frames, let editor request more.
+       644 +  
+       645 +  ### Variable Validity States
+       646 +  
+       647 +  Variables have three states at any code location:
+       648 +  
+       649 +  ```lisp
+       650 +  (ecase (debug-var-validity var location)
+       651 +    (:valid     (debug-var-value var frame))  ; Safe to read
+       652 +    (:invalid   ':<not-available>)            ; May not exist
+       653 +    (:unknown   ':<not-available>))           ; 
+           + Corrupted/dead
+       654 +  ```
+       655 +  
+       656 +  **For ClojurePHP:** PHP closures capture by-value or 
+           + by-reference. Track which locals are accessible at each 
+           + point.
+       657 +  
+       658 +  ### Debug Info Storage (SBCL)
+       659 +  
+       660 +  SBCL embeds debug info in **packed binary format** in 
+           + compiled code:
+       661 +  
+       662 +  ```
+       663 +  [flags] [name-length] [name-bytes] [package] [id] 
+           + [sc+offset] [live-mask]
+       664 +  ```
+       665 +  
+       666 +  Each code location has:
+       667 +  - **Kind** (3 bits): call-site, block-start, 
+           + non-local-exit, etc.
+       668 +  - **PC Delta** - Offset from previous location
+       669 +  - **Form Info** - Top-level form number + form number 
+           + within
+       670 +  - **Live Set** - Bitmap of which variables are live
+       671 +  
+       672 +  **For ClojurePHP:** We can embed source locations directly 
+           + in PHP output (inline comments or data structures), not just
+           +  separate files.
+       673 +  
+       674 +  ### Source Location Resolution (Three Tiers)
+       675 +  
+       676 +  SLIME uses layered fallback for robustness:
+       677 +  
+       678 +  ```
+       679 +  Tier 1: Debug Block Information (most precise)
+       680 +          └─ Compiler embedded block positions
+       681 +  
+       682 +  Tier 2: Source Path Parser
+       683 +          └─ Read source, record positions, resolve 
+           + form-numbers
+       684 +  
+       685 +  Tier 3: Function Definition Fallback
+       686 +          └─ Return function's location if nothing else works
+       687 +  ```
+       688 +  
+       689 +  **Key insight:** Always show something useful. Never fail 
+           + to locate.
+       690 +  
+       691 +  ---
+       692 +  
+       693 +  ## Shared vs Platform Concerns
+       694 +  
+       695 +  Based on SLIME/SBCL analysis and our discussions, here's 
+           + the clean separation:
+       696 +  
+       697 +  ### Source Maps
+       698 +  
+       699 +  ```
+       700 +  ┌──────────────────────────────────────────────────────────
+           + ───┐
+       701 +  │  CLOJURE CONCERN (shared)                                
+           +    │
+       702 +  │                                                          
+           +    │
+       703 +  │  • Reader attaches {:line :column :file} to forms        
+           +    │
+       704 +  │  • Analyzer preserves location in HIR node's :env        
+           +    │
+       705 +  │  • CONTRACT: every HIR node carries source location      
+           +    │
+       706 +  │                                                          
+           +    │
+       707 +  │  {:op :invoke                                            
+           +    │
+       708 +  │   :env {:file "app.cljc" :line 12 :column 5}             
+           +    │
+       709 +  │   :fn ...}                                               
+           +    │
+       710 +  │                                                          
+           +    │
+       711 +  └──────────────────────────────────────────────────────────
+           + ───┘
+       712 +                                │
+       713 +                                ▼
+       714 +  ┌──────────────────────────────────────────────────────────
+           + ───┐
+       715 +  │  PLATFORM CONCERN (per backend)                          
+           +    │
+       716 +  │                                                          
+           +    │
+       717 +  │  • Format: How to encode the mapping                     
+           +    │
+       718 +  │  • Storage: Inline, separate file, embedded              
+           +    │
+       719 +  │  • Consumption: How runtime/debugger reads it            
+           +    │
+       720 +  │                                                          
+           +    │
+       721 +  │  PHP:  .xdebug/*.map (Xdebug 3.5 format)                 
+           +    │
+       722 +  │        .xdebug/*.php (OPcache-friendly array)            
+           +    │
+       723 +  │  JS:   .map (V3 source map, VLQ-encoded)                 
+           +    │
+       724 +  │  JVM:  LineNumberTable in .class bytecode                
+           +    │
+       725 +  │  WASM: DWARF debug info or custom section                
+           +    │
+       726 +  │                                                          
+           +    │
+       727 +  └──────────────────────────────────────────────────────────
+           + ───┘
+       728 +  ```
+       729 +  
+       730 +  ### Debugger
+       731 +  
+       732 +  ```
+       733 +  ┌──────────────────────────────────────────────────────────
+           + ───┐
+       734 +  │  CLOJURE CONCERN (shared)                                
+           +    │
+       735 +  │                                                          
+           +    │
+       736 +  │  clojure/debugger.cljc:                                  
+           +    │
+       737 +  │    • IDebugBackend protocol                              
+           +    │
+       738 +  │    • SLDB loop (wait for commands, dispatch)             
+           +    │
+       739 +  │    • Message protocol (:debug, :debug-activate, etc.)    
+           +    │
+       740 +  │    • Restart binding (*restart-clusters*)                
+           +    │
+       741 +  │    • Inspector (stateful navigation, history)            
+           +    │
+       742 +  │                                                          
+           +    │
+       743 +  │  clojure/condition.cljc:                                 
+           +    │
+       744 +  │    • Condition hierarchy                                 
+           +    │
+       745 +  │    • with-restarts, invoke-restart                       
+           +    │
+       746 +  │    • signal, error, warn, cerror                         
+           +    │
+       747 +  │                                                          
+           +    │
+       748 +  └──────────────────────────────────────────────────────────
+           + ───┘
+       749 +                                │
+       750 +                                ▼
+       751 +  ┌──────────────────────────────────────────────────────────
+           + ───┐
+       752 +  │  PLATFORM CONCERN (per backend)                          
+           +    │
+       753 +  │                                                          
+           +    │
+       754 +  │  backends/php/debug.cljc:                                
+           +    │
+       755 +  │    • Emit breakpoint instrumentation                     
+           +    │
+       756 +  │    • Capture locals via closure introspection            
+           +    │
+       757 +  │    • Frame representation                                
+           +    │
+       758 +  │                                                          
+           +    │
+       759 +  │  Runtime (PHP):                                          
+           +    │
+       760 +  │    \Cljp\Debug::brk($locals, $file, $line)               
+           +    │
+       761 +  │    \Cljp\Debug::pushRestart($name, $fn)                  
+           +    │
+       762 +  │    \Cljp\Debug::invokeRestart($name, ...$args)           
+           +    │
+       763 +  │                                                          
+           +    │
+       764 +  │  Optional Xdebug integration for PHP-level debugging     
+           +    │
+       765 +  │                                                          
+           +    │
+       766 +  └──────────────────────────────────────────────────────────
+           + ───┘
+       767 +  ```
+       768 +  
+       769 +  ### Clojure Debugger vs Platform Debugger
+       770 +  
+       771 +  | Aspect | Clojure Debugger | Platform Debugger (Xdebug) |
+       772 +  |--------|------------------|----------------------------|
+       773 +  | **Sees** | Clojure bindings, forms | PHP variables, PHP 
+           + lines |
+       774 +  | **Steps by** | Clojure form | PHP statement |
+       775 +  | **Macros** | Can step through expansion | Already 
+           + expanded |
+       776 +  | **Interop** | Opaque unless instrumented | Full 
+           + visibility |
+       777 +  | **Condition/restart** | Yes (like Common Lisp) | No |
+       778 +  | **Works when** | REPL connected | Always (production too)
+           +  |
+       779 +  | **Backend-specific** | No (shared protocol) | Yes |
+       780 +  
+       781 +  **Recommendation:** Build the Clojure debugger first 
+           + (shared, 95% of use cases). Xdebug integration is 
+           + nice-to-have for PHP interop debugging.
+       782 +  
+       783 +  ---
+       784 +  
+       785 +  ## Xdebug 3.5 Integration
+       786 +  
+       787 +  Xdebug 3.5.0 (December 2025) adds native source map support
+           +  with line range mappings:
+       788 +  
+       789 +  ### Source Map Format
+       790 +  
+       791 +  ```
+       792 +  # out.php.map
+       793 +  remote_prefix: /var/www/app
+       794 +  local_prefix: /home/dev/project
+       795 +  
+       796 +  # Line range mappings: PHP lines → Clojure source
+       797 +  out.php:6-8 = src/app.cljc:12
+       798 +  out.php:10-15 = src/app.cljc:15
+       799 +  out.php:18 = src/app.cljc:20
+       800 +  ```
+       801 +  
+       802 +  ### Registration
+       803 +  
+       804 +  ```php
+       805 +  // In bootstrap
+       806 +  if (extension_loaded('xdebug')) {
+       807 +      foreach (glob(__DIR__ . '/.xdebug/*.map') as $map) {
+       808 +          xdebug_set_source_map($map);
+       809 +      }
+       810 +  }
+       811 +  ```
+       812 +  
+       813 +  ### What This Enables
+       814 +  
+       815 +  With Xdebug's mapping:
+       816 +  1. User sets breakpoint at `app.cljc:15` in IDE
+       817 +  2. Xdebug maps to `out.php:10`
+       818 +  3. Execution stops
+       819 +  4. Stack trace shows `app.cljc:15` (not PHP location)
+       820 +  
+       821 +  ### Limitations
+       822 +  
+       823 +  From Xdebug docs: "Extending line range maps to also 
+           + include column information, although IDEs can't do anything 
+           + with this yet, and neither does the DBGp protocol support 
+           + this yet either."
+       824 +  
+       825 +  Line-level is the best we can do with Xdebug. Column info 
+           + stays in our rich JSON format for error messages.
+       826 +  
+       827 +  ### Source Map Outputs
+       828 +  
+       829 +  | Format | Purpose | Consumer |
+       830 +  |--------|---------|----------|
+       831 +  | `.xdebug/*.map` | Xdebug line mapping | Xdebug 3.5+ 
+           + debugger |
+       832 +  | `.xdebug/*.php` | Fast error lookup | ErrorHandler 
+           + (OPcache'd) |
+       833 +  | `.xdebug/*.json` | Rich metadata | Error display, tooling
+           +  |
+       834 +  
+       835 +  ---
+       836 +  
+       837    ## Unified Error System
+       838    
+       839    ### The One Exception Type: ExceptionInfo
+
+> and can we somehow update the document to reflect the clojure and platform
+ split? 
+
+● Now let me update the Implementation Roadmap and Reference sections to
+  reflect the shared/platform split:
+
+● Update(docs\slime-dx-vision.md)
+  ⎿  Updated docs\slime-dx-vision.md with 50 additions and 43 removals   
+       1654    
+       1655    ## Implementation Roadmap
+       1656    
+       1657 +  Each phase marks items as **[S]** Shared (Clojure concern)
+            +  or **[P]** Platform (PHP-specific).
+       1658 +  
+       1659    ### Phase 1: Rich Errors ✓
+       1660 -  - [x] Source maps with file/line/col
+       1661 -  - [x] Error handler rewrites stack traces
+       1662 -  - [x] Form capture in source maps
+       1663 -  - [x] Source context in errors (surrounding lines)
+       1664 -  - [ ] ExceptionInfo implementation in PHP
+       1665 -  - [ ] Structured error data (`:cljp.error/*` keys)
+       1666 -  - [ ] `ex-triage` / `ex-str` pipeline
+       1667 -  - [ ] Helpful hints in error messages
+       1660 +  - [x] **[S]** Source location in HIR `:env`
+       1661 +  - [x] **[P]** Source maps with file/line/col (JSON format)
+       1662 +  - [x] **[P]** Error handler rewrites stack traces
+       1663 +  - [x] **[P]** Form capture in source maps
+       1664 +  - [x] **[P]** Source context in errors (surrounding lines)
+       1665 +  - [ ] **[P]** ExceptionInfo implementation in PHP
+       1666 +  - [ ] **[S]** Structured error data (`:cljp.error/*` keys)
+       1667 +  - [ ] **[S]** `ex-triage` / `ex-str` pipeline
+       1668 +  - [ ] **[S]** Helpful hints in error messages
+       1669    
+       1670    ### Phase 2: Basic REPL
+       1671 -  - [ ] `with-bindings` macro (set up REPL context)
+       1672 -  - [ ] 
+            -  Hook-based REPL (`:read`, `:eval`, `:print`, `:caught`)
+       1673 -  - [ ] `*1`, `*2`, `*3`, `*e` bindings
+       1674 -  - [ ] 
+            -  TCP eval server (compile form → execute in PHP → return 
+            -  result)
+       1675 -  - [ ] Long-running PHP subprocess (maintains state)
+       1676 -  - [ ] Simple readline REPL (`cljp repl`)
+       1677 -  - [ ] Hot reload (redefine functions without restart)
+       1671 +  - [ ] **[S]** `with-bindings` macro (set up REPL context)
+       1672 +  - [ ] **[S]** 
+            +  Hook-based REPL (`:read`, `:eval`, `:print`, `:caught`)
+       1673 +  - [ ] **[S]** `*1`, `*2`, `*3`, `*e` bindings
+       1674 +  - [ ] **[P]** 
+            +  TCP eval server (compile form → execute in PHP → return 
+            +  result)
+       1675 +  - [ ] **[P]** 
+            +  Long-running PHP subprocess (maintains state)
+       1676 +  - [ ] **[S]** Simple readline REPL (`cljp repl`)
+       1677 +  - [ ] **[P]** 
+            +  Hot reload (redefine functions without restart)
+       1678    
+       1679    ### Phase 3: CLI Architecture
+       1680 -  - [ ] Two-phase dispatch (init options → main option)
+       1681 -  - [ ] Extensible commands map (like ClojureScript)
+       1682 -  - [ ] `cljp -i init.cljc -e '(+ 1 2)' script.cljc`
+       1683 -  - [ ] `cljp -r` / `cljp --repl`
+       1684 -  - [ ] `cljp -m app.core` (call `-main`)
+       1685 -  - [ ] `cljp -c app.core` (compile)
+       1686 -  - [ ] `cljp -w src/` (watch mode)
+       1680 +  - [ ] **[S]** 
+            +  Two-phase dispatch (init options → main option)
+       1681 +  - [ ] **[S]** Extensible commands map (like ClojureScript)
+       1682 +  - [ ] **[S]** `cljp -i init.cljc -e '(+ 1 2)' script.cljc`
+       1683 +  - [ ] **[S]** `cljp -r` / `cljp --repl`
+       1684 +  - [ ] **[S]** `cljp -m app.core` (call `-main`)
+       1685 +  - [ ] **[P]** `cljp -c app.core` (compile to PHP)
+       1686 +  - [ ] **[S]** `cljp -w src/` (watch mode)
+       1687    
+       1688    ### Phase 4: nREPL Compatibility
+       1689 -  - [ ] Bencode transport
+       1690 -  - [ ] Core ops: eval, load-file, complete, info
+       1691 -  - [ ] CIDER middleware compatibility
+       1692 -  - [ ] Works with existing Clojure editor plugins
+       1689 +  - [ ] **[S]** Bencode transport
+       1690 +  - [ ] **[S]** Core ops: eval, load-file, complete, info
+       1691 +  - [ ] **[S]** CIDER middleware compatibility
+       1692 +  - [ ] **[S]** Works with existing Clojure editor plugins
+       1693    
+       1694    ### Phase 5: Test Framework
+       1695 -  - [ ] `clojure.test` port (deftest, is, testing)
+       1696 -  - [ ] Integration with error system
+       1697 -  - [ ] `(thrown? ...)` assertions
+       1698 -  - [ ] Test runner CLI
+       1695 +  - [ ] **[S]** `clojure.test` port (deftest, is, testing)
+       1696 +  - [ ] **[S]** Integration with error system
+       1697 +  - [ ] **[S]** `(thrown? ...)` assertions
+       1698 +  - [ ] **[S]** Test runner CLI
+       1699    
+       1700    ### Phase 6: Self-Hosting
+       1701 -  - [ ] `LispReader.php` - the bootstrap barrier
+       1702 -  - [ ] `LineNumberingPushbackReader.php`
+       1703 -  - [ ] Reader in ClojurePHP (compiled by JVM)
+       1704 -  - [ ] Analyzer in ClojurePHP
+       1705 -  - [ ] Emitter in ClojurePHP
+       1706 -  - [ ] Bootstrap: JVM compiles cljp compiler → PHP
+       1707 -  - [ ] Native: PHP image runs compiler, no JVM needed
+       1701 +  - [ ] **[P]** `LispReader.php` - the bootstrap barrier
+       1702 +  - [ ] **[P]** `LineNumberingPushbackReader.php`
+       1703 +  - [ ] **[S]** Reader in ClojurePHP (compiled by JVM)
+       1704 +  - [ ] **[S]** Analyzer in ClojurePHP
+       1705 +  - [ ] **[P]** PHP emitter in ClojurePHP
+       1706 +  - [ ] **[P]** Bootstrap: JVM compiles cljp compiler → PHP
+       1707 +  - [ ] **[P]** 
+            +  Native: PHP image runs compiler, no JVM needed
+       1708    
+       1709 -  ### Phase 7: Advanced Features
+       1710 -  - [ ] Macroexpand (expand-1, expand-all) - in-process!
+       1711 -  - [ ] Inspector (navigate data structures)
+       1712 -  - [ ] Watch mode (file watcher + auto-reload)
+       1713 -  - [ ] Xdebug bridge (breakpoints in Clojure source)
+       1714 -  - [ ] Condition/restart system (like Common Lisp)
+       1709 +  ### Phase 7: Debugger & Advanced Features
+       1710 +  - [ ] **[S]** `IDebugBackend` protocol
+       1711 +  - [ ] **[S]** SLDB loop (message protocol)
+       1712 +  - [ ] **[S]** Condition/restart system (`with-restarts`, 
+            + `invoke-restart`)
+       1713 +  - [ ] **[S]** Inspector (stateful navigation, history)
+       1714 +  - [ ] **[S]** Macroexpand (expand-1, expand-all) - 
+            + in-process!
+       1715 +  - [ ] **[P]** Breakpoint instrumentation in emit
+       1716 +  - [ ] **[P]** Local capture via closure introspection
+       1717 +  - [ ] **[P]** Xdebug 3.5 source map generation (`.map` 
+            + format)
+       1718 +  - [ ] **[P]** Watch mode (file watcher + auto-reload)
+       1719    
+       1720    ### Phase 8: PHP Symbiosis
+       1721    
+
+● Update(docs\slime-dx-vision.md)
+  ⎿  Updated docs\slime-dx-vision.md with 65 additions                   
+       1856    | `Main.cs` | ~58 | Thin shim, calls `clojure.main/main` |
+       1857    | (rest mirrors JVM) | | C# ports of Clojure Java classes 
+              |
+       1858    
+       1859 +  ### SLIME (Debugger Architecture)
+       1860 +  | File | Lines | Purpose | Type |
+       1861 +  |------|-------|---------|------|
+       1862 +  | `swank.lisp` | ~18000 | Main server, RPC, debugger loop 
+            + | **[S]** Shared |
+       1863 +  | `swank/backend.lisp` | ~1650 | Interface contracts 
+            + (DEFINTERFACE) | **[S]** Shared |
+       1864 +  | `swank/sbcl.lisp` | ~2050 | SBCL-specific 
+            + implementations | **[P]** Platform |
+       1865 +  | `swank/source-path-parser.lisp` | ~200 | Source location
+            +  tracking | **[S]** Shared |
+       1866 +  
+       1867 +  ### SBCL (Debug Internals)
+       1868 +  | File | Lines | Purpose |
+       1869 +  |------|-------|---------|
+       1870 +  | `src/code/debug.lisp` | ~2750 | Frame iteration, 
+            + backtrace |
+       1871 +  | `src/code/debug-int.lisp` | ~4150 | Debug API, frame/var
+            +  access |
+       1872 +  | `src/code/debug-info.lisp` | ~435 | Debug info 
+            + structures (packed binary) |
+       1873 +  | `src/code/restart.lisp` | ~300 | Restart binding and 
+            + invocation |
+       1874 +  
+       1875    ---
+       1876    
+       1877 +  ## ClojurePHP File Structure (Shared vs Platform)
+       1878 +  
+       1879 +  Based on the patterns from SLIME/SBCL and other Clojure 
+            + implementations:
+       1880 +  
+       1881 +  ```
+       1882 +  src/
+       1883 +  ├── clojure/                          # SHARED (Clojure 
+            + concern)
+       1884 +  │   ├── core.cljc                     # Standard library
+       1885 +  │   ├── main.cljc                     # CLI, REPL loop, 
+            + error triage
+       1886 +  │   ├── test.cljc                     # Test framework
+       1887 +  │   ├── repl.cljc                     # REPL utilities 
+            + (doc, source, etc.)
+       1888 +  │   ├── walk.cljc                     # Tree traversal
+       1889 +  │   ├── set.cljc                      # Set operations
+       1890 +  │   ├── string.cljc                   # String operations
+       1891 +  │   ├── debugger.cljc                 # IDebugBackend, 
+            + SLDB loop, inspector
+       1892 +  │   ├── condition.cljc                # with-restarts, 
+            + invoke-restart
+       1893 +  │   ├── nrepl/
+       1894 +  │   │   ├── server.cljc               # nREPL server
+       1895 +  │   │   ├── bencode.cljc              # Bencode transport
+       1896 +  │   │   └── middleware.cljc           # CIDER 
+            + compatibility
+       1897 +  │   └── core/
+       1898 +  │       ├── reader.cljc               # LispReader (shared
+            +  logic)
+       1899 +  │       ├── analyzer.cljc             # HIR generation
+       1900 +  │       └── hir.cljc                  # HIR node 
+            + definitions
+       1901 +  │
+       1902 +  ├── backends/
+       1903 +  │   └── php/                          # PLATFORM 
+            + (PHP-specific)
+       1904 +  │       ├── emit.cljc                 # HIR → PHP code
+       1905 +  │       ├── source-map.cljc           # Generate 
+            + .map/.php/.json
+       1906 +  │       ├── debug.cljc                # IDebugBackend impl
+            +  for PHP
+       1907 +  │       └── interop.cljc              # PHP-specific forms
+       1908 +  │
+       1909 +  └── runtime/
+       1910 +      └── php/                          # PLATFORM (PHP 
+            + runtime)
+       1911 +          ├── Cljp/
+       1912 +          │   ├── Runtime.php           # Bootstrap, cljp() 
+            + function
+       1913 +          │   ├── ErrorHandler.php      # Exception → 
+            + Clojure source
+       1914 +          │   └── Debug.php             # brk(), restarts, 
+            + frame capture
+       1915 +          └── Clojure/
+       1916 +              └── Lang/
+       1917 +                  ├── Vector.php        # Persistent vector
+       1918 +                  ├── HashMap.php       # Persistent map
+       1919 +                  └── ...
+       1920 +  ```
+       1921 +  
+       1922 +  **Key insight:** The `clojure/` directory is identical 
+            + across all backends. Only `backends/<target>/` and 
+            + `runtime/<target>/` change.
+       1923 +  
+       1924 +  ---
+       1925 +  
+       1926    ## The Dream
+       1927    
+       1928    Write Clojure. Evaluate instantly. See results. Navigate 
+              errors back to source.
+
+● Now let me update the Integration Points section to reflect the two
+  debugger approaches:
+
+● Update(docs\slime-dx-vision.md)
+  ⎿  Updated docs\slime-dx-vision.md with 10 additions and 3 removals    
+       939    ;;   actual: (not (= {:result 42} {:error "missing 
+             field"}))
+       940    ```
+       941    
+       942 -  **Debugger (Xdebug):**
+       943 -  - Breakpoint in `.cljc` → source map → PHP line → Xdebug
+       942 +  **Clojure Debugger (Primary):**
+       943 +  - Breakpoints via instrumented emit: 
+           + `\Cljp\Debug::brk($locals, ...)`
+       944 +  - SLDB loop: send state to editor, wait for commands
+       945 +  - Step by Clojure form, not PHP line
+       946 +  - Inspect Clojure bindings, not PHP variables
+       947 +  - Condition/restart: choose recovery strategies 
+           + interactively
+       948 +  
+       949 +  **Xdebug (Secondary, for PHP interop):**
+       950 +  - Breakpoint in `.cljc` → Xdebug 3.5 source map → PHP line
+       951    - Step → PHP steps → source map → show Clojure line
+       952 -  - Inspect → PHP values → pretty-print as Clojure data
+       952 +  - Useful for debugging PHP library calls and interop issues
+       953    - All invisible. User thinks they're debugging Clojure.
+       954    
+       955    ### Rich Error Display (from clojure.main/ex-str)
+
+● Let me add a summary section before "The Dream":
+
+● Update(docs\slime-dx-vision.md)
+  ⎿  Updated docs\slime-dx-vision.md with 72 additions                   
+       1930    
+       1931    ---
+       1932    
+       1933 +  ## Summary: The Architecture Principle
+       1934 +  
+       1935 +  Following SLIME/SBCL's proven model, ClojurePHP separates 
+            + concerns cleanly:
+       1936 +  
+       1937 +  ```
+       1938 +  ┌─────────────────────────────────────────────────────────
+            + ───────────┐
+       1939 +  │                                                         
+            +            │
+       1940 +  │   WRITE ONCE (Clojure concern)          ~80% of code    
+            +            │
+       1941 +  │   ─────────────────────────────                         
+            +            │
+       1942 +  │                                                         
+            +            │
+       1943 +  │   • Reader (syntax → forms with metadata)               
+            +            │
+       1944 +  │   • Analyzer (forms → HIR with :env locations)          
+            +            │
+       1945 +  │   • Standard library (clojure.core, clojure.string, 
+            + etc.)          │
+       1946 +  │   • REPL loop (hook-based, customizable)                
+            +            │
+       1947 +  │   • nREPL server (bencode, CIDER middleware)            
+            +            │
+       1948 +  │   • Error system (ex-triage, ex-str, phases)            
+            +            │
+       1949 +  │   • Debugger protocol (IDebugBackend, SLDB loop)        
+            +            │
+       1950 +  │   • Condition/restart system (with-restarts, 
+            + invoke-restart)       │
+       1951 +  │   • Inspector (stateful navigation, history)            
+            +            │
+       1952 +  │   • Test framework (deftest, is, testing)               
+            +            │
+       1953 +  │   • CLI dispatcher (two-phase, extensible)              
+            +            │
+       1954 +  │                                                         
+            +            │
+       1955 +  ├─────────────────────────────────────────────────────────
+            + ───────────┤
+       1956 +  │                                                         
+            +            │
+       1957 +  │   IMPLEMENT PER BACKEND (Platform concern)   ~20% of 
+            + code          │
+       1958 +  │   ────────────────────────────────────────              
+            +            │
+       1959 +  │                                                         
+            +            │
+       1960 +  │   • Emitter (HIR → target code)                         
+            +            │
+       1961 +  │   • Source map format (Xdebug .map, JS v3, JVM 
+            + LineNumberTable)    │
+       1962 +  │   • Debug backend (frame capture, local introspection)  
+            +            │
+       1963 +  │   • Runtime primitives (data structures, interop)       
+            +            │
+       1964 +  │   • Bootstrap shim (minimal native code to load Clojure)
+            +            │
+       1965 +  │                                                         
+            +            │
+       1966 +  └─────────────────────────────────────────────────────────
+            + ───────────┘
+       1967 +  ```
+       1968 +  
+       1969 +  ### Why This Matters
+       1970 +  
+       1971 +  | Approach | Lines of Code | Semantic Drift | Maintenance 
+            + |
+       1972 +  
+            + |----------|---------------|----------------|-------------|
+       1973 +  | Reimplement per platform | ~25K × N backends | Diverges 
+            + over time | N teams |
+       1974 +  | Shared core + thin backends | ~20K + 2K × N | Identical 
+            + everywhere | 1 team |
+       1975 +  
+       1976 +  **For 6 backends:**
+       1977 +  - Reimplementation: ~150,000 lines, 6 communities, 6 bug 
+            + trackers
+       1978 +  - Shared + backends: ~32,000 lines, 1 community, 1 bug 
+            + tracker
+       1979 +  
+       1980 +  ### The Contract
+       1981 +  
+       1982 +  **Shared code guarantees:**
+       1983 +  ```clojure
+       1984 +  ;; Every HIR node has source location
+       1985 +  {:op :invoke
+       1986 +   :env {:file "app.cljc" :line 12 :column 5 :context :expr}
+       1987 +   :fn {...}
+       1988 +   :args [...]}
+       1989 +  ```
+       1990 +  
+       1991 +  **Backend must implement:**
+       1992 +  ```clojure
+       1993 +  (defprotocol IBackend
+       1994 +    (emit [this hir])           ; HIR → target code string
+       1995 +    (emit-source-map [this])    ; target-specific source map
+            +  format
+       1996 +  
+       1997 +  (defprotocol IDebugBackend
+       1998 +    (frame-locals [this n])     ; nth frame's bindings
+       1999 +    (eval-in-frame [this form n])  ; eval with frame's 
+            + context
+       2000 +    (frame-source-location [this n]))  ; source location for
+            +  frame
+       2001 +  ```
+       2002 +  
+       2003 +  ---
+       2004 +  
+       2005    ## The Dream
+       2006    
+       2007    Write Clojure. Evaluate instantly. See results. Navigate 
+              errors back to source.
+
+● Done. Here's what I added to docs/slime-dx-vision.md:
+
+  New Sections Added
+
+  1. Lessons from SLIME/SBCL Architecture (~230 lines)
+
+  - Backend abstraction pattern (DEFINTERFACE/DEFIMPLEMENTATION)
+  - Debugger hook architecture
+  - SLDB loop message protocol
+  - Condition/restart system design
+  - Inspector architecture with stateful navigation
+  - Lazy frame fetching (20 frames initially)
+  - Variable validity states
+  - Debug info storage (packed binary)
+  - Source location resolution (three-tier fallback)
+
+  2. Shared vs Platform Concerns (~80 lines)
+
+  - Source maps: HIR :env (shared) → format/storage (platform)
+  - Debugger: protocol/SLDB/inspector (shared) → frame capture (platform)
+  - Comparison table: Clojure debugger vs Xdebug
+
+  3. Xdebug 3.5 Integration (~50 lines)
+
+  - Native source map format (line ranges)
+  - xdebug_set_source_map() registration
+  - What this enables for breakpoints
+  - Limitations (line-level only, no columns yet)
+
+  Sections Updated
+
+  Implementation Roadmap
+
+  - Added [S] Shared / [P] Platform markers to every item
+  - Added Phase 7 debugger items with proper split
+
+  Reference: Key Files
+
+  - Added SLIME files with shared/platform classification
+  - Added SBCL debug internals
+  - Added ClojurePHP File Structure showing ideal layout
+
+  Integration Points
+
+  - Split "Debugger" into Clojure Debugger (primary) and Xdebug (secondary)
+
+  Summary: The Architecture Principle
+
+  - Visual diagram of 80% shared / 20% platform split
+  - Code savings comparison (6 backends: 150K → 32K lines)
+  - Contract definitions: IBackend, IDebugBackend
+
+
+

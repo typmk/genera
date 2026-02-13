@@ -1,0 +1,21 @@
+{
+  "name": "emacs-integration",
+  "version": "1.0.0",
+  "description": "Seamless Emacs integration for Claude Code with token-efficient diagnostics, REPL interaction, and programmatic control via emacsclient",
+  "author": "Apollo",
+  "homepage": "https://github.com/yourusername/emacs-integration",
+  "keywords": [
+    "emacs",
+    "lisp",
+    "diagnostics",
+    "repl",
+    "elisp",
+    "clojure",
+    "common-lisp"
+  ],
+  "requirements": {
+    "emacs": ">=28.0",
+    "emacsclient": "required"
+  },
+  "license": "MIT"
+}

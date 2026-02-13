@@ -1,0 +1,1 @@
+["^ ","~:resource-id",["~:shadow.build.modules/append","~:main"],"~:source","\ntry { observatory.app.init(); } catch (e) { console.error(\"An error occurred when calling (observatory.app/init)\"); console.error(e); }","~:js","\ntry { observatory.app.init(); } catch (e) { console.error(\"An error occurred when calling (observatory.app/init)\"); console.error(e); }"]

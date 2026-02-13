@@ -1,0 +1,57 @@
+{
+  "matchers": [
+    {
+      "name": "lisp-file-safety-check",
+      "description": "Automatically check Lisp files for parenthesis errors before editing",
+      "tools": ["Edit", "Write"],
+      "file_pattern": "\\.(el|clj|cljs|cljc|lisp|lsp)$",
+      "hooks": [
+        {
+          "event": "PreToolUse",
+          "type": "command",
+          "command": "bash",
+          "args": [
+            "-c",
+            "FILE_PATH=$(echo \"$FILE_PATH\" | sed 's/\\\\/\\//g'); emacsclient -e \"(claude/quick-paren-summary \\\"$FILE_PATH\\\")\" 2>/dev/null | grep -q ':status \"ok\"' && exit 0 || (echo \"⚠️  Warning: Parenthesis errors detected in $FILE_PATH. Run /emacs-diag for details.\" && exit 0)"
+          ],
+          "timeout": 5000,
+          "description": "Check for paren errors before editing Lisp files"
+        }
+      ]
+    },
+    {
+      "name": "session-connectivity-check",
+      "description": "Verify Emacs server connectivity at session start",
+      "hooks": [
+        {
+          "event": "SessionStart",
+          "type": "command",
+          "command": "bash",
+          "args": [
+            "-c",
+            "if emacsclient -e '(claude/ping)' 2>/dev/null | grep -q ':status \"ok\"'; then echo '✓ Emacs server connected'; exit 0; else echo '✗ Emacs server not responding. Start Emacs to enable integration features.'; exit 0; fi"
+          ],
+          "timeout": 3000,
+          "description": "Check if Emacs server is running"
+        }
+      ]
+    },
+    {
+      "name": "diagnostic-helper-availability",
+      "description": "Verify diagnostic helper functions are loaded",
+      "hooks": [
+        {
+          "event": "SessionStart",
+          "type": "command",
+          "command": "bash",
+          "args": [
+            "-c",
+            "if emacsclient -e '(fboundp '\\''claude/minimal-diagnostic)' 2>/dev/null | grep -q 't'; then echo '✓ Emacs diagnostic helpers loaded'; exit 0; else echo '⚠️  Diagnostic helpers not found. Load claude-paren-diagnostics.el for full functionality.'; exit 0; fi"
+          ],
+          "timeout": 3000,
+          "description": "Verify helper functions are available"
+        }
+      ]
+    }
+  ]
+}

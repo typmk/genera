@@ -15,9 +15,11 @@
     },
     "autoload": {
         "psr-4": {
-            "Clojure\\": "src/clojure/php/runtime/Clojure/",
-            "Cljp\\": "src/clojure/php/runtime/Cljp/"
-        }
+            "Clojure\\Php\\": "src/php/clojure/php/"
+        },
+        "files": [
+            "src/php/clojure/php/bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

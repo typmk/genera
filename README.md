@@ -1,92 +1,100 @@
-# clj-php
+# Genera
 
-A very naive experiment on compiling Clojure to PHP.  Hmmm...
+A live programming environment inspired by Symbolics Genera, Smalltalk, and SLIME/SBCL.
 
-## Using
+## Vision
 
-Simple example of defining and cailling a function:
+Genera combines:
+- **Multi-target Clojure compiler** - Compile to PHP, Python, Rust, JavaScript, Julia, CLR, JVM
+- **Live system introspection** - SLIME-like tools for the physical machine
+- **Protocol bridges** - MCP, LSP, DAP integration for editor/tool connectivity
 
-```clojure
-(ns examples.basic)
+## Structure
 
-(defn double [x]
-    (* 2 x))
-
-(println (str "Double 2 is... " (double 2)))
+```
+genera/
+├── src/                    # Compiler source
+│   ├── php/                # PHP target (primary)
+│   ├── py/                 # Python target
+│   ├── rs/                 # Rust target
+│   ├── js/                 # JavaScript target
+│   ├── jl/                 # Julia target
+│   ├── clr/                # CLR/.NET target
+│   ├── jvm/                # JVM target
+│   └── platforms/          # Platform-specific code
+├── tools/
+│   ├── defnet/             # Analysis/networking layer (submodule)
+│   ├── defport/            # Protocol bridge - MCP, LSP, DAP (submodule)
+│   ├── emacs/              # Emacs tooling (parinfer, bracket detection, MCP)
+│   └── observatory/        # System introspection tools
+│       ├── system-observatory/
+│       ├── wsl-monitor/
+│       └── wsl-taskman*/
+├── ref/                    # Reference implementations (32 submodules)
+│   ├── clojure/            # Clojure source
+│   ├── clojurescript/      # ClojureScript
+│   ├── sbcl/               # Steel Bank Common Lisp
+│   ├── slime/              # SLIME (Superior Lisp Interaction Mode)
+│   ├── otp/                # Erlang/OTP
+│   └── ...                 # See ref/ for full list
+├── tests/
+├── docs/
+├── config/
+└── script/
 ```
 
-You can compile and run this with:
+## Quick Start
+
+### Compile Clojure to PHP
 
 ```bash
-./bin/cljp examples/basic.cljp
+clojure -M:cljp input.cljc > output.php
 ```
 
-Which should output:
-
-```
-Double 2 is... 4
-```
-
-## Features
-
-At the moment only the basic of Clojure have been implemented, but hopefully this will be a growing list.
-
-* defn
-* namespaces (with :use and :require)
-* PHP integration
-
-## PHP Integration
-
-Integration with PHP is handled (like in ClojureScript) through the *php* import to each namespace.  You
-can then reference any functions from the standard PHP distributions.
-
-```clojure
-(println "Date is: " (php/date "dS F Y, H:i:s"))
-```
-
-You can also include other PHP libraries and use objects, much like the Java interop provided by Clojure.
-Like this contrived database example:
-
-```clojure
-(ns examples.objects)
-
-(def cnn (DBConnection. "localhost" "root" ""))
-
-(.query cnn "select * from table")
-```
-
-### Including PHP Files
-
-You can also include PHP files using *:include*.  This is executed at runtime though, so should be used
-for any application bootstrap (like pulling in required PHP libraries).
-
-```clojure
-(ns examples
-  (:include "path/to/bootstrap.php"))
-```
-
-## Tests
-
-Tests written with Midje and PHPUnit, run them with...
+### Run the compiler
 
 ```bash
-lein midje
-phpunit test/php
+clojure -M:cljp --help
 ```
 
-### Disclaimer
+## Requirements
 
-This is not meant to ever be an actually useful thing, compiling Clojure to PHP is insane.  It's just
-a learning tool for me to get more familiar with Clojure.
+- Clojure 1.12+
+- Java 22+ (for FFM)
+- PHP 8.4+ (for runtime)
 
-## TODO
+## Development
 
-I don't plan to implement *all* Clojure features, some of them don't make sense (like Futures, as PHP
-has no thread support).  These are some things I am looking to implement though:
+```bash
+# Install dependencies
+clojure -P
 
-* variable arity
-* destructuring
-* tail recursion
-* lazy sequences
-* macros
+# Run tests
+clojure -M:test
 
+# Start REPL
+clojure -M:dev
+```
+
+## Submodules
+
+Clone with all reference implementations:
+
+```bash
+git clone --recurse-submodules https://github.com/typmk/ClojurePHP.git genera
+```
+
+Or initialize after clone:
+
+```bash
+git submodule update --init --recursive
+```
+
+## Related Projects
+
+- [defnet](https://github.com/typmk/defnet) - Analysis and networking layer
+- [defport](https://github.com/typmk/defport) - Multi-protocol support (MCP, LSP, DAP)
+
+## License
+
+MIT License - see [LICENSE](LICENSE)

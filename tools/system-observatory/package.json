@@ -1,0 +1,21 @@
+{
+  "name": "system-observatory",
+  "version": "0.1.0",
+  "description": "Live hardware introspection - Task Manager meets SLIME",
+  "scripts": {
+    "dev": "shadow-cljs watch app",
+    "repl": "shadow-cljs cljs-repl app",
+    "build": "shadow-cljs release app",
+    "workbench": "shadow-cljs watch workbench"
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.28.18"
+  },
+  "dependencies": {
+    "@js-joda/core": "3.2.0",
+    "@js-joda/locale_en-us": "3.1.1",
+    "@js-joda/timezone": "2.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

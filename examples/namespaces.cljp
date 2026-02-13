@@ -1,6 +1,0 @@
-
-(ns examples.namespaces
-  (:use examples.double))
-
-(println "Double 2 should still be... " (double 2))
-

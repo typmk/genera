@@ -1,0 +1,99 @@
+[submodule "tools/defnet"]
+	path = tools/defnet
+	url = git@github-typmk:typmk/defnet.git
+[submodule "tools/defport"]
+	path = tools/defport
+	url = git@github-typmk:typmk/defport.git
+[submodule "ref/cider"]
+	path = ref/cider
+	url = https://github.com/clojure-emacs/cider.git
+[submodule "ref/clojure"]
+	path = ref/clojure
+	url = https://github.com/clojure/clojure.git
+[submodule "ref/clojure-clr"]
+	path = ref/clojure-clr
+	url = https://github.com/clojure/clojure-clr.git
+[submodule "ref/ClojureDart"]
+	path = ref/ClojureDart
+	url = https://github.com/Tensegritics/ClojureDart.git
+[submodule "ref/clojure-lsp"]
+	path = ref/clojure-lsp
+	url = https://github.com/clojure-lsp/clojure-lsp.git
+[submodule "ref/clojure-mcp"]
+	path = ref/clojure-mcp
+	url = https://github.com/bhauman/clojure-mcp.git
+[submodule "ref/clojurescript"]
+	path = ref/clojurescript
+	url = https://github.com/clojure/clojurescript.git
+[submodule "ref/core.async"]
+	path = ref/core.async
+	url = https://github.com/clojure/core.async.git
+[submodule "ref/criterium"]
+	path = ref/criterium
+	url = https://github.com/hugoduncan/criterium.git
+[submodule "ref/fastmcp"]
+	path = ref/fastmcp
+	url = https://github.com/jlowin/fastmcp.git
+[submodule "ref/flow-storm-debugger"]
+	path = ref/flow-storm-debugger
+	url = https://github.com/flow-storm/flow-storm-debugger.git
+[submodule "ref/jsonrpc4clj"]
+	path = ref/jsonrpc4clj
+	url = https://github.com/clojure-lsp/jsonrpc4clj.git
+[submodule "ref/lsp4clj"]
+	path = ref/lsp4clj
+	url = https://github.com/clojure-lsp/lsp4clj.git
+[submodule "ref/otp"]
+	path = ref/otp
+	url = https://github.com/erlang/otp.git
+[submodule "ref/parinfer-elisp"]
+	path = ref/parinfer-elisp
+	url = https://github.com/oakmac/parinfer-elisp
+[submodule "ref/parinfer.js"]
+	path = ref/parinfer.js
+	url = https://github.com/parinfer/parinfer.js
+[submodule "ref/parinfer-rust"]
+	path = ref/parinfer-rust
+	url = https://github.com/eraserhd/parinfer-rust
+[submodule "ref/parinfer-rust-mode"]
+	path = ref/parinfer-rust-mode
+	url = https://github.com/justinbarclay/parinfer-rust-mode
+[submodule "ref/PHP-Parser"]
+	path = ref/PHP-Parser
+	url = https://github.com/nikic/PHP-Parser.git
+[submodule "ref/php-src"]
+	path = ref/php-src
+	url = https://github.com/php/php-src.git
+[submodule "ref/phpstan"]
+	path = ref/phpstan
+	url = https://github.com/phpstan/phpstan.git
+[submodule "ref/phpstorm-stubs"]
+	path = ref/phpstorm-stubs
+	url = https://github.com/JetBrains/phpstorm-stubs.git
+[submodule "ref/sbcl"]
+	path = ref/sbcl
+	url = https://github.com/sbcl/sbcl.git
+[submodule "ref/shelled"]
+	path = ref/shelled
+	url = https://github.com/crosschainer/shelled.git
+[submodule "ref/slime"]
+	path = ref/slime
+	url = https://github.com/slime/slime.git
+[submodule "ref/spec.alpha"]
+	path = ref/spec.alpha
+	url = https://github.com/clojure/spec.alpha.git
+[submodule "ref/tree-sitter"]
+	path = ref/tree-sitter
+	url = https://github.com/tree-sitter/tree-sitter.git
+[submodule "ref/wasmtime"]
+	path = ref/wasmtime
+	url = https://github.com/bytecodealliance/wasmtime.git
+[submodule "ref/xdebug"]
+	path = ref/xdebug
+	url = https://github.com/xdebug/xdebug.git
+[submodule "ref/phel-lang"]
+	path = ref/phel-lang
+	url = https://github.com/phel-lang/phel-lang.git
+[submodule "ref/swoole-src"]
+	path = ref/swoole-src
+	url = https://github.com/swoole/swoole-src.git

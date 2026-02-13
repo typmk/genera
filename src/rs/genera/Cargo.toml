@@ -1,0 +1,95 @@
+[package]
+name = "genera"
+version = "0.1.0"
+edition = "2021"
+authors = ["Genera Team"]
+description = "Native Lisp runtime in Rust - inspired by Symbolics Genera"
+license = "EPL-2.0"
+repository = "https://github.com/anthropics/ClojurePHP"
+
+[lib]
+name = "genera"
+path = "src/lib.rs"
+
+[[bin]]
+name = "genera"
+path = "src/main.rs"
+
+[dependencies]
+# Garbage collection - arena-based, safe
+gc-arena = "0.5"
+gc-arena-derive = "0.5"
+
+# Persistent data structures
+rpds = "1.1"
+archery = "1"  # Shared pointer abstraction for rpds
+
+# Concurrent hash maps for symbol/keyword interning
+dashmap = "6"
+
+# Small vector optimization for stack frames
+smallvec = "1.13"
+
+# Arena allocation for temporary objects
+bumpalo = { version = "3.16", features = ["collections"] }
+
+# Efficient string interning
+string-interner = "0.17"
+
+# Fast hashing
+ahash = "0.8"
+rustc-hash = "2"
+
+# Error handling
+thiserror = "2"
+
+# JIT compilation (Cranelift)
+cranelift-codegen = { version = "0.114", optional = true }
+cranelift-frontend = { version = "0.114", optional = true }
+cranelift-module = { version = "0.114", optional = true }
+cranelift-jit = { version = "0.114", optional = true }
+cranelift-native = { version = "0.114", optional = true }
+target-lexicon = { version = "0.12", optional = true }
+
+# Numeric types (BigInt, Ratio)
+num-bigint = "0.4"
+num-rational = "0.4"
+num-traits = "0.2"
+
+# Regex support
+regex = "1"
+lazy_static = "1.5"
+
+# Ordered float for map keys
+ordered-float = "4"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[features]
+default = []
+# Cranelift JIT compilation
+jit = [
+    "dep:cranelift-codegen",
+    "dep:cranelift-frontend",
+    "dep:cranelift-module",
+    "dep:cranelift-jit",
+    "dep:cranelift-native",
+    "dep:target-lexicon",
+]
+stm = []          # Software Transactional Memory for refs
+async-agents = [] # Async runtime for agents
+# All optional features
+full = ["jit"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
+
+[[bench]]
+name = "collections"
+harness = false

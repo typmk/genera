@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSL Task Manager</title>
+  <!-- Critical CSS inline for instant first paint -->
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg-solid:oklch(0.17 0 0);--bg-mica:oklch(0.17 0 0/0.96);--text-primary:oklch(1 0 0);--text-secondary:oklch(1 0 0/0.7)}
+    body{font-family:'Segoe UI Variable','Segoe UI',sans-serif;font-size:13px;background:transparent;color:var(--text-primary);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+    .titlebar{height:48px;display:flex;align-items:center;padding:0 12px;background:var(--bg-mica);gap:12px;-webkit-app-region:drag}
+    .app-container{flex:1;display:flex;overflow:hidden;background:var(--bg-solid)}
+    .sidebar{width:220px;height:100%;background:var(--bg-mica);display:flex;flex-direction:column}
+    .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .panel{display:none;flex:1;overflow:hidden}.panel.active{display:flex}
+  </style>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="main.js" defer></script>
+</head>
+<body>
+  <!-- Custom Titlebar - Windows 11 Style -->
+  <div class="titlebar">
+    <div class="titlebar-icon">⚡</div>
+    <span class="titlebar-title">WSL Task Manager</span>
+    <div class="titlebar-spacer-left"></div>
+    <div class="titlebar-search">
+      <input type="text" id="search" placeholder="Search processes..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-form-type="other">
+    </div>
+    <div class="titlebar-spacer"></div>
+    <div class="window-controls">
+      <button class="win-btn" id="win-minimize" title="Minimize">─</button>
+      <button class="win-btn" id="win-maximize" title="Maximize">☐</button>
+      <button class="win-btn win-close" id="win-close" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Windows 11 Style Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="nav-items">
+        <div class="nav-item active" data-tab="processes">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Processes</span>
+        </div>
+        <div class="nav-item" data-tab="details">
+          <span class="nav-icon">📝</span>
+          <span class="nav-label">Details</span>
+        </div>
+        <div class="nav-item" data-tab="performance">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Performance</span>
+        </div>
+        <div class="nav-item" data-tab="users">
+          <span class="nav-icon">👤</span>
+          <span class="nav-label">Users</span>
+        </div>
+        <div class="nav-item" data-tab="services">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-label">Services</span>
+        </div>
+        <div class="nav-item" data-tab="network">
+          <span class="nav-icon">🌐</span>
+          <span class="nav-label">Network</span>
+        </div>
+        <div class="nav-item" data-tab="startup">
+          <span class="nav-icon">🚀</span>
+          <span class="nav-label">Startup</span>
+        </div>
+        <div class="nav-item" data-tab="explore">
+          <span class="nav-icon">🔬</span>
+          <span class="nav-label">Explore</span>
+        </div>
+        <div class="nav-item" data-tab="settings">
+          <span class="nav-icon">🔧</span>
+          <span class="nav-label">Settings</span>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <span class="quick-label">CPU</span>
+            <span class="quick-value" id="sidebar-cpu">--%</span>
+          </div>
+          <div class="quick-stat">
+            <span class="quick-label">Memory</span>
+            <span class="quick-value" id="sidebar-mem">--%</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-area">
+      <!-- Header with stats -->
+      <header class="header">
+        <div class="source-selector">
+          <select id="source-select" title="Select system source">
+            <option value="all">🌐 All Systems</option>
+            <option value="windows">🪟 Windows</option>
+          </select>
+        </div>
+        <div class="header-stats">
+          <div class="stat-chip">
+            <span class="stat-value" id="cpu-pct">--%</span>
+            <span class="stat-label">CPU</span>
+          </div>
+          <div class="stat-chip" id="mem-stat">
+            <span class="stat-value" id="mem-pct">--%</span>
+            <span class="stat-label">Memory</span>
+          </div>
+          <div class="stat-chip">
+            <span class="stat-value" id="load-avg">--</span>
+            <span class="stat-label">Load</span>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <button class="header-btn" id="refresh-btn" title="Refresh">↻</button>
+        <button class="header-btn danger" id="kill-btn" title="End Task" disabled>End task</button>
+      </header>
+
+      <!-- Content -->
+      <main class="content">
+        <!-- Processes Panel (Hierarchical System Tree with sortable columns) -->
+        <div class="panel active" id="processes-panel">
+          <div class="tree-table">
+            <div class="tree-table-header">
+              <div class="tree-col tree-col-name" data-sort="name">Name</div>
+              <div class="tree-col tree-col-cpu sorted" data-sort="cpu">CPU</div>
+              <div class="tree-col tree-col-mem" data-sort="memory">Memory</div>
+              <div class="tree-col tree-col-status" data-sort="status">Status</div>
+            </div>
+            <div class="tree-container" id="system-tree"></div>
+          </div>
+        </div>
+
+        <!-- Details Panel (Flat list with all columns - like Windows) -->
+        <div class="panel" id="details-panel">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="short_name" class="col-name">Name</th>
+                  <th data-sort="pid" class="col-pid">PID</th>
+                  <th data-sort="source" class="col-source">Source</th>
+                  <th data-sort="state" class="col-state">Status</th>
+                  <th data-sort="user" class="col-user">User</th>
+                  <th data-sort="cpu_percent" class="col-cpu">CPU</th>
+                  <th data-sort="memory_mb" class="col-mem">Memory</th>
+                  <th class="col-command">Command line</th>
+                </tr>
+              </thead>
+              <tbody id="details-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Performance Panel -->
+        <div class="panel" id="performance-panel">
+          <div class="perf-grid">
+            <div class="perf-card">
+              <h3>CPU</h3>
+              <div class="perf-large-stat"><span id="cpu-large">--</span><span class="unit">%</span></div>
+              <div class="chart" id="cpu-chart">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polyline class="chart-line cpu" id="cpu-line" points=""></polyline>
+                </svg>
+              </div>
+              <div class="perf-stat">
+                <span>Load Average</span>
+                <strong id="load-display">-- -- --</strong>
+              </div>
+              <div class="perf-stat">
+                <span>Cores</span>
+                <strong id="cpu-cores">--</strong>
+              </div>
+              <div class="core-bars" id="core-bars">
+                <!-- Per-core CPU bars will be rendered here -->
+              </div>
+            </div>
+
+            <div class="perf-card">
+              <h3>Memory</h3>
+              <div class="perf-large-stat"><span id="mem-large">--</span><span class="unit">%</span></div>
+              <div class="chart" id="mem-chart">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <polyline class="chart-line mem" id="mem-line" points=""></polyline>
+                </svg>
+              </div>
+              <div class="perf-stat">
+                <span>Used / Total</span>
+                <strong id="mem-used">-- / -- MiB</strong>
+              </div>
+              <div class="perf-stat">
+                <span>Available</span>
+                <strong id="mem-avail">-- MiB</strong>
+              </div>
+            </div>
+
+            <div class="perf-card">
+              <h3>System Info</h3>
+              <div class="system-info">
+                <div class="info-item">
+                  <div class="info-label">Kernel</div>
+                  <div class="info-value" id="sys-kernel">--</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Hostname</div>
+                  <div class="info-value" id="sys-hostname">--</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Uptime</div>
+                  <div class="info-value" id="sys-uptime">--</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Swap</div>
+                  <div class="info-value" id="sys-swap">-- / -- MiB</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="perf-card">
+              <h3>GPU</h3>
+              <div class="perf-large-stat"><span id="gpu-large">--</span><span class="unit">%</span></div>
+              <div class="gpu-info" id="gpu-info">
+                <div class="perf-stat">
+                  <span>GPU</span>
+                  <strong id="gpu-name">--</strong>
+                </div>
+                <div class="perf-stat">
+                  <span>Memory</span>
+                  <strong id="gpu-mem">-- / -- MiB</strong>
+                </div>
+                <div class="perf-stat">
+                  <span>Temperature</span>
+                  <strong id="gpu-temp">--</strong>
+                </div>
+              </div>
+              <div class="gpu-processes" id="gpu-processes">
+                <!-- GPU process usage will be rendered here -->
+              </div>
+            </div>
+
+            <div class="perf-card top-consumers">
+              <h3>Top Memory Consumers</h3>
+              <div id="top-consumers"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Panel -->
+        <div class="panel" id="users-panel">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="user" class="col-user-name">User</th>
+                  <th data-sort="status" class="col-status">Status</th>
+                  <th data-sort="cpu_percent" class="col-cpu">CPU</th>
+                  <th data-sort="memory_mb" class="col-mem">Memory</th>
+                  <th data-sort="process_count" class="col-procs">Processes</th>
+                  <th data-sort="source" class="col-source">Source</th>
+                </tr>
+              </thead>
+              <tbody id="users-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Services Panel -->
+        <div class="panel" id="services-panel">
+          <div class="services-toolbar">
+            <select id="services-source" autocomplete="off">
+              <option value="windows">🪟 Windows Services</option>
+              <option value="linux">🐧 Linux Services (systemd)</option>
+            </select>
+            <button class="header-btn" id="services-refresh">↻ Refresh</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="name" class="col-service-name">Name</th>
+                  <th data-sort="display_name" class="col-display-name">Description</th>
+                  <th data-sort="status" class="col-status">Status</th>
+                  <th data-sort="start_type" class="col-start-type">Startup Type</th>
+                </tr>
+              </thead>
+              <tbody id="services-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Network Panel -->
+        <div class="panel" id="network-panel">
+          <div class="network-toolbar">
+            <button class="header-btn" id="network-refresh">↻ Refresh</button>
+            <span class="network-count" id="network-count">-- connections</span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="local_addr" class="col-addr">Local Address</th>
+                  <th data-sort="local_port" class="col-port">Local Port</th>
+                  <th data-sort="remote_addr" class="col-addr">Remote Address</th>
+                  <th data-sort="remote_port" class="col-port">Remote Port</th>
+                  <th data-sort="state" class="col-state">State</th>
+                  <th data-sort="protocol" class="col-protocol">Protocol</th>
+                  <th data-sort="process_name" class="col-process">Process</th>
+                  <th data-sort="pid" class="col-pid">PID</th>
+                </tr>
+              </thead>
+              <tbody id="network-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Startup Panel -->
+        <div class="panel" id="startup-panel">
+          <div class="startup-toolbar">
+            <button class="header-btn" id="startup-refresh">↻ Refresh</button>
+            <span class="startup-count" id="startup-count">-- items</span>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th data-sort="name" class="col-startup-name">Name</th>
+                  <th data-sort="publisher" class="col-publisher">Publisher</th>
+                  <th data-sort="status" class="col-status">Status</th>
+                  <th data-sort="startup_type" class="col-type">Type</th>
+                  <th data-sort="location" class="col-location">Location</th>
+                </tr>
+              </thead>
+              <tbody id="startup-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Explore Panel (System Profiler / DevTools for PC) -->
+        <div class="panel" id="explore-panel">
+          <div class="explore-container">
+            <!-- CPU Heatmap Section -->
+            <div class="explore-section">
+              <div class="explore-header">
+                <h3>CPU Architecture</h3>
+                <span class="explore-subtitle" id="cpu-arch-info">-- cores</span>
+              </div>
+              <div class="cpu-heatmap" id="cpu-heatmap">
+                <!-- Per-core cells with process load rendered here -->
+              </div>
+              <div class="cpu-legend">
+                <span class="legend-item"><span class="legend-color idle"></span> Idle</span>
+                <span class="legend-item"><span class="legend-color low"></span> 1-25%</span>
+                <span class="legend-item"><span class="legend-color med"></span> 25-50%</span>
+                <span class="legend-item"><span class="legend-color high"></span> 50-75%</span>
+                <span class="legend-item"><span class="legend-color crit"></span> 75-100%</span>
+              </div>
+            </div>
+
+            <!-- Memory Visualization Section -->
+            <div class="explore-section">
+              <div class="explore-header">
+                <h3>Memory Layout</h3>
+                <span class="explore-subtitle" id="mem-arch-info">-- / -- GB</span>
+              </div>
+              <div class="memory-bar" id="memory-bar">
+                <!-- Memory blocks showing process allocations -->
+              </div>
+              <div class="memory-breakdown" id="memory-breakdown">
+                <!-- Top memory consumers list -->
+              </div>
+            </div>
+
+            <!-- Process Profiler Section -->
+            <div class="explore-section profiler-section">
+              <div class="explore-header">
+                <h3>Live Profiler</h3>
+                <div class="profiler-controls">
+                  <select id="profiler-process" autocomplete="off">
+                    <option value="">Select a process...</option>
+                  </select>
+                  <button class="header-btn" id="profiler-attach">Attach</button>
+                </div>
+              </div>
+              <div class="profiler-content" id="profiler-content">
+                <div class="profiler-placeholder">
+                  Select a process above to view real-time CPU, memory, and I/O metrics
+                </div>
+              </div>
+              <div class="profiler-graphs" id="profiler-graphs" style="display: none;">
+                <div class="profiler-chart">
+                  <div class="profiler-chart-header">
+                    <span>CPU Usage</span>
+                    <span class="profiler-value" id="profiler-cpu-value">--%</span>
+                  </div>
+                  <div class="profiler-sparkline" id="profiler-cpu-chart">
+                    <svg viewBox="0 0 200 40" preserveAspectRatio="none">
+                      <polyline class="profiler-line cpu" id="profiler-cpu-line" points=""></polyline>
+                    </svg>
+                  </div>
+                </div>
+                <div class="profiler-chart">
+                  <div class="profiler-chart-header">
+                    <span>Memory</span>
+                    <span class="profiler-value" id="profiler-mem-value">-- MB</span>
+                  </div>
+                  <div class="profiler-sparkline" id="profiler-mem-chart">
+                    <svg viewBox="0 0 200 40" preserveAspectRatio="none">
+                      <polyline class="profiler-line mem" id="profiler-mem-line" points=""></polyline>
+                    </svg>
+                  </div>
+                </div>
+                <div class="profiler-chart">
+                  <div class="profiler-chart-header">
+                    <span>Threads</span>
+                    <span class="profiler-value" id="profiler-threads-value">--</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- External Profiler Links -->
+            <div class="explore-section tools-section">
+              <div class="explore-header">
+                <h3>Advanced Profiling Tools</h3>
+              </div>
+              <div class="profiler-tools">
+                <button class="tool-btn" id="tool-perf" title="Linux perf profiler">
+                  <span class="tool-icon">📈</span>
+                  <span class="tool-name">perf</span>
+                </button>
+                <button class="tool-btn" id="tool-strace" title="System call tracer">
+                  <span class="tool-icon">🔍</span>
+                  <span class="tool-name">strace</span>
+                </button>
+                <button class="tool-btn" id="tool-ltrace" title="Library call tracer">
+                  <span class="tool-icon">📚</span>
+                  <span class="tool-name">ltrace</span>
+                </button>
+                <button class="tool-btn" id="tool-valgrind" title="Memory debugger">
+                  <span class="tool-icon">🧪</span>
+                  <span class="tool-name">valgrind</span>
+                </button>
+                <button class="tool-btn windows-tool" id="tool-procmon" title="Windows Process Monitor">
+                  <span class="tool-icon">🪟</span>
+                  <span class="tool-name">ProcMon</span>
+                </button>
+                <button class="tool-btn windows-tool" id="tool-xperf" title="Windows Performance Analyzer">
+                  <span class="tool-icon">⚡</span>
+                  <span class="tool-name">xperf</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="panel" id="settings-panel">
+          <div class="settings-container">
+            <div class="settings-section">
+              <h3>General</h3>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Refresh interval</span>
+                  <span class="setting-desc">How often to update process data</span>
+                </div>
+                <select id="setting-refresh-rate" autocomplete="off">
+                  <option value="1000">1 second</option>
+                  <option value="2000" selected>2 seconds</option>
+                  <option value="5000">5 seconds</option>
+                  <option value="10000">10 seconds</option>
+                </select>
+              </div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Default tab</span>
+                  <span class="setting-desc">Tab shown on startup</span>
+                </div>
+                <select id="setting-default-tab" autocomplete="off">
+                  <option value="processes" selected>Processes</option>
+                  <option value="details">Details</option>
+                  <option value="performance">Performance</option>
+                  <option value="users">Users</option>
+                  <option value="services">Services</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>Display</h3>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Show system processes</span>
+                  <span class="setting-desc">Include Windows system processes in list</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="setting-show-system" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Compact mode</span>
+                  <span class="setting-desc">Reduce row height for more items</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="setting-compact-mode">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>Behavior</h3>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Confirm before ending task</span>
+                  <span class="setting-desc">Show confirmation dialog when killing processes</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="setting-confirm-kill" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Start minimized</span>
+                  <span class="setting-desc">Start in system tray</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="setting-start-minimized">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Start with Windows</span>
+                  <span class="setting-desc">Launch automatically on login</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="setting-autostart">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <h3>About</h3>
+              <div class="about-info">
+                <div class="about-row">
+                  <span>WSL Task Manager</span>
+                  <span class="about-value">v0.1.0</span>
+                </div>
+                <div class="about-row">
+                  <span>Built with</span>
+                  <span class="about-value">Tauri + Rust</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Hidden elements for memory detail -->
+      <span id="mem-detail" style="display:none">-- / -- MiB</span>
+      <span id="proc-count" style="display:none">--</span>
+    </div>
+  </div>
+
+  <!-- Affinity Dialog -->
+  <div class="modal-overlay" id="affinity-overlay">
+    <div class="modal-dialog" id="affinity-dialog">
+      <div class="modal-header">
+        <span class="modal-title">Set CPU Affinity</span>
+        <button class="modal-close" id="affinity-close">✕</button>
+      </div>
+      <div class="modal-content">
+        <div class="affinity-process-info" id="affinity-process-info">Process: --</div>
+        <div class="affinity-cores" id="affinity-cores">
+          <!-- Core checkboxes will be rendered here -->
+        </div>
+        <div class="affinity-actions">
+          <button class="modal-btn" id="affinity-all">Select All</button>
+          <button class="modal-btn" id="affinity-none">Select None</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn secondary" id="affinity-cancel">Cancel</button>
+        <button class="modal-btn primary" id="affinity-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Context menu for actions -->
+  <div class="context-menu" id="context-menu">
+    <button class="context-item" id="ctx-end-task">End task</button>
+    <button class="context-item" id="ctx-end-tree">End process tree</button>
+    <div class="context-divider"></div>
+    <button class="context-item" id="ctx-details">View details</button>
+    <div class="context-divider"></div>
+    <div class="context-submenu-trigger">
+      <button class="context-item ctx-has-submenu" id="ctx-priority">Set priority ▸</button>
+      <div class="context-submenu" id="priority-submenu">
+        <button class="context-item" data-priority="realtime">Realtime</button>
+        <button class="context-item" data-priority="high">High</button>
+        <button class="context-item" data-priority="above_normal">Above normal</button>
+        <button class="context-item" data-priority="normal">Normal</button>
+        <button class="context-item" data-priority="below_normal">Below normal</button>
+        <button class="context-item" data-priority="idle">Low</button>
+      </div>
+    </div>
+    <button class="context-item" id="ctx-affinity">Set affinity...</button>
+    <div class="context-divider"></div>
+    <div class="context-submenu-trigger">
+      <button class="context-item ctx-has-submenu" id="ctx-debug">Attach debugger ▸</button>
+      <div class="context-submenu" id="debugger-submenu">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+    <div class="context-divider"></div>
+    <button class="context-item" id="ctx-kill-node">Kill all Node.js</button>
+    <button class="context-item" id="ctx-kill-php">Kill all PHP</button>
+  </div>
+
+  <!-- Network-specific context menu -->
+  <div id="network-context-menu">
+    <div class="network-ctx-header">Connection</div>
+    <button class="network-ctx-item" id="net-ctx-copy">
+      <span class="icon">📋</span>
+      Copy connection info
+    </button>
+    <button class="network-ctx-item" id="net-ctx-view-process">
+      <span class="icon">🔍</span>
+      View process details
+    </button>
+    <div class="network-ctx-divider"></div>
+    <div class="network-ctx-header">Network Tools</div>
+    <button class="network-ctx-item" id="net-ctx-tshark">
+      <span class="icon">🦈</span>
+      Capture packets (tshark)
+    </button>
+    <button class="network-ctx-item" id="net-ctx-lsof">
+      <span class="icon">📂</span>
+      Monitor with lsof
+    </button>
+    <button class="network-ctx-item" id="net-ctx-ss">
+      <span class="icon">🔌</span>
+      Socket stats (ss)
+    </button>
+    <div class="network-ctx-divider"></div>
+    <button class="network-ctx-item" id="net-ctx-nmap">
+      <span class="icon">🎯</span>
+      Scan remote (nmap)
+      <span class="requires-elevation">may need sudo</span>
+    </button>
+    <button class="network-ctx-item" id="net-ctx-whois">
+      <span class="icon">🌐</span>
+      Whois lookup
+    </button>
+  </div>
+</body>
+</html>

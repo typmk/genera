@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+#
+# ClojurePHP Compiler CLI
+#
+# Wrapper script that invokes the Clojure compiler.
+#
+# Usage:
+#   cljpc <input.cljc> [output.php]    Compile file
+#   cljpc -e "(+ 1 2)"                 Evaluate expression
+#   cljpc -o output.php input.cljc     Compile with explicit output
+#   cljpc --server                     Start compilation server (keeps JVM warm)
+#   cljpc --client file.cljc           Compile via server (fast)
+#
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SERVER_PORT="${CLJPC_PORT:-5555}"
+SERVER_PIDFILE="/tmp/cljpc-server.pid"
+
+# JVM options: 2GB heap, faster startup
+JVM_OPTS="-J-Xmx2g -J-XX:+TieredCompilation -J-XX:TieredStopAtLevel=1"
+
+# Check if clj is available
+if ! command -v clj &> /dev/null; then
+    echo "Error: 'clj' (Clojure CLI) not found. Install from https://clojure.org/guides/install_clojure" >&2
+    exit 1
+fi
+
+cd "$PROJECT_DIR"
+
+case "$1" in
+    --server)
+        # Start compilation server (keeps JVM warm)
+        echo "Starting cljpc server on port $SERVER_PORT..."
+        exec clj $JVM_OPTS -M -m clojure.php.server "$SERVER_PORT"
+        ;;
+    --server-bg)
+        # Start server in background
+        if [ -f "$SERVER_PIDFILE" ] && kill -0 "$(cat "$SERVER_PIDFILE")" 2>/dev/null; then
+            echo "Server already running (PID $(cat "$SERVER_PIDFILE"))"
+            exit 0
+        fi
+        echo "Starting cljpc server in background on port $SERVER_PORT..."
+        nohup clj $JVM_OPTS -M -m clojure.php.server "$SERVER_PORT" > /tmp/cljpc-server.log 2>&1 &
+        echo $! > "$SERVER_PIDFILE"
+        sleep 2
+        if kill -0 "$(cat "$SERVER_PIDFILE")" 2>/dev/null; then
+            echo "Server started (PID $(cat "$SERVER_PIDFILE"))"
+        else
+            echo "Failed to start server. Check /tmp/cljpc-server.log"
+            exit 1
+        fi
+        ;;
+    --stop)
+        # Stop background server
+        if [ -f "$SERVER_PIDFILE" ]; then
+            kill "$(cat "$SERVER_PIDFILE")" 2>/dev/null
+            rm -f "$SERVER_PIDFILE"
+            echo "Server stopped"
+        else
+            echo "No server running"
+        fi
+        ;;
+    --client)
+        # Compile via server (fast path)
+        shift
+        if ! command -v nc &> /dev/null; then
+            echo "Error: 'nc' (netcat) required for client mode" >&2
+            exit 1
+        fi
+        echo "$@" | nc localhost "$SERVER_PORT"
+        ;;
+    *)
+        # Direct compilation (cold start)
+        exec clj $JVM_OPTS -M -m clojure.php.main "$@"
+        ;;
+esac

@@ -1,8 +1,0 @@
-
-(ns examples.includes
-  (:include "php/Namer.php"))
-
-(def namer (Namer. "Rich"))
-
-(println "Full name: " (.getFullName namer "Hickey"))
-
