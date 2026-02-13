@@ -1,0 +1,1203 @@
+;; =============================================================================
+;; Clojure Parity Test Specifications
+;; =============================================================================
+;;
+;; Format:
+;;   :tests       — explicit [{:it "name" :eval "expr"}]
+;;   :parametric  — cross-product [{:describe "name"
+;;                                   :params {:var ["v1" "v2"]}
+;;                                   :template "(f %var)"}]
+;;
+;; %var in :template substitutes from :params (cross-product of all param axes).
+;; Expected values are NOT specified — captured from JVM reference run.
+;;
+;; Naming: :it should read as "it <does something>" — e.g. {:it "returns nil"}
+;;
+
+[
+
+;; =============================================================================
+;; 1. LITERALS — data types read correctly
+;; =============================================================================
+
+{:category :literals
+ :tests
+ [{:it "nil"                :eval "nil"}
+  {:it "true"               :eval "true"}
+  {:it "false"              :eval "false"}
+  {:it "zero"               :eval "0"}
+  {:it "positive integer"   :eval "42"}
+  {:it "negative integer"   :eval "-1"}
+  {:it "large integer"      :eval "1000000"}
+  {:it "float"              :eval "3.14"}
+  {:it "negative float"     :eval "-2.5"}
+  {:it "float zero"         :eval "0.0"}
+  {:it "empty string"       :eval "\"\""}
+  {:it "simple string"      :eval "\"hello\""}
+  {:it "string with spaces" :eval "\"hello world\""}
+  {:it "keyword"            :eval ":foo"}
+  {:it "namespaced keyword" :eval ":bar/baz"}
+  {:it "empty vector"       :eval "[]"}
+  {:it "empty map"          :eval "{}"}
+  {:it "empty list"         :eval "'()"}
+  {:it "nested structure"   :eval "[1 [2 [3]]]"}
+  {:it "mixed collection"   :eval "[1 :a \"b\" nil true]"}
+  {:it "character"          :eval "\\a"}
+  {:it "newline char"       :eval "\\newline"}
+  {:it "space char"         :eval "\\space"}]}
+
+
+;; =============================================================================
+;; 2. ARITHMETIC
+;; =============================================================================
+
+{:category :arithmetic
+ :tests
+ [{:it "(+) identity"       :eval "(+)"}
+  {:it "(*) identity"       :eval "(*)"}
+  {:it "unary +"            :eval "(+ 5)"}
+  {:it "unary -"            :eval "(- 5)"}
+  {:it "unary *"            :eval "(* 5)"}
+  {:it "variadic +"         :eval "(+ 1 2 3 4 5)"}
+  {:it "variadic -"         :eval "(- 100 10 20 30)"}
+  {:it "variadic *"         :eval "(* 1 2 3 4 5)"}
+  {:it "quot positive"      :eval "(quot 7 2)"}
+  {:it "quot negative"      :eval "(quot -7 2)"}
+  {:it "rem positive"       :eval "(rem 7 3)"}
+  {:it "rem negative"       :eval "(rem -7 3)"}
+  {:it "mod positive"       :eval "(mod 7 3)"}
+  {:it "mod negative"       :eval "(mod -7 3)"}
+  {:it "abs positive"       :eval "(abs 42)"}
+  {:it "abs negative"       :eval "(abs -42)"}
+  {:it "abs zero"           :eval "(abs 0)"}]
+ :parametric
+ [{:describe "addition"
+   :params {:a ["0" "1" "-1" "42" "3.14"]
+            :b ["0" "1" "-1" "42" "3.14"]}
+   :template "(+ %a %b)"}
+  {:describe "subtraction"
+   :params {:a ["0" "1" "-1" "42" "3.14"]
+            :b ["0" "1" "-1" "42" "3.14"]}
+   :template "(- %a %b)"}
+  {:describe "multiplication"
+   :params {:a ["0" "1" "-1" "7" "0.5"]
+            :b ["0" "1" "-1" "7" "0.5"]}
+   :template "(* %a %b)"}
+  {:describe "inc/dec"
+   :params {:f ["inc" "dec"]
+            :n ["0" "1" "-1" "42" "-100" "0.5"]}
+   :template "(%f %n)"}
+  {:describe "max/min"
+   :params {:f ["max" "min"]
+            :a ["-1" "0" "1" "42"]
+            :b ["-1" "0" "1" "42"]}
+   :template "(%f %a %b)"}]}
+
+
+;; =============================================================================
+;; 3. COMPARISON
+;; =============================================================================
+
+{:category :comparison
+ :tests
+ [{:it "= nil nil"          :eval "(= nil nil)"}
+  {:it "= true true"        :eval "(= true true)"}
+  {:it "= true false"       :eval "(= true false)"}
+  {:it "= keyword"          :eval "(= :a :a)"}
+  {:it "= keyword diff"     :eval "(= :a :b)"}
+  {:it "= vector"           :eval "(= [1 2 3] [1 2 3])"}
+  {:it "= vector diff"      :eval "(= [1 2] [1 3])"}
+  {:it "= map"              :eval "(= {:a 1 :b 2} {:b 2 :a 1})"}
+  {:it "= list vector"      :eval "(= '(1 2 3) [1 2 3])"}
+  {:it "= empty colls"      :eval "(= [] '())"}
+  {:it "= nested"           :eval "(= {:a [1 2]} {:a [1 2]})"}
+  {:it "compare ints"       :eval "(compare 1 2)"}
+  {:it "compare equal"      :eval "(compare 5 5)"}
+  {:it "compare strings"    :eval "(compare \"a\" \"b\")"}
+  {:it "compare keywords"   :eval "(compare :a :b)"}]
+ :parametric
+ [{:describe "numeric comparison"
+   :params {:op ["<" ">" "<=" ">=" "==" "="]
+            :a  ["0" "1" "-1" "42"]
+            :b  ["0" "1" "-1" "42"]}
+   :template "(%op %a %b)"}]}
+
+
+;; =============================================================================
+;; 4. PREDICATES
+;; =============================================================================
+
+{:category :predicates
+ :tests
+ [{:it "nil? nil"            :eval "(nil? nil)"}
+  {:it "nil? false"          :eval "(nil? false)"}
+  {:it "some? nil"           :eval "(some? nil)"}
+  {:it "some? false"         :eval "(some? false)"}
+  {:it "some? 0"             :eval "(some? 0)"}]
+ :parametric
+ [{:describe "type predicates"
+   :params {:pred ["nil?" "some?" "true?" "false?" "boolean?"
+                   "number?" "integer?" "float?" "zero?" "pos?" "neg?"
+                   "string?" "keyword?" "symbol?" "fn?"
+                   "coll?" "seq?" "sequential?" "associative?" "counted?"
+                   "vector?" "map?" "set?" "list?" "empty?"]
+            :val  ["nil" "true" "false"
+                   "0" "1" "-1" "3.14"
+                   "\"\"" "\"hello\""
+                   ":foo" "'bar"
+                   "[]" "[1 2]"
+                   "{}" "{:a 1}"
+                   "'()" "'(1 2)"]}
+   :template "(%pred %val)"}
+  {:describe "even/odd"
+   :params {:pred ["even?" "odd?"]
+            :n    ["0" "1" "2" "3" "-1" "-2" "100" "99"]}
+   :template "(%pred %n)"}]}
+
+
+;; =============================================================================
+;; 5. VECTORS
+;; =============================================================================
+
+{:category :vectors
+ :tests
+ [{:it "vector constructor"     :eval "(vector 1 2 3)"}
+  {:it "vector empty"           :eval "(vector)"}
+  {:it "vec from list"          :eval "(vec '(1 2 3))"}
+  {:it "vec from nil"           :eval "(vec nil)"}
+  {:it "vec from set"           :eval "(count (vec #{1 2 3}))"}
+  {:it "nth first"              :eval "(nth [10 20 30] 0)"}
+  {:it "nth last"               :eval "(nth [10 20 30] 2)"}
+  {:it "nth default"            :eval "(nth [10 20] 5 :missing)"}
+  {:it "get index"              :eval "(get [10 20 30] 1)"}
+  {:it "get out of bounds"      :eval "(get [10 20] 5)"}
+  {:it "get default"            :eval "(get [10 20] 5 :nope)"}
+  {:it "peek"                   :eval "(peek [1 2 3])"}
+  {:it "peek empty"             :eval "(peek [])"}
+  {:it "pop"                    :eval "(pop [1 2 3])"}
+  {:it "subvec"                 :eval "(subvec [0 1 2 3 4] 1 4)"}
+  {:it "subvec from"            :eval "(subvec [0 1 2 3 4] 2)"}
+  {:it "assoc index"            :eval "(assoc [1 2 3] 1 :x)"}
+  {:it "assoc multi"            :eval "(assoc [1 2 3] 0 :a 2 :c)"}
+  {:it "update index"           :eval "(update [1 2 3] 1 inc)"}
+  {:it "vector as fn"           :eval "([10 20 30] 1)"}
+  {:it "mapv"                   :eval "(mapv inc [1 2 3])"}
+  {:it "filterv"                :eval "(filterv even? [1 2 3 4 5])"}
+  {:it "into vector"            :eval "(into [1 2] [3 4])"}
+  {:it "rseq"                   :eval "(vec (rseq [1 2 3]))"}
+  {:it "empty vector"           :eval "(empty [1 2 3])"}]
+ :parametric
+ [{:describe "conj onto vector"
+   :params {:vec ["[]" "[1]" "[1 2 3]" "[nil]"]
+            :val ["nil" "1" ":x" "\"s\"" "[1]" "{:a 1}"]}
+   :template "(conj %vec %val)"}
+  {:describe "count vector"
+   :params {:vec ["[]" "[1]" "[1 2]" "[1 2 3]" "[1 2 3 4 5 6 7 8 9 10]"]}
+   :template "(count %vec)"}]}
+
+
+;; =============================================================================
+;; 6. MAPS
+;; =============================================================================
+
+{:category :maps
+ :tests
+ [{:it "hash-map"               :eval "(hash-map :a 1 :b 2)"}
+  {:it "hash-map empty"         :eval "(hash-map)"}
+  {:it "array-map"              :eval "(array-map :a 1 :b 2)"}
+  {:it "get key"                :eval "(get {:a 1 :b 2} :a)"}
+  {:it "get missing"            :eval "(get {:a 1} :z)"}
+  {:it "get default"            :eval "(get {:a 1} :z :not-found)"}
+  {:it "keyword as fn"          :eval "(:a {:a 1 :b 2})"}
+  {:it "keyword default"        :eval "(:z {:a 1} :nope)"}
+  {:it "map as fn"              :eval "({:a 1 :b 2} :b)"}
+  {:it "map as fn default"      :eval "({:a 1} :z :default)"}
+  {:it "assoc"                  :eval "(assoc {:a 1} :b 2)"}
+  {:it "assoc multi"            :eval "(assoc {} :a 1 :b 2 :c 3)"}
+  {:it "assoc overwrite"        :eval "(assoc {:a 1} :a 99)"}
+  {:it "dissoc"                 :eval "(dissoc {:a 1 :b 2 :c 3} :b)"}
+  {:it "dissoc multi"           :eval "(dissoc {:a 1 :b 2 :c 3} :a :c)"}
+  {:it "dissoc missing"         :eval "(dissoc {:a 1} :z)"}
+  {:it "merge"                  :eval "(merge {:a 1} {:b 2})"}
+  {:it "merge overwrite"        :eval "(merge {:a 1} {:a 2})"}
+  {:it "merge nil"              :eval "(merge {:a 1} nil)"}
+  {:it "merge-with"             :eval "(merge-with + {:a 1 :b 2} {:a 3 :b 4})"}
+  {:it "select-keys"            :eval "(select-keys {:a 1 :b 2 :c 3} [:a :c])"}
+  {:it "update key"             :eval "(update {:a 1} :a inc)"}
+  {:it "update missing"         :eval "(update {:a 1} :b (fnil inc 0))"}
+  {:it "update-in"              :eval "(update-in {:a {:b 1}} [:a :b] inc)"}
+  {:it "assoc-in"               :eval "(assoc-in {} [:a :b :c] 1)"}
+  {:it "get-in"                 :eval "(get-in {:a {:b {:c 1}}} [:a :b :c])"}
+  {:it "get-in missing"         :eval "(get-in {:a 1} [:x :y] :nope)"}
+  {:it "contains? true"         :eval "(contains? {:a 1} :a)"}
+  {:it "contains? false"        :eval "(contains? {:a 1} :b)"}
+  {:it "contains? nil val"      :eval "(contains? {:a nil} :a)"}
+  {:it "keys"                   :eval "(sort (keys {:c 3 :a 1 :b 2}))"}
+  {:it "vals"                   :eval "(sort (vals {:c 3 :a 1 :b 2}))"}
+  {:it "count map"              :eval "(count {:a 1 :b 2 :c 3})"}
+  {:it "empty map"              :eval "(empty {:a 1})"}
+  {:it "into map"               :eval "(into {} [[:a 1] [:b 2]])"}
+  {:it "zipmap"                 :eval "(zipmap [:a :b :c] [1 2 3])"}
+  {:it "find"                   :eval "(find {:a 1 :b 2} :a)"}
+  {:it "find missing"           :eval "(find {:a 1} :z)"}
+  {:it "key"                    :eval "(key (first {:a 1}))"}
+  {:it "val"                    :eval "(val (first {:a 1}))"}]}
+
+
+;; =============================================================================
+;; 7. SETS
+;; =============================================================================
+
+{:category :sets
+ :tests
+ [{:it "hash-set"               :eval "(hash-set 1 2 3)"}
+  {:it "set from vector"        :eval "(set [1 2 2 3 3 3])"}
+  {:it "set from nil"           :eval "(set nil)"}
+  {:it "conj"                   :eval "(conj #{1 2} 3)"}
+  {:it "conj duplicate"         :eval "(conj #{1 2} 2)"}
+  {:it "disj"                   :eval "(disj #{1 2 3} 2)"}
+  {:it "disj missing"           :eval "(disj #{1 2} 5)"}
+  {:it "contains? true"         :eval "(contains? #{1 2 3} 2)"}
+  {:it "contains? false"        :eval "(contains? #{1 2 3} 5)"}
+  {:it "set as fn"              :eval "(#{1 2 3} 2)"}
+  {:it "set as fn missing"      :eval "(#{1 2 3} 5)"}
+  {:it "count"                  :eval "(count #{1 2 3})"}
+  {:it "empty set"              :eval "(empty #{1 2 3})"}
+  {:it "into set"               :eval "(into #{1} [2 3])"}
+  {:it "union"                  :eval "(clojure.set/union #{1 2} #{2 3})"}
+  {:it "intersection"           :eval "(clojure.set/intersection #{1 2 3} #{2 3 4})"}
+  {:it "difference"             :eval "(clojure.set/difference #{1 2 3} #{2})"}
+  {:it "subset? true"           :eval "(clojure.set/subset? #{1 2} #{1 2 3})"}
+  {:it "subset? false"          :eval "(clojure.set/subset? #{1 4} #{1 2 3})"}
+  {:it "superset?"              :eval "(clojure.set/superset? #{1 2 3} #{1 2})"}]}
+
+
+;; =============================================================================
+;; 8. LISTS
+;; =============================================================================
+
+{:category :lists
+ :tests
+ [{:it "list constructor"       :eval "(list 1 2 3)"}
+  {:it "list empty"             :eval "(list)"}
+  {:it "conj prepends"          :eval "(conj '(2 3) 1)"}
+  {:it "conj to nil"            :eval "(conj nil 1)"}
+  {:it "first"                  :eval "(first '(1 2 3))"}
+  {:it "rest"                   :eval "(vec (rest '(1 2 3)))"}
+  {:it "peek"                   :eval "(peek '(1 2 3))"}
+  {:it "pop"                    :eval "(pop '(1 2 3))"}
+  {:it "count"                  :eval "(count '(1 2 3))"}
+  {:it "nth"                    :eval "(nth '(10 20 30) 1)"}
+  {:it "into list"              :eval "(into '() [1 2 3])"}]}
+
+
+;; =============================================================================
+;; 9. SEQUENCES — the big one
+;; =============================================================================
+
+{:category :sequences
+ :tests
+ [;; seq basics
+  {:it "seq nil"                :eval "(seq nil)"}
+  {:it "seq empty vec"          :eval "(seq [])"}
+  {:it "seq empty str"          :eval "(seq \"\")"}
+  {:it "seq vec"                :eval "(vec (seq [1 2 3]))"}
+  {:it "seq string"             :eval "(vec (seq \"abc\"))"}
+  {:it "seq map"                :eval "(count (seq {:a 1 :b 2}))"}
+  {:it "first nil"              :eval "(first nil)"}
+  {:it "first empty"            :eval "(first [])"}
+  {:it "first vec"              :eval "(first [1 2 3])"}
+  {:it "second"                 :eval "(second [1 2 3])"}
+  {:it "rest nil"               :eval "(vec (rest nil))"}
+  {:it "rest vec"               :eval "(vec (rest [1 2 3]))"}
+  {:it "rest single"            :eval "(vec (rest [1]))"}
+  {:it "next nil"               :eval "(next nil)"}
+  {:it "next single"            :eval "(next [1])"}
+  {:it "next vec"               :eval "(vec (next [1 2 3]))"}
+  {:it "last"                   :eval "(last [1 2 3])"}
+  {:it "last single"            :eval "(last [1])"}
+  {:it "last nil"               :eval "(last nil)"}
+  {:it "butlast"                :eval "(vec (butlast [1 2 3]))"}
+  {:it "butlast single"         :eval "(butlast [1])"}
+  {:it "cons nil"               :eval "(vec (cons 1 nil))"}
+  {:it "cons vec"               :eval "(vec (cons 0 [1 2]))"}
+  {:it "concat"                 :eval "(vec (concat [1 2] [3 4]))"}
+  {:it "concat nil"             :eval "(vec (concat nil [1 2]))"}
+  {:it "concat three"           :eval "(vec (concat [1] [2] [3]))"}
+  {:it "concat empty"           :eval "(vec (concat [] []))"}
+
+  ;; transformations
+  {:it "map inc"                :eval "(vec (map inc [1 2 3]))"}
+  {:it "map nil"                :eval "(vec (map inc nil))"}
+  {:it "map two colls"          :eval "(vec (map + [1 2] [3 4]))"}
+  {:it "map three colls"        :eval "(vec (map + [1 2] [3 4] [5 6]))"}
+  {:it "mapv"                   :eval "(mapv inc [1 2 3])"}
+  {:it "map-indexed"            :eval "(vec (map-indexed vector [10 20 30]))"}
+  {:it "filter"                 :eval "(vec (filter even? [1 2 3 4 5 6]))"}
+  {:it "filterv"                :eval "(filterv odd? [1 2 3 4])"}
+  {:it "remove"                 :eval "(vec (remove even? [1 2 3 4]))"}
+  {:it "keep"                   :eval "(vec (keep identity [1 nil 2 nil 3]))"}
+  {:it "keep-indexed"           :eval "(vec (keep-indexed (fn [i v] (when (even? i) v)) [10 20 30 40]))"}
+  {:it "take"                   :eval "(vec (take 3 [1 2 3 4 5]))"}
+  {:it "take more"              :eval "(vec (take 10 [1 2 3]))"}
+  {:it "take zero"              :eval "(vec (take 0 [1 2 3]))"}
+  {:it "drop"                   :eval "(vec (drop 2 [1 2 3 4 5]))"}
+  {:it "drop more"              :eval "(vec (drop 10 [1 2]))"}
+  {:it "take-while"             :eval "(vec (take-while #(< % 4) [1 2 3 4 5]))"}
+  {:it "drop-while"             :eval "(vec (drop-while #(< % 4) [1 2 3 4 5]))"}
+  {:it "take-nth"               :eval "(vec (take-nth 2 [1 2 3 4 5 6]))"}
+  {:it "reverse"                :eval "(vec (reverse [1 2 3]))"}
+  {:it "reverse empty"          :eval "(vec (reverse []))"}
+  {:it "sort"                   :eval "(vec (sort [3 1 4 1 5 9 2 6]))"}
+  {:it "sort-by"                :eval "(vec (sort-by - [1 2 3]))"}
+  {:it "sort-by key"            :eval "(vec (sort-by :age [{:age 30} {:age 20} {:age 40}]))"}
+  {:it "distinct"               :eval "(vec (distinct [1 2 1 3 2 4]))"}
+  {:it "dedupe"                 :eval "(vec (dedupe [1 1 2 2 3 1 1]))"}
+  {:it "flatten"                :eval "(vec (flatten [[1 2] [3 [4 5]]]))"}
+  {:it "flatten nil"            :eval "(vec (flatten nil))"}
+  {:it "mapcat"                 :eval "(vec (mapcat reverse [[1 2] [3 4]]))"}
+
+  ;; reduction
+  {:it "reduce +"               :eval "(reduce + [1 2 3])"}
+  {:it "reduce + init"          :eval "(reduce + 10 [1 2 3])"}
+  {:it "reduce empty"           :eval "(reduce + [])"}
+  {:it "reduce empty init"      :eval "(reduce + 0 [])"}
+  {:it "reduce conj"            :eval "(reduce conj [] [1 2 3])"}
+  {:it "reduce-kv"              :eval "(reduce-kv (fn [acc k v] (+ acc v)) 0 {:a 1 :b 2 :c 3})"}
+  {:it "reductions"             :eval "(vec (reductions + [1 2 3 4]))"}
+  {:it "reductions init"        :eval "(vec (reductions + 0 [1 2 3]))"}
+
+  ;; grouping/partitioning
+  {:it "partition"              :eval "(vec (map vec (partition 2 [1 2 3 4])))"}
+  {:it "partition-all"          :eval "(vec (map vec (partition-all 2 [1 2 3 4 5])))"}
+  {:it "partition-by"           :eval "(vec (map vec (partition-by even? [1 3 2 4 1])))"}
+  {:it "group-by"               :eval "(group-by even? [1 2 3 4 5])"}
+  {:it "frequencies"            :eval "(frequencies [:a :b :a :c :b :a])"}
+  {:it "split-at"               :eval "(vec (map vec (split-at 3 [1 2 3 4 5])))"}
+  {:it "split-with"             :eval "(vec (map vec (split-with #(< % 4) [1 2 3 4 5])))"}
+
+  ;; into
+  {:it "into vec"               :eval "(into [] '(1 2 3))"}
+  {:it "into set"               :eval "(into #{} [1 2 2 3])"}
+  {:it "into map"               :eval "(into {} [[:a 1] [:b 2]])"}
+  {:it "into sorted-map"        :eval "(into (sorted-map) {:c 3 :a 1 :b 2})"}
+
+  ;; range / repeat / cycle / iterate
+  {:it "range 5"                :eval "(vec (range 5))"}
+  {:it "range 1-5"              :eval "(vec (range 1 5))"}
+  {:it "range step"             :eval "(vec (range 0 10 3))"}
+  {:it "range negative step"    :eval "(vec (range 5 0 -1))"}
+  {:it "repeat"                 :eval "(vec (repeat 3 :x))"}
+  {:it "repeatedly"             :eval "(count (vec (repeatedly 5 (constantly 1))))"}
+  {:it "cycle take"             :eval "(vec (take 7 (cycle [1 2 3])))"}
+  {:it "iterate take"           :eval "(vec (take 5 (iterate inc 0)))"}
+
+  ;; interleave / interpose
+  {:it "interleave"             :eval "(vec (interleave [1 2 3] [:a :b :c]))"}
+  {:it "interleave uneven"      :eval "(vec (interleave [1 2] [:a :b :c]))"}
+  {:it "interpose"              :eval "(vec (interpose :x [1 2 3]))"}
+
+  ;; predicates over seqs
+  {:it "some found"             :eval "(some even? [1 2 3])"}
+  {:it "some not found"         :eval "(some even? [1 3 5])"}
+  {:it "some with set"          :eval "(some #{3 5} [1 2 3 4])"}
+  {:it "every? true"            :eval "(every? pos? [1 2 3])"}
+  {:it "every? false"           :eval "(every? pos? [1 -2 3])"}
+  {:it "every? empty"           :eval "(every? pos? [])"}
+  {:it "not-every?"             :eval "(not-every? even? [1 2 3])"}
+  {:it "not-any?"               :eval "(not-any? even? [1 3 5])"}
+  {:it "not-any? false"         :eval "(not-any? even? [1 2 3])"}
+  {:it "empty? vec"             :eval "(empty? [])"}
+  {:it "empty? nonempty"        :eval "(empty? [1])"}
+  {:it "empty? nil"             :eval "(empty? nil)"}]
+
+ :parametric
+ [{:describe "map with fn"
+   :params {:f    ["inc" "dec" "str" "#(* % 2)"]
+            :coll ["[1 2 3]" "[0]" "[10 20 30 40 50]"]}
+   :template "(vec (map %f %coll))"}
+  {:describe "filter with pred"
+   :params {:pred ["even?" "odd?" "pos?" "neg?" "zero?" "nil?"]
+            :coll ["[1 2 3 4 5 6]" "[0 -1 1 -2 2]" "[nil 1 nil 2 nil]"]}
+   :template "(vec (filter %pred %coll))"}
+  {:describe "take/drop"
+   :params {:op ["take" "drop"]
+            :n  ["0" "1" "3" "100"]
+            :coll ["[]" "[1]" "[1 2 3 4 5]"]}
+   :template "(vec (%op %n %coll))"}
+  {:describe "reduce with fn"
+   :params {:f    ["+" "*" "max" "min"]
+            :coll ["[1 2 3]" "[5]" "[10 20 30]"]}
+   :template "(reduce %f %coll)"}]}
+
+
+;; =============================================================================
+;; 10. STRINGS
+;; =============================================================================
+
+{:category :strings
+ :tests
+ [{:it "str empty"              :eval "(str)"}
+  {:it "str one"                :eval "(str \"hello\")"}
+  {:it "str multi"              :eval "(str \"a\" \"b\" \"c\")"}
+  {:it "str mixed"              :eval "(str 1 :a nil true)"}
+  {:it "str nil"                :eval "(str nil)"}
+  {:it "count string"           :eval "(count \"hello\")"}
+  {:it "count empty"            :eval "(count \"\")"}
+  {:it "subs from"              :eval "(subs \"hello\" 1)"}
+  {:it "subs range"             :eval "(subs \"hello\" 1 4)"}
+  {:it "name keyword"           :eval "(name :foo)"}
+  {:it "name ns keyword"        :eval "(name :bar/baz)"}
+  {:it "name symbol"            :eval "(name 'foo)"}
+  {:it "name string"            :eval "(name \"already\")"}
+  {:it "namespace keyword"      :eval "(namespace :bar/baz)"}
+  {:it "namespace no-ns"        :eval "(namespace :foo)"}
+  {:it "keyword from string"    :eval "(keyword \"test\")"}
+  {:it "keyword with ns"        :eval "(keyword \"ns\" \"name\")"}
+  {:it "symbol from string"     :eval "(symbol \"test\")"}
+  {:it "symbol with ns"         :eval "(symbol \"ns\" \"name\")"}
+  {:it "str/join"               :eval "(clojure.string/join \", \" [1 2 3])"}
+  {:it "str/join no sep"        :eval "(clojure.string/join [\"a\" \"b\" \"c\"])"}
+  {:it "str/split"              :eval "(clojure.string/split \"a,b,c\" #\",\")"}
+  {:it "str/replace"            :eval "(clojure.string/replace \"hello world\" \"world\" \"clojure\")"}
+  {:it "str/upper-case"         :eval "(clojure.string/upper-case \"hello\")"}
+  {:it "str/lower-case"         :eval "(clojure.string/lower-case \"HELLO\")"}
+  {:it "str/trim"               :eval "(clojure.string/trim \"  hello  \")"}
+  {:it "str/blank? empty"       :eval "(clojure.string/blank? \"\")"}
+  {:it "str/blank? spaces"      :eval "(clojure.string/blank? \"   \")"}
+  {:it "str/blank? content"     :eval "(clojure.string/blank? \"hi\")"}
+  {:it "str/starts-with?"       :eval "(clojure.string/starts-with? \"hello\" \"hel\")"}
+  {:it "str/ends-with?"         :eval "(clojure.string/ends-with? \"hello\" \"llo\")"}
+  {:it "str/includes?"          :eval "(clojure.string/includes? \"hello\" \"ell\")"}
+  {:it "str/reverse"            :eval "(clojure.string/reverse \"hello\")"}
+  {:it "apply str"              :eval "(apply str [\"a\" \"b\" \"c\"])"}]}
+
+
+;; =============================================================================
+;; 11. FUNCTIONS — higher-order, composition, application
+;; =============================================================================
+
+{:category :functions
+ :tests
+ [{:it "identity"               :eval "(identity 42)"}
+  {:it "identity nil"           :eval "(identity nil)"}
+  {:it "constantly"             :eval "((constantly 5) :any :args)"}
+  {:it "comp empty"             :eval "((comp) 5)"}
+  {:it "comp single"            :eval "((comp inc) 1)"}
+  {:it "comp double"            :eval "((comp inc inc) 1)"}
+  {:it "comp str+inc"           :eval "((comp str inc) 1)"}
+  {:it "comp three"             :eval "((comp first reverse) [1 2 3])"}
+  {:it "partial one"            :eval "((partial + 1) 2)"}
+  {:it "partial two"            :eval "((partial + 1 2) 3)"}
+  {:it "partial str"            :eval "((partial str \"hello \") \"world\")"}
+  {:it "complement"             :eval "((complement even?) 3)"}
+  {:it "complement false"       :eval "((complement even?) 4)"}
+  {:it "juxt pair"              :eval "((juxt inc dec) 5)"}
+  {:it "juxt triple"            :eval "((juxt first last count) [1 2 3])"}
+  {:it "apply +"                :eval "(apply + [1 2 3])"}
+  {:it "apply prefix"           :eval "(apply + 1 [2 3])"}
+  {:it "apply str"              :eval "(apply str [\"a\" \"b\" \"c\"])"}
+  {:it "apply vector"           :eval "(apply vector 1 2 [3 4])"}
+  {:it "fnil nil"               :eval "((fnil inc 0) nil)"}
+  {:it "fnil value"             :eval "((fnil inc 0) 5)"}
+  {:it "every-pred true"        :eval "((every-pred pos? even?) 2)"}
+  {:it "every-pred false"       :eval "((every-pred pos? even?) 3)"}
+  {:it "some-fn first"          :eval "((some-fn :a :b) {:a 1})"}
+  {:it "some-fn second"         :eval "((some-fn :a :b) {:b 2})"}
+  {:it "some-fn none"           :eval "((some-fn :a :b) {:c 3})"}
+  {:it "memoize"                :eval "(let [f (memoize +)] [(f 1 2) (f 1 2)])"}
+  {:it "fn? true"               :eval "(fn? inc)"}
+  {:it "fn? false"              :eval "(fn? 42)"}
+  {:it "ifn? keyword"           :eval "(ifn? :a)"}
+  {:it "ifn? map"               :eval "(ifn? {:a 1})"}
+  {:it "ifn? set"               :eval "(ifn? #{1 2})"}
+  {:it "ifn? vector"            :eval "(ifn? [1 2])"}]}
+
+
+;; =============================================================================
+;; 12. SPECIAL FORMS — language core
+;; =============================================================================
+
+{:category :special-forms
+ :tests
+ [;; def
+  {:it "def value"              :eval "(do (def parity-x 42) parity-x)"}
+  {:it "def nil"                :eval "(do (def parity-n nil) parity-n)"}
+
+  ;; let
+  {:it "let simple"             :eval "(let [x 1] x)"}
+  {:it "let multi"              :eval "(let [x 1 y 2] (+ x y))"}
+  {:it "let shadow"             :eval "(let [x 1] (let [x 2] x))"}
+  {:it "let sequential"         :eval "(let [x 1 y (inc x)] y)"}
+  {:it "let unused"             :eval "(let [x 1 y 2] x)"}
+
+  ;; if
+  {:it "if true"                :eval "(if true 1 2)"}
+  {:it "if false"               :eval "(if false 1 2)"}
+  {:it "if nil"                 :eval "(if nil 1 2)"}
+  {:it "if zero (truthy)"       :eval "(if 0 1 2)"}
+  {:it "if empty str (truthy)"  :eval "(if \"\" 1 2)"}
+  {:it "if no else"             :eval "(if false 1)"}
+
+  ;; do
+  {:it "do returns last"        :eval "(do 1 2 3)"}
+  {:it "do side effect"         :eval "(do (+ 1 2) (+ 3 4))"}
+
+  ;; fn
+  {:it "fn call"                :eval "((fn [x] x) 42)"}
+  {:it "fn multi arg"           :eval "((fn [a b] (+ a b)) 1 2)"}
+  {:it "fn no arg"              :eval "((fn [] 42))"}
+  {:it "fn closure"             :eval "(let [x 10] ((fn [y] (+ x y)) 5))"}
+  {:it "fn nested closure"      :eval "(let [x 1] ((fn [] ((fn [] x)))))"}
+  {:it "fn variadic"            :eval "((fn [& args] (count args)) 1 2 3)"}
+  {:it "fn variadic mixed"      :eval "((fn [a b & more] [a b (vec more)]) 1 2 3 4)"}
+
+  ;; loop/recur
+  {:it "loop simple"            :eval "(loop [x 0] (if (= x 5) x (recur (inc x))))"}
+  {:it "loop accumulate"        :eval "(loop [n 10 acc 0] (if (= n 0) acc (recur (dec n) (+ acc n))))"}
+  {:it "loop vec build"         :eval "(loop [i 0 v []] (if (= i 5) v (recur (inc i) (conj v i))))"}
+
+  ;; when / when-not
+  {:it "when true"              :eval "(when true :yes)"}
+  {:it "when false"             :eval "(when false :yes)"}
+  {:it "when-not true"          :eval "(when-not true :yes)"}
+  {:it "when-not false"         :eval "(when-not false :yes)"}
+
+  ;; cond
+  {:it "cond first"             :eval "(cond true 1 true 2)"}
+  {:it "cond second"            :eval "(cond false 1 true 2)"}
+  {:it "cond none"              :eval "(cond false 1 false 2)"}
+  {:it "cond :else"             :eval "(cond false 1 :else 2)"}
+
+  ;; case
+  {:it "case match"             :eval "(case 2 1 :one 2 :two 3 :three)"}
+  {:it "case default"           :eval "(case 5 1 :one 2 :two :other)"}
+  {:it "case keyword"           :eval "(case :b :a 1 :b 2 :c 3)"}
+
+  ;; condp
+  {:it "condp ="                :eval "(condp = 2 1 :one 2 :two 3 :three)"}
+  {:it "condp default"          :eval "(condp = 5 1 :one 2 :two :other)"}
+
+  ;; if-let / when-let
+  {:it "if-let some"            :eval "(if-let [x (first [1 2])] x :none)"}
+  {:it "if-let nil"             :eval "(if-let [x (first [])] x :none)"}
+  {:it "when-let some"          :eval "(when-let [x (first [1 2])] x)"}
+  {:it "when-let nil"           :eval "(when-let [x (first [])] x)"}
+
+  ;; if-some / when-some
+  {:it "if-some value"          :eval "(if-some [x (get {:a 1} :a)] x :none)"}
+  {:it "if-some nil"            :eval "(if-some [x (get {:a 1} :b)] x :none)"}
+  {:it "if-some false"          :eval "(if-some [x false] x :none)"}
+
+  ;; try/catch
+  {:it "try no error"           :eval "(try 42 (catch Exception e :error))"}
+  {:it "try with error"         :eval "(try (/ 1 0) (catch ArithmeticException e :caught))"}
+  {:it "try finally"            :eval "(let [a (atom 0)] (try (reset! a 1) (finally (reset! a 2))) @a)"}]}
+
+
+;; =============================================================================
+;; 13. DESTRUCTURING
+;; =============================================================================
+
+{:category :destructuring
+ :tests
+ [{:it "seq simple"             :eval "(let [[a b c] [1 2 3]] [a b c])"}
+  {:it "seq rest"               :eval "(let [[a & more] [1 2 3 4]] [a (vec more)])"}
+  {:it "seq nested"             :eval "(let [[a [b c]] [1 [2 3]]] [a b c])"}
+  {:it "seq as"                 :eval "(let [[a b :as all] [1 2 3]] [a b all])"}
+  {:it "map simple"             :eval "(let [{:keys [a b]} {:a 1 :b 2}] [a b])"}
+  {:it "map strs"               :eval "(let [{:strs [a b]} {\"a\" 1 \"b\" 2}] [a b])"}
+  {:it "map or"                 :eval "(let [{:keys [a b] :or {b 99}} {:a 1}] [a b])"}
+  {:it "map as"                 :eval "(let [{:keys [a] :as m} {:a 1 :b 2}] [a m])"}
+  {:it "map rename"             :eval "(let [{x :a y :b} {:a 1 :b 2}] [x y])"}
+  {:it "fn arg destructure"     :eval "((fn [[a b]] (+ a b)) [1 2])"}
+  {:it "fn map destructure"     :eval "((fn [{:keys [x y]}] (+ x y)) {:x 3 :y 4})"}
+  {:it "nested map+seq"         :eval "(let [{[a b] :pair} {:pair [1 2]}] [a b])"}
+  {:it "loop destructure"       :eval "(loop [[x & xs] [1 2 3] acc 0] (if x (recur xs (+ acc x)) acc))"}]}
+
+
+;; =============================================================================
+;; 14. ATOMS
+;; =============================================================================
+
+{:category :atoms
+ :tests
+ [{:it "create and deref"       :eval "(deref (atom 42))"}
+  {:it "@ syntax"               :eval "(let [a (atom 0)] @a)"}
+  {:it "reset!"                 :eval "(let [a (atom 1)] (reset! a 2) @a)"}
+  {:it "reset! returns new"     :eval "(let [a (atom 1)] (reset! a 99))"}
+  {:it "swap!"                  :eval "(let [a (atom 1)] (swap! a inc) @a)"}
+  {:it "swap! with args"        :eval "(let [a (atom 10)] (swap! a + 5 3) @a)"}
+  {:it "swap! returns new"      :eval "(let [a (atom 1)] (swap! a inc))"}
+  {:it "atom with map"          :eval "(let [a (atom {:count 0})] (swap! a update :count inc) @a)"}
+  {:it "atom with vector"       :eval "(let [a (atom [])] (swap! a conj 1) (swap! a conj 2) @a)"}
+  {:it "compare-and-set! true"  :eval "(let [a (atom 1)] (compare-and-set! a 1 2) @a)"}
+  {:it "compare-and-set! false" :eval "(let [a (atom 1)] (compare-and-set! a 99 2) @a)"}]}
+
+
+;; =============================================================================
+;; 15. BIT OPERATIONS
+;; =============================================================================
+
+{:category :bitops
+ :tests
+ [{:it "bit-and"                :eval "(bit-and 5 3)"}
+  {:it "bit-or"                 :eval "(bit-or 5 3)"}
+  {:it "bit-xor"                :eval "(bit-xor 5 3)"}
+  {:it "bit-not"                :eval "(bit-not 0)"}
+  {:it "bit-not 5"              :eval "(bit-not 5)"}
+  {:it "bit-shift-left"         :eval "(bit-shift-left 1 4)"}
+  {:it "bit-shift-right"        :eval "(bit-shift-right 16 4)"}
+  {:it "unsigned-bit-shift-right" :eval "(unsigned-bit-shift-right -1 1)"}
+  {:it "bit-test true"          :eval "(bit-test 4 2)"}
+  {:it "bit-test false"         :eval "(bit-test 4 0)"}
+  {:it "bit-set"                :eval "(bit-set 0 2)"}
+  {:it "bit-clear"              :eval "(bit-clear 7 1)"}
+  {:it "bit-flip on"            :eval "(bit-flip 0 2)"}
+  {:it "bit-flip off"           :eval "(bit-flip 7 2)"}
+  {:it "bit-and-not"            :eval "(bit-and-not 7 2)"}]
+ :parametric
+ [{:describe "bit-shift-left"
+   :params {:n   ["1" "255" "1024"]
+            :amt ["0" "1" "4" "8" "16"]}
+   :template "(bit-shift-left %n %amt)"}]}
+
+
+;; =============================================================================
+;; 16. THREADING MACROS
+;; =============================================================================
+
+{:category :threading
+ :tests
+ [{:it "-> simple"              :eval "(-> 1 inc inc)"}
+  {:it "-> with forms"          :eval "(-> 5 (+ 3) (* 2))"}
+  {:it "-> nested"              :eval "(-> {:a {:b 1}} :a :b)"}
+  {:it "-> string ops"          :eval "(-> \"hello\" clojure.string/upper-case (subs 0 3))"}
+  {:it "->> simple"             :eval "(->> [1 2 3] (map inc) vec)"}
+  {:it "->> filter map"         :eval "(->> (range 10) (filter even?) (map #(* % %)) vec)"}
+  {:it "->> into"               :eval "(->> [1 2 3] (map str) (into []))"}
+  {:it "as-> simple"            :eval "(as-> 0 v (inc v) (+ v 3))"}
+  {:it "as-> position"          :eval "(as-> [1 2 3] v (conj v 4) (count v))"}
+  {:it "some-> found"           :eval "(some-> {:a {:b 1}} :a :b)"}
+  {:it "some-> nil"             :eval "(some-> {:a {:b 1}} :x :b)"}
+  {:it "some->> found"          :eval "(some->> [1 2 3] (map inc) vec)"}
+  {:it "cond-> true"            :eval "(cond-> 1 true inc true inc)"}
+  {:it "cond-> partial"         :eval "(cond-> 1 true inc false (* 10))"}
+  {:it "cond->> true"           :eval "(cond->> [1 2 3] true (map inc) true vec)"}]}
+
+
+;; =============================================================================
+;; 17. BOOLEAN LOGIC
+;; =============================================================================
+
+{:category :boolean-logic
+ :tests
+ [{:it "and true true"          :eval "(and true true)"}
+  {:it "and true false"         :eval "(and true false)"}
+  {:it "and short-circuit"      :eval "(and nil (/ 1 0))"}
+  {:it "and returns last"       :eval "(and 1 2 3)"}
+  {:it "and returns falsy"      :eval "(and 1 nil 3)"}
+  {:it "or true"                :eval "(or nil false true)"}
+  {:it "or returns first"       :eval "(or nil false 42)"}
+  {:it "or short-circuit"       :eval "(or 1 (/ 1 0))"}
+  {:it "or all false"           :eval "(or nil false nil)"}
+  {:it "not true"               :eval "(not true)"}
+  {:it "not false"              :eval "(not false)"}
+  {:it "not nil"                :eval "(not nil)"}
+  {:it "not 0 (truthy)"         :eval "(not 0)"}
+  {:it "boolean true"           :eval "(boolean 42)"}
+  {:it "boolean false"          :eval "(boolean nil)"}
+  {:it "boolean false-false"    :eval "(boolean false)"}]
+ :parametric
+ [{:describe "truthiness"
+   :params {:val ["nil" "false" "true" "0" "1" "\"\"" "\"x\"" ":k" "[]" "[1]" "{}" "{:a 1}"]}
+   :template "(if %val :truthy :falsy)"}]}
+
+
+;; =============================================================================
+;; 18. METADATA
+;; =============================================================================
+
+{:category :metadata
+ :tests
+ [{:it "meta on var"            :eval "(:name (meta #'inc))"}
+  {:it "with-meta"              :eval "(meta (with-meta [1 2] {:tag :int}))"}
+  {:it "vary-meta"              :eval "(meta (vary-meta [1 2] assoc :x 1))"}
+  {:it "meta preserved"         :eval "(meta (conj (with-meta [1 2] {:t true}) 3))"}
+  {:it "meta on empty"          :eval "(meta (with-meta {} {:info true}))"}]}
+
+
+;; =============================================================================
+;; 19. REGEX
+;; =============================================================================
+
+{:category :regex
+ :tests
+ [{:it "re-find match"          :eval "(re-find #\"\\d+\" \"abc123def\")"}
+  {:it "re-find no match"       :eval "(re-find #\"\\d+\" \"abcdef\")"}
+  {:it "re-find groups"         :eval "(re-find #\"(\\d+)-(\\d+)\" \"12-34\")"}
+  {:it "re-matches full"        :eval "(re-matches #\"\\d+\" \"123\")"}
+  {:it "re-matches partial"     :eval "(re-matches #\"\\d+\" \"123abc\")"}
+  {:it "re-seq"                 :eval "(vec (re-seq #\"\\d+\" \"a1b2c3\"))"}]}
+
+
+;; =============================================================================
+;; 20. MULTI-ARITY & DISPATCH
+;; =============================================================================
+
+{:category :multi-arity
+ :tests
+ [{:it "multi-arity fn"         :eval "((fn ([x] x) ([x y] (+ x y))) 5)"}
+  {:it "multi-arity 2"          :eval "((fn ([x] x) ([x y] (+ x y))) 3 4)"}
+  {:it "defn multi-arity"       :eval "(do (defn parity-ma ([x] x) ([x y] (+ x y))) [(parity-ma 1) (parity-ma 1 2)])"}
+  {:it "multimethod"            :eval "(do (defmulti parity-greet :lang)
+                                           (defmethod parity-greet :en [_] \"hello\")
+                                           (defmethod parity-greet :fr [_] \"bonjour\")
+                                           [(parity-greet {:lang :en}) (parity-greet {:lang :fr})])"}]}
+
+
+;; =============================================================================
+;; 21. TRANSDUCERS
+;; =============================================================================
+
+{:category :transducers
+ :tests
+ [{:it "map xf"                 :eval "(into [] (map inc) [1 2 3])"}
+  {:it "filter xf"              :eval "(into [] (filter even?) [1 2 3 4 5])"}
+  {:it "comp xf"                :eval "(into [] (comp (map inc) (filter even?)) [1 2 3 4 5])"}
+  {:it "take xf"                :eval "(into [] (take 3) [1 2 3 4 5])"}
+  {:it "drop xf"                :eval "(into [] (drop 2) [1 2 3 4 5])"}
+  {:it "mapcat xf"              :eval "(into [] (mapcat reverse) [[1 2] [3 4]])"}
+  {:it "distinct xf"            :eval "(into [] (distinct) [1 2 1 3 2])"}
+  {:it "dedupe xf"              :eval "(into [] (dedupe) [1 1 2 2 3 1])"}
+  {:it "partition-all xf"       :eval "(into [] (partition-all 2) [1 2 3 4 5])"}
+  {:it "keep xf"                :eval "(into [] (keep #(when (even? %) (* % %))) [1 2 3 4 5])"}
+  {:it "transduce"              :eval "(transduce (map inc) + [1 2 3])"}
+  {:it "transduce init"         :eval "(transduce (map inc) + 10 [1 2 3])"}
+  {:it "sequence"               :eval "(vec (sequence (map inc) [1 2 3]))"}
+  {:it "eduction"               :eval "(vec (eduction (map inc) (filter even?) [1 2 3 4]))"}
+  {:it "comp three xf"          :eval "(into [] (comp (filter odd?) (map inc) (take 2)) (range 10))"}]}
+
+
+;; =============================================================================
+;; 22. LAZY SEQUENCES
+;; =============================================================================
+
+{:category :lazy-sequences
+ :tests
+ [{:it "lazy-seq basic"         :eval "(first (lazy-seq [1 2 3]))"}
+  {:it "lazy-seq realized"      :eval "(vec (take 5 (lazy-seq (iterate inc 0))))"}
+  {:it "realized? not"          :eval "(realized? (lazy-seq [1]))"}
+  {:it "doall forces"           :eval "(count (doall (map identity [1 2 3])))"}
+  {:it "dorun forces"           :eval "(let [a (atom 0)] (dorun (map (fn [_] (swap! a inc)) [1 2 3])) @a)"}
+  {:it "take from lazy"         :eval "(vec (take 3 (iterate inc 100)))"}
+  {:it "map is lazy"            :eval "(first (map inc (range)))"}
+  {:it "filter is lazy"         :eval "(first (filter even? (range)))"}]}
+
+
+;; =============================================================================
+;; 23. PROTOCOLS
+;; =============================================================================
+
+{:category :protocols
+ :tests
+ [{:it "defprotocol + defrecord"
+   :eval "(do (defprotocol ParityProto (parity-greet-p [this]))
+              (defrecord ParityRec [name]
+                ParityProto
+                (parity-greet-p [this] (str \"hello \" (:name this))))
+              (parity-greet-p (->ParityRec \"world\")))"}
+  {:it "extend-type"
+   :eval "(do (defprotocol ParityStringy (parity-stringify [this]))
+              (extend-type clojure.lang.PersistentVector
+                ParityStringy
+                (parity-stringify [this] (str \"vec:\" (count this))))
+              (parity-stringify [1 2 3]))"}
+  {:it "satisfies?"
+   :eval "(do (defprotocol ParityP2 (parity-p2-fn [this]))
+              (defrecord ParityR2 [] ParityP2 (parity-p2-fn [_] :ok))
+              (satisfies? ParityP2 (->ParityR2)))"}]}
+
+
+;; =============================================================================
+;; 24. MACROS
+;; =============================================================================
+
+{:category :macros
+ :tests
+ [{:it "defmacro simple"
+   :eval "(do (defmacro parity-unless [test then] (list 'if (list 'not test) then))
+              (parity-unless false :ok))"}
+  {:it "syntax-quote"
+   :eval "(do (defmacro parity-when2 [test & body] `(if ~test (do ~@body)))
+              (parity-when2 true 1 2 3))"}
+  {:it "gensym"
+   :eval "(do (defmacro parity-swap [a b]
+                (let [tmp (gensym \"tmp\")]
+                  `(let [~tmp ~a] (do (def ~a ~b) (def ~b ~tmp)))))
+              (def parity-aa 1) (def parity-bb 2)
+              (parity-swap parity-aa parity-bb)
+              [parity-aa parity-bb])"}
+  {:it "macroexpand-1"
+   :eval "(macroexpand-1 '(when true 1 2))"}]}
+
+
+;; =============================================================================
+;; 25. STRESS / BEHAVIORAL
+;; =============================================================================
+
+{:category :stress
+ :tests
+ [{:it "deep recursion"
+   :eval "(loop [n 100000 acc 0] (if (= n 0) acc (recur (dec n) (+ acc n))))"}
+  {:it "large vector"
+   :eval "(count (vec (range 10000)))"}
+  {:it "large map"
+   :eval "(count (into {} (map (fn [i] [i i]) (range 1000))))"}
+  {:it "nested closures"
+   :eval "(let [f (fn [x] (fn [y] (fn [z] (+ x y z))))] (((f 1) 2) 3))"}
+  {:it "many conj"
+   :eval "(count (reduce conj [] (range 10000)))"}
+  {:it "many assoc"
+   :eval "(count (reduce (fn [m i] (assoc m i i)) {} (range 1000)))"}
+  {:it "map over large"
+   :eval "(last (mapv inc (range 10000)))"}
+  {:it "reduce large"
+   :eval "(reduce + (range 10001))"}
+  {:it "nested vectors"
+   :eval "(get-in (reduce (fn [v _] [v]) :leaf (range 10)) (repeat 10 0))"}
+  {:it "sort large"
+   :eval "(first (sort (reverse (range 1000))))"}]}
+
+
+;; =============================================================================
+;; 26. SORTED COLLECTIONS
+;; =============================================================================
+
+{:category :sorted-collections
+ :tests
+ [{:it "sorted-map"              :eval "(sorted-map :c 3 :a 1 :b 2)"}
+  {:it "sorted-map-by"           :eval "(sorted-map-by > 1 :a 2 :b 3 :c)"}
+  {:it "sorted-set"              :eval "(sorted-set 3 1 2)"}
+  {:it "sorted-set-by"           :eval "(vec (sorted-set-by > 3 1 2))"}
+  {:it "subseq >"                :eval "(vec (subseq (sorted-set 1 2 3 4 5) > 2))"}
+  {:it "subseq >= <="            :eval "(vec (subseq (sorted-set 1 2 3 4 5) >= 2 <= 4))"}
+  {:it "rsubseq"                 :eval "(vec (rsubseq (sorted-set 1 2 3 4 5) > 2))"}
+  {:it "sorted-map keys order"   :eval "(vec (keys (sorted-map :c 3 :a 1 :b 2)))"}
+  {:it "into sorted-map"         :eval "(into (sorted-map) {:c 3 :a 1 :b 2})"}
+  {:it "conj sorted-set"         :eval "(conj (sorted-set 1 3) 2)"}
+  {:it "disj sorted-set"         :eval "(disj (sorted-set 1 2 3) 2)"}
+  {:it "sorted? true"            :eval "(sorted? (sorted-map))"}
+  {:it "sorted? false"           :eval "(sorted? {})"}]}
+
+
+;; =============================================================================
+;; 27. TRANSIENTS
+;; =============================================================================
+
+{:category :transients
+ :tests
+ [{:it "transient vector"        :eval "(persistent! (conj! (transient [1 2]) 3))"}
+  {:it "transient map"           :eval "(persistent! (assoc! (transient {:a 1}) :b 2))"}
+  {:it "transient set"           :eval "(persistent! (conj! (transient #{1 2}) 3))"}
+  {:it "dissoc! map"             :eval "(persistent! (dissoc! (transient {:a 1 :b 2}) :a))"}
+  {:it "disj! set"               :eval "(persistent! (disj! (transient #{1 2 3}) 2))"}
+  {:it "pop! vector"             :eval "(persistent! (pop! (transient [1 2 3])))"}
+  {:it "count transient"         :eval "(count (transient [1 2 3]))"}
+  {:it "chain operations"        :eval "(persistent! (-> (transient []) (conj! 1) (conj! 2) (conj! 3)))"}
+  {:it "build large"             :eval "(count (persistent! (reduce conj! (transient []) (range 1000))))"}]}
+
+
+;; =============================================================================
+;; 28. VOLATILES
+;; =============================================================================
+
+{:category :volatiles
+ :tests
+ [{:it "volatile! and deref"     :eval "@(volatile! 42)"}
+  {:it "vreset!"                 :eval "(let [v (volatile! 0)] (vreset! v 99) @v)"}
+  {:it "vswap!"                  :eval "(let [v (volatile! 0)] (vswap! v inc) @v)"}
+  {:it "vswap! with args"        :eval "(let [v (volatile! 10)] (vswap! v + 5) @v)"}
+  {:it "volatile? true"          :eval "(volatile? (volatile! 0))"}
+  {:it "volatile? false"         :eval "(volatile? (atom 0))"}]}
+
+
+;; =============================================================================
+;; 29. CONCURRENCY
+;; =============================================================================
+
+{:category :concurrency
+ :tests
+ [;; futures
+  {:it "future deref"            :eval "@(future 42)"}
+  {:it "future computation"      :eval "@(future (+ 1 2 3))"}
+  {:it "future realized?"        :eval "(let [f (future 1)] @f (realized? f))"}
+  {:it "deref with timeout"      :eval "(deref (future (Thread/sleep 10) 42) 5000 :timeout)"}
+
+  ;; promises
+  {:it "promise deliver"         :eval "(let [p (promise)] (deliver p 42) @p)"}
+  {:it "promise realized"        :eval "(let [p (promise)] (deliver p 1) (realized? p))"}
+  {:it "promise not realized"    :eval "(realized? (promise))"}
+
+  ;; agents
+  {:it "agent deref"             :eval "@(agent 42)"}
+  {:it "agent send"              :eval "(let [a (agent 0)] (send a inc) (await a) @a)"}
+  {:it "agent send-off"          :eval "(let [a (agent 0)] (send-off a inc) (await a) @a)"}
+  {:it "agent error"             :eval "(let [a (agent 0 :error-mode :continue)] (send a inc) (await a) @a)"}
+
+  ;; refs / STM
+  {:it "ref deref"               :eval "@(ref 42)"}
+  {:it "dosync alter"            :eval "(let [r (ref 0)] (dosync (alter r inc)) @r)"}
+  {:it "dosync commute"          :eval "(let [r (ref 0)] (dosync (commute r + 5)) @r)"}
+  {:it "dosync ref-set"          :eval "(let [r (ref 0)] (dosync (ref-set r 99)) @r)"}
+  {:it "dosync multi-ref"        :eval "(let [a (ref 100) b (ref 0)] (dosync (alter a - 30) (alter b + 30)) [@a @b])"}
+  {:it "ensure"                  :eval "(let [r (ref 1)] (dosync (ensure r) @r))"}
+
+  ;; pmap
+  {:it "pmap"                    :eval "(vec (pmap inc [1 2 3 4]))"}
+
+  ;; locking
+  {:it "locking"                 :eval "(let [o (Object.)] (locking o 42))"}]}
+
+
+;; =============================================================================
+;; 30. DYNAMIC VARS
+;; =============================================================================
+
+{:category :dynamic-vars
+ :tests
+ [{:it "def dynamic"             :eval "(do (def ^:dynamic *parity-dv* 10) *parity-dv*)"}
+  {:it "binding"                 :eval "(do (def ^:dynamic *parity-dv2* 1) (binding [*parity-dv2* 99] *parity-dv2*))"}
+  {:it "binding restores"        :eval "(do (def ^:dynamic *parity-dv3* 1) (binding [*parity-dv3* 99] nil) *parity-dv3*)"}
+  {:it "binding nested"          :eval "(do (def ^:dynamic *parity-dv4* 0)
+                                            (binding [*parity-dv4* 1]
+                                              (binding [*parity-dv4* 2] *parity-dv4*)))"}
+  {:it "with-redefs"             :eval "(with-redefs [inc dec] (inc 5))"}
+  {:it "alter-var-root"          :eval "(do (def parity-avr 1) (alter-var-root #'parity-avr inc) parity-avr)"}
+  {:it "bound?"                  :eval "(do (def ^:dynamic *parity-bnd* 1) (bound? #'*parity-bnd*))"}
+  {:it "var-get"                 :eval "(do (def parity-vg 42) (var-get #'parity-vg))"}
+  {:it "thread-bound?"           :eval "(do (def ^:dynamic *parity-tb* 1)
+                                            (binding [*parity-tb* 2] (thread-bound? #'*parity-tb*)))"}]}
+
+
+;; =============================================================================
+;; 31. ERROR HANDLING
+;; =============================================================================
+
+{:category :error-handling
+ :tests
+ [{:it "ex-info"                 :eval "(ex-message (ex-info \"boom\" {:code 42}))"}
+  {:it "ex-data"                 :eval "(ex-data (ex-info \"boom\" {:code 42}))"}
+  {:it "ex-message"              :eval "(ex-message (Exception. \"oops\"))"}
+  {:it "ex-cause"                :eval "(ex-message (ex-cause (ex-info \"outer\" {} (Exception. \"inner\"))))"}
+  {:it "throw catch ex-info"     :eval "(try (throw (ex-info \"err\" {:x 1})) (catch clojure.lang.ExceptionInfo e (ex-data e)))"}
+  {:it "catch Exception"         :eval "(try (/ 1 0) (catch Exception e (.getSimpleName (class e))))"}
+  {:it "catch specific"          :eval "(try (/ 1 0) (catch ArithmeticException e \"caught\"))"}
+  {:it "finally runs"            :eval "(let [a (atom 0)] (try 1 (finally (reset! a 1))) @a)"}
+  {:it "multiple catch"          :eval "(try (throw (ex-info \"x\" {}))
+                                             (catch ArithmeticException e :arith)
+                                             (catch clojure.lang.ExceptionInfo e :info)
+                                             (catch Exception e :generic))"}
+  {:it "nested try"              :eval "(try (try (/ 1 0) (catch ArithmeticException e :inner)) (catch Exception e :outer))"}]}
+
+
+;; =============================================================================
+;; 32. COERCION
+;; =============================================================================
+
+{:category :coercion
+ :tests
+ [{:it "int"                     :eval "(int 3.14)"}
+  {:it "long"                    :eval "(long 3.14)"}
+  {:it "float"                   :eval "(float 1)"}
+  {:it "double"                  :eval "(double 1)"}
+  {:it "short"                   :eval "(short 42)"}
+  {:it "byte"                    :eval "(byte 42)"}
+  {:it "char from int"           :eval "(char 65)"}
+  {:it "int from char"           :eval "(int \\A)"}
+  {:it "boolean truthy"          :eval "(boolean 42)"}
+  {:it "boolean falsy"           :eval "(boolean nil)"}
+  {:it "boolean false"           :eval "(boolean false)"}
+  {:it "num"                     :eval "(num 42)"}
+  {:it "bigint"                  :eval "(bigint 42)"}
+  {:it "bigdec"                  :eval "(bigdec 3.14)"}
+  {:it "biginteger"              :eval "(biginteger 1000000)"}
+  {:it "rationalize"             :eval "(rationalize 0.5)"}]
+ :parametric
+ [{:describe "int coercion"
+   :params {:f   ["int" "long" "float" "double"]
+            :val ["0" "1" "-1" "42" "3.14" "-2.5"]}
+   :template "(%f %val)"}]}
+
+
+;; =============================================================================
+;; 33. PRINTING / STRING REPR
+;; =============================================================================
+
+{:category :printing
+ :tests
+ [{:it "pr-str nil"              :eval "(pr-str nil)"}
+  {:it "pr-str int"              :eval "(pr-str 42)"}
+  {:it "pr-str string"           :eval "(pr-str \"hello\")"}
+  {:it "pr-str keyword"          :eval "(pr-str :foo)"}
+  {:it "pr-str vector"           :eval "(pr-str [1 2 3])"}
+  {:it "pr-str map"              :eval "(pr-str (sorted-map :a 1 :b 2))"}
+  {:it "pr-str set"              :eval "(pr-str (sorted-set 1 2 3))"}
+  {:it "pr-str list"             :eval "(pr-str '(1 2 3))"}
+  {:it "pr-str nested"           :eval "(pr-str {:a [1 2] :b #{3}})"}
+  {:it "prn-str"                 :eval "(prn-str 42)"}
+  {:it "print-str"               :eval "(print-str \"hello\")"}
+  {:it "println-str"             :eval "(println-str \"hello\")"}
+  {:it "format"                  :eval "(format \"%s is %d\" \"age\" 42)"}
+  {:it "format float"            :eval "(format \"%.2f\" 3.14159)"}
+  {:it "with-out-str"            :eval "(with-out-str (print \"hello\"))"}
+  {:it "with-out-str println"    :eval "(clojure.string/trim (with-out-str (println \"hi\")))"}]
+ :parametric
+ [{:describe "pr-str roundtrip"
+   :params {:val ["nil" "true" "false" "42" "-1" "3.14"
+                  "\"hello\"" ":foo" ":a/b" "'sym"
+                  "[]" "[1 2 3]" "{}" "'(1 2)"]}
+   :template "(= %val (read-string (pr-str %val)))"}]}
+
+
+;; =============================================================================
+;; 34. DELAYS
+;; =============================================================================
+
+{:category :delays
+ :tests
+ [{:it "delay deref"             :eval "@(delay 42)"}
+  {:it "delay computation"       :eval "@(delay (+ 1 2 3))"}
+  {:it "delay? true"             :eval "(delay? (delay 1))"}
+  {:it "delay? false"            :eval "(delay? 1)"}
+  {:it "force"                   :eval "(force (delay 42))"}
+  {:it "force non-delay"         :eval "(force 42)"}
+  {:it "realized? before"        :eval "(realized? (delay 1))"}
+  {:it "realized? after"         :eval "(let [d (delay 1)] @d (realized? d))"}
+  {:it "delay memoizes"          :eval "(let [a (atom 0) d (delay (swap! a inc))] [@d @d @a])"}]}
+
+
+;; =============================================================================
+;; 35. HIERARCHIES
+;; =============================================================================
+
+{:category :hierarchies
+ :tests
+ [{:it "derive/isa?"             :eval "(do (derive ::parity-child ::parity-parent) (isa? ::parity-child ::parity-parent))"}
+  {:it "isa? self"               :eval "(isa? ::anything ::anything)"}
+  {:it "isa? class"              :eval "(isa? Long Number)"}
+  {:it "isa? vector"             :eval "(isa? [::parity-child :x] [::parity-parent :x])"}
+  {:it "parents"                 :eval "(do (derive ::parity-c2 ::parity-p2) (contains? (parents ::parity-c2) ::parity-p2))"}
+  {:it "ancestors"               :eval "(do (derive ::parity-g ::parity-gp) (derive ::parity-gc ::parity-g) (contains? (ancestors ::parity-gc) ::parity-gp))"}
+  {:it "descendants"             :eval "(do (derive ::parity-d ::parity-dp) (contains? (descendants ::parity-dp) ::parity-d))"}
+  {:it "make-hierarchy"          :eval "(let [h (make-hierarchy)
+                                              h (derive h :child :parent)]
+                                          (isa? h :child :parent))"}
+  {:it "prefer-method"           :eval "(do (defmulti parity-pm identity)
+                                            (defmethod parity-pm :default [_] :default)
+                                            (parity-pm :anything))"}]}
+
+
+;; =============================================================================
+;; 36. NAMESPACES
+;; =============================================================================
+
+{:category :namespaces
+ :tests
+ [{:it "find-ns"                 :eval "(some? (find-ns 'clojure.core))"}
+  {:it "the-ns"                  :eval "(some? (the-ns 'clojure.core))"}
+  {:it "ns-name"                 :eval "(ns-name (the-ns 'clojure.core))"}
+  {:it "ns-publics has inc"      :eval "(contains? (ns-publics 'clojure.core) 'inc)"}
+  {:it "ns-resolve"              :eval "(some? (ns-resolve 'clojure.core 'inc))"}
+  {:it "resolve"                 :eval "(some? (resolve 'inc))"}
+  {:it "all-ns count"            :eval "(> (count (all-ns)) 0)"}
+  {:it "ns-aliases"              :eval "(map? (ns-aliases *ns*))"}
+  {:it "create-ns"               :eval "(some? (create-ns 'parity.test.ns))"}]}
+
+
+;; =============================================================================
+;; 37. TYPE SYSTEM
+;; =============================================================================
+
+{:category :type-system
+ :tests
+ [{:it "type int"                :eval "(type 42)"}
+  {:it "type string"             :eval "(type \"hello\")"}
+  {:it "type keyword"            :eval "(type :foo)"}
+  {:it "type vector"             :eval "(type [1 2])"}
+  {:it "type map"                :eval "(type {:a 1})"}
+  {:it "type set"                :eval "(type #{1})"}
+  {:it "type list"               :eval "(type '(1 2))"}
+  {:it "type nil"                :eval "(type nil)"}
+  {:it "type fn"                 :eval "(fn? (type inc))"}
+  {:it "class int"               :eval "(class 42)"}
+  {:it "instance? true"          :eval "(instance? String \"hello\")"}
+  {:it "instance? false"         :eval "(instance? String 42)"}
+  {:it "instance? Number"        :eval "(instance? Number 42)"}
+  {:it "supers"                  :eval "(contains? (supers Long) Number)"}
+  {:it "bases"                   :eval "(some? (bases Long))"}]
+ :parametric
+ [{:describe "type of value"
+   :params {:val ["nil" "true" "42" "3.14" "\"s\"" ":k" "[]" "{}" "'()" "#{}"]}
+   :template "(str (type %val))"}]}
+
+
+;; =============================================================================
+;; 38. RECORDS & TYPES
+;; =============================================================================
+
+{:category :records-types
+ :tests
+ [{:it "defrecord create"        :eval "(do (defrecord ParityPt [x y]) (:x (->ParityPt 1 2)))"}
+  {:it "defrecord map->record"   :eval "(do (defrecord ParityPt2 [x y]) (:y (map->ParityPt2 {:x 1 :y 2})))"}
+  {:it "record as map"           :eval "(do (defrecord ParityR3 [a b]) (keys (->ParityR3 1 2)))"}
+  {:it "record assoc"            :eval "(do (defrecord ParityR4 [a]) (:a (assoc (->ParityR4 1) :a 99)))"}
+  {:it "record = map false"      :eval "(do (defrecord ParityR5 [a]) (= (->ParityR5 1) {:a 1}))"}
+  {:it "record = record"         :eval "(do (defrecord ParityR6 [a]) (= (->ParityR6 1) (->ParityR6 1)))"}
+  {:it "deftype"                 :eval "(do (deftype ParityT [x]
+                                              clojure.lang.IDeref
+                                              (deref [_] x))
+                                            @(ParityT. 42))"}
+  {:it "reify"                   :eval "(let [o (reify clojure.lang.IDeref (deref [_] 99))] @o)"}]}
+
+
+;; =============================================================================
+;; 39. ATOM WATCHES & VALIDATORS
+;; =============================================================================
+
+{:category :watches-validators
+ :tests
+ [{:it "add-watch"               :eval "(let [a (atom 0) log (atom [])]
+                                          (add-watch a :w (fn [k r o n] (swap! log conj [o n])))
+                                          (reset! a 1) (reset! a 2)
+                                          @log)"}
+  {:it "remove-watch"            :eval "(let [a (atom 0) log (atom [])]
+                                          (add-watch a :w (fn [k r o n] (swap! log conj n)))
+                                          (reset! a 1)
+                                          (remove-watch a :w)
+                                          (reset! a 2)
+                                          @log)"}
+  {:it "validator pass"          :eval "(let [a (atom 0 :validator pos?)] (reset! a 5) @a)"}
+  {:it "validator fail"          :eval "(try (let [a (atom 1 :validator pos?)] (reset! a -1))
+                                             (catch IllegalStateException e :caught))"}
+  {:it "set-validator!"          :eval "(let [a (atom 0)] (set-validator! a number?) (reset! a 42) @a)"}]}
+
+
+;; =============================================================================
+;; 40. ARRAYS (host-adjacent)
+;; =============================================================================
+
+{:category :arrays
+ :tests
+ [{:it "make-array"              :eval "(alength (make-array Object 5))"}
+  {:it "int-array"               :eval "(vec (int-array [1 2 3]))"}
+  {:it "long-array"              :eval "(vec (long-array [1 2 3]))"}
+  {:it "object-array"            :eval "(vec (object-array [1 :a \"b\"]))"}
+  {:it "aset/aget"               :eval "(let [a (int-array 3)] (aset a 0 42) (aget a 0))"}
+  {:it "alength"                 :eval "(alength (int-array 10))"}
+  {:it "into-array"              :eval "(vec (into-array [1 2 3]))"}
+  {:it "to-array"                :eval "(alength (to-array [1 2 3]))"}
+  {:it "amap"                    :eval "(vec (amap (int-array [1 2 3]) i ret (aset ret i (* (aget ret i) 2))))"}
+  {:it "areduce"                 :eval "(areduce (int-array [1 2 3]) i acc 0 (+ acc (aget (int-array [1 2 3]) i)))"}]}
+
+]

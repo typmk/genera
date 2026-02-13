@@ -16,14 +16,9 @@
  * Build: gcc -O3 -march=native -nostdlib -static -o proto_macro test/proto_macro.c
  */
 
-#include "../src/c/sys.c"
-
-// We'll build a self-contained version here to show the patterns cleanly.
-// In practice these macros would be in base.c.
-
-// Pull in just what we need from base.c for comparison
-#include "../src/c/base.c"
-#include "../src/c/read.c"
+// Pull in runtime (sys → std → rt) + reader
+#include "../rt/rt.c"
+#include "../lang/read.c"
 
 // ============================================================================
 // 1. X-MACRO PROTOCOL SPEC

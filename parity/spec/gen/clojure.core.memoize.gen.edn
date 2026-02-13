@@ -1,0 +1,82 @@
+[
+{:category :clojure.core.memoize.functions,
+ :parametric
+ [{:describe "build-memoizer",
+   :params
+   {:cache-factory ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/build-memoizer %cache-factory %f)"}
+  {:describe "fifo",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/fifo %f)"}
+  {:describe "lazy-snapshot",
+   :params
+   {:memoized-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.memoize/lazy-snapshot %memoized-fn)"}
+  {:describe "lru",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/lru %f)"}
+  {:describe "lu",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/lu %f)"}
+  {:describe "memo",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo %f)"}
+  {:describe "memo-clear!",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-clear! %f)"}
+  {:describe "memo-fifo",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-fifo %f)"}
+  {:describe "memo-lru",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-lru %f)"}
+  {:describe "memo-lu",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-lu %f)"}
+  {:describe "memo-reset!",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :base ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.memoize/memo-reset! %f %base)"}
+  {:describe "memo-swap!",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :base ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.memoize/memo-swap! %f %base)"}
+  {:describe "memo-ttl",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-ttl %f)"}
+  {:describe "memo-unwrap",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/memo-unwrap %f)"}
+  {:describe "memoized?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.memoize/memoized? %val)"}
+  {:describe "memoizer",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :cache ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.memoize/memoizer %f %cache)"}
+  {:describe "snapshot",
+   :params
+   {:memoized-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.memoize/snapshot %memoized-fn)"}
+  {:describe "ttl",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.memoize/ttl %f)"}]}
+]

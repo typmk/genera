@@ -1,0 +1,22 @@
+[
+{:category :clojure.instant.functions,
+ :parametric
+ [{:describe "parse-timestamp",
+   :params
+   {:new-instant ["nil" "true" "0" "1" "-1"],
+    :cs ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.instant/parse-timestamp %new-instant %cs)"}
+  {:describe "read-instant-calendar",
+   :params {:cs ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.instant/read-instant-calendar %cs)"}
+  {:describe "read-instant-date",
+   :params {:cs ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.instant/read-instant-date %cs)"}
+  {:describe "read-instant-timestamp",
+   :params {:cs ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.instant/read-instant-timestamp %cs)"}
+  {:describe "validated",
+   :params
+   {:new-instance ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.instant/validated %new-instance)"}]}
+]

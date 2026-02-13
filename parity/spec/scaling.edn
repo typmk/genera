@@ -1,0 +1,31 @@
+[{:category :scaling
+  :tests
+  [{:it "vector-nth-O1"
+    :eval "(let [v (vec (range 100000))] (nth v (quot (count v) 2)))"
+    :scaling true
+    :sizes [100 1000 10000 100000]
+    :expected-complexity :O1}
+
+   {:it "vector-conj-O1"
+    :eval "(let [v (vec (range 100000))] (conj v :x))"
+    :scaling true
+    :sizes [1000 10000 100000 1000000]
+    :expected-complexity :O1}
+
+   {:it "map-get-O1"
+    :eval "(let [m (into {} (map (fn [i] [i i]) (range 100000)))] (get m (quot (count m) 2)))"
+    :scaling true
+    :sizes [100 1000 10000 100000]
+    :expected-complexity :O1}
+
+   {:it "map-assoc-O1"
+    :eval "(let [m (into {} (map (fn [i] [i i]) (range 100000)))] (assoc m :new :value))"
+    :scaling true
+    :sizes [100 1000 10000 100000]
+    :expected-complexity :O1}
+
+   {:it "set-contains-O1"
+    :eval "(let [s (set (range 100000))] (contains? s (quot (count s) 2)))"
+    :scaling true
+    :sizes [100 1000 10000 100000]
+    :expected-complexity :O1}]}]

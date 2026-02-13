@@ -132,9 +132,19 @@ static void cmd_eval(Str args) {
     if (!args.len) { pf("  usage: eval <expr>\n"); return; }
     char buf[4096];
     ARGS_STR(args, buf, 4096);
-    Val form = gram_read(buf);
+    obs_reset();
+    tap_on();
+    // Eval all forms (not just first)
+    Gram *g = world_step(buf, true);
     g_signal = SIGNAL_NONE; g_depth = 0;
-    Val result = eval(form, g_global_env);
+    Val result = NIL;
+    u32 c = g->nodes[0].child;
+    while (c) {
+        result = eval_node(g, c, g_global_env);
+        if (g_signal) break;
+        c = g->nodes[c].next;
+    }
+    tap_off();
     if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); return; }
     buf_s(&g_print_buf, "  ");
     pp_val(result);
@@ -193,6 +203,99 @@ static void cmd_analyze(Str args) {
 }
 
 // ============================================================================
+// Obs Command — query existing observation data
+// ============================================================================
+
+static void cmd_obs(Str args) {
+    if (!g_obs_total) { pf("  no observations (eval something first)\n"); return; }
+
+    // obs <name> — focus on one name
+    if (args.len) {
+        StrId id = str_intern(args);
+        if (!obs_hit(id)) { pf("  '%.*s' not dispatched\n", args.len, args.data); return; }
+        Str name = str_from_id(id);
+        u32 cnt = g_obs_count[id];
+        bool sp = sig_get(id) != NULL;
+
+        pf("  ");
+        pfc(sp ? C_CYAN : C_YELLOW);
+        for (u32 j = 0; j < name.len; j++) buf_c(&g_print_buf, name.data[j]);
+        pfc(C_RESET);
+        pf("\n");
+
+        // Count + percentage
+        pf("  calls    %u", cnt);
+        if (g_obs_total) pf("  (");
+        u32 p10 = g_obs_total ? (u32)((u64)cnt * 1000 / g_obs_total) : 0;
+        pf("%u.%u%%)", p10 / 10, p10 % 10);
+        pf("\n");
+
+        // Self-time (if tier 2 was active)
+        if (g_obs_ns[id]) {
+            pf("  self     ");
+            buf_elapsed(&g_print_buf, obs_ticks_to_ns(g_obs_ns[id]));
+            pf("  (~");
+            buf_elapsed(&g_print_buf, cnt > 0 ? obs_ticks_to_ns(g_obs_ns[id]) / cnt : 0);
+            pf("/call)\n");
+        }
+
+        // Allocations
+        if (g_obs_alloc[id]) {
+            pf("  alloc    ");
+            buf_bytes(&g_print_buf, g_obs_alloc[id]);
+            if (cnt > 0) { pf("  (~"); buf_u(&g_print_buf, (u32)(g_obs_alloc[id] / cnt)); pf(" B/call)"); }
+            pf("\n");
+        }
+
+        // Recent trace entries (last 10 matching from ring buffer)
+        u32 n = trace_count(), shown = 0;
+        for (u32 i = 0; i < n && shown < 10; i++) {
+            u32 idx = (g_trace_pos - 1 - i) & TRACE_MASK;
+            TraceEv *e = &g_trace[idx];
+            if (e->name == id) {
+                pf("  [%u] depth=%u kind=", g_trace_total - i, e->depth);
+                Str k = str_from_id(e->kind);
+                for (u32 j = 0; j < k.len; j++) buf_c(&g_print_buf, k.data[j]);
+                pf("\n");
+                shown++;
+            }
+        }
+        print_flush();
+        return;
+    }
+
+    // obs (no args) — compact summary of current state
+    u32 hits[256];
+    u32 nh = obs_collect(hits, 256);
+    u32 max_c = nh ? g_obs_count[hits[0]] : 1;
+    pf("  %u ops, %u names\n", g_obs_total, nh);
+    for (u32 i = 0; i < nh && i < 15; i++) {
+        StrId id = hits[i]; Str name = str_from_id(id);
+        u32 cnt = g_obs_count[id];
+        buf_s(&g_print_buf, "  ");
+        buf_rjust_i(&g_print_buf, cnt, 8);
+        buf_s(&g_print_buf, "  ");
+        for (u32 j = 0; j < name.len; j++) buf_c(&g_print_buf, name.data[j]);
+        // Self-time if available
+        if (g_obs_ns[id]) {
+            pfc(C_DIM);
+            buf_s(&g_print_buf, "  ");
+            buf_elapsed(&g_print_buf, obs_ticks_to_ns(g_obs_ns[id]));
+            pfc(C_RESET);
+        }
+        // Allocs if any
+        if (g_obs_alloc[id]) {
+            pfc(C_DIM);
+            buf_s(&g_print_buf, "  ");
+            buf_bytes(&g_print_buf, g_obs_alloc[id]);
+            pfc(C_RESET);
+        }
+        pf("\n");
+    }
+    print_flush();
+}
+
+// ============================================================================
 // Register All REPL Commands
 // ============================================================================
 
@@ -211,8 +314,9 @@ static void glass_repl_init(void) {
     cmd_register("emit",   cmd_emit,    "emit C source <source>");
     cmd_register("reval",  cmd_reval,   "compile via gcc + run <source>");
 
-    // Analysis
+    // Analysis + Observation
     cmd_register("analyze", cmd_analyze, "analyze source (views)");
+    cmd_register("obs",     cmd_obs,     "observation data [name]");
 
     // Default language
     lang_lisp(&g_lang);

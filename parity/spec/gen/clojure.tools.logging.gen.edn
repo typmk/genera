@@ -1,0 +1,97 @@
+[
+{:category :clojure.tools.logging.functions,
+ :tests
+ [{:it "log-uncapture!",
+   :eval "(clojure.tools.logging/log-uncapture!)"}],
+ :parametric
+ [{:describe "debug",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/debug %message)"}
+  {:describe "debugf",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/debugf %fmt)"}
+  {:describe "enabled?",
+   :params
+   {:level ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/enabled? %level)"}
+  {:describe "error",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/error %message)"}
+  {:describe "errorf",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/errorf %fmt)"}
+  {:describe "fatal",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/fatal %message)"}
+  {:describe "fatalf",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/fatalf %fmt)"}
+  {:describe "info",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/info %message)"}
+  {:describe "infof",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/infof %fmt)"}
+  {:describe "log",
+   :params
+   {:level ["nil" "true" "0" "1" "-1"],
+    :message ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.logging/log %level %message)"}
+  {:describe "log*",
+   :params
+   {:logger ["nil" "true"],
+    :level ["nil" "true"],
+    :throwable ["nil" "true"],
+    :message ["nil" "true"]},
+   :template
+   "(clojure.tools.logging/log* %logger %level %throwable %message)"}
+  {:describe "log-capture!",
+   :params
+   {:logger-ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/log-capture! %logger-ns)"}
+  {:describe "log-stream",
+   :params
+   {:level ["nil" "true" "0" "1" "-1"],
+    :logger-ns ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.logging/log-stream %level %logger-ns)"}
+  {:describe "logf",
+   :params
+   {:level ["nil" "true" "0" "1" "-1"],
+    :fmt ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.logging/logf %level %fmt)"}
+  {:describe "logp",
+   :params
+   {:level ["nil" "true" "0" "1" "-1"],
+    :message ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.logging/logp %level %message)"}
+  {:describe "spy",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/spy %expr)"}
+  {:describe "spyf",
+   :params
+   {:fmt ["nil" "true" "0" "1" "-1"],
+    :expr ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.logging/spyf %fmt %expr)"}
+  {:describe "trace",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/trace %message)"}
+  {:describe "tracef",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/tracef %fmt)"}
+  {:describe "warn",
+   :params
+   {:message ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/warn %message)"}
+  {:describe "warnf",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/warnf %fmt)"}
+  {:describe "with-logs",
+   :params
+   {:logger-ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.logging/with-logs %logger-ns)"}]}
+]

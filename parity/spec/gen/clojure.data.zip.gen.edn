@@ -1,0 +1,83 @@
+[
+{:category :clojure.data.zip.functions,
+ :parametric
+ [{:describe "ancestors",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/ancestors %loc)"}
+  {:describe "auto",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.zip/auto %v %x)"}
+  {:describe "auto?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.data.zip/auto? %val)"}
+  {:describe "children",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/children %loc)"}
+  {:describe "children-auto",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/children-auto %loc)"}
+  {:describe "descendants",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/descendants %loc)"}
+  {:describe "left-locs",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/left-locs %loc)"}
+  {:describe "leftmost?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.data.zip/leftmost? %val)"}
+  {:describe "mapcat-chain",
+   :params
+   {:loc ["nil" "true" "0"],
+    :preds ["nil" "true" "0"],
+    :mkpred ["nil" "true" "0"]},
+   :template "(clojure.data.zip/mapcat-chain %loc %preds %mkpred)"}
+  {:describe "right-locs",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.zip/right-locs %loc)"}
+  {:describe "rightmost?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.data.zip/rightmost? %val)"}]}
+]

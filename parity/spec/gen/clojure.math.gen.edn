@@ -1,0 +1,147 @@
+[
+{:category :clojure.math.functions,
+ :tests [{:it "random", :eval "(clojure.math/random)"}],
+ :parametric
+ [{:describe "IEEE-remainder",
+   :params
+   {:dividend ["0" "1" "-1" "42" "3.14"],
+    :divisor ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/IEEE-remainder %dividend %divisor)"}
+  {:describe "acos",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/acos %a)"}
+  {:describe "add-exact",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/add-exact %x %y)"}
+  {:describe "asin",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/asin %a)"}
+  {:describe "atan",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/atan %a)"}
+  {:describe "atan2",
+   :params
+   {:y ["0" "1" "-1" "42" "3.14"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/atan2 %y %x)"}
+  {:describe "cbrt",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/cbrt %a)"}
+  {:describe "ceil",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/ceil %a)"}
+  {:describe "copy-sign",
+   :params
+   {:magnitude ["0" "1" "-1" "42" "3.14"],
+    :sign ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/copy-sign %magnitude %sign)"}
+  {:describe "cos",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/cos %a)"}
+  {:describe "cosh",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/cosh %x)"}
+  {:describe "decrement-exact",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/decrement-exact %a)"}
+  {:describe "exp",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/exp %a)"}
+  {:describe "expm1",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/expm1 %x)"}
+  {:describe "floor",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/floor %a)"}
+  {:describe "floor-div",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/floor-div %x %y)"}
+  {:describe "floor-mod",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/floor-mod %x %y)"}
+  {:describe "get-exponent",
+   :params {:d ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/get-exponent %d)"}
+  {:describe "hypot",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/hypot %x %y)"}
+  {:describe "increment-exact",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/increment-exact %a)"}
+  {:describe "log",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/log %a)"}
+  {:describe "log10",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/log10 %a)"}
+  {:describe "log1p",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/log1p %x)"}
+  {:describe "multiply-exact",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/multiply-exact %x %y)"}
+  {:describe "negate-exact",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/negate-exact %a)"}
+  {:describe "next-after",
+   :params
+   {:start ["0" "1" "-1" "42" "3.14"],
+    :direction ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/next-after %start %direction)"}
+  {:describe "next-down",
+   :params {:d ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/next-down %d)"}
+  {:describe "next-up",
+   :params {:d ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/next-up %d)"}
+  {:describe "pow",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/pow %a %b)"}
+  {:describe "rint",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/rint %a)"}
+  {:describe "round",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/round %a)"}
+  {:describe "scalb",
+   :params
+   {:d ["0" "1" "-1" "42" "3.14"],
+    :scaleFactor ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/scalb %d %scaleFactor)"}
+  {:describe "signum",
+   :params {:d ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/signum %d)"}
+  {:describe "sin",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/sin %a)"}
+  {:describe "sinh",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/sinh %x)"}
+  {:describe "sqrt",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/sqrt %a)"}
+  {:describe "subtract-exact",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/subtract-exact %x %y)"}
+  {:describe "tan",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/tan %a)"}
+  {:describe "tanh",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/tanh %x)"}
+  {:describe "to-degrees",
+   :params {:r ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/to-degrees %r)"}
+  {:describe "to-radians",
+   :params {:deg ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/to-radians %deg)"}
+  {:describe "ulp",
+   :params {:d ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math/ulp %d)"}]}
+]

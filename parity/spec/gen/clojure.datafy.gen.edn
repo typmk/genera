@@ -1,0 +1,13 @@
+[
+{:category :clojure.datafy.functions,
+ :parametric
+ [{:describe "datafy",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.datafy/datafy %x)"}
+  {:describe "nav",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :k [":a" ":b" ":foo"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.datafy/nav %coll %k %v)"}]}
+]

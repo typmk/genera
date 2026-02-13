@@ -1,0 +1,53 @@
+[
+{:category :clojure.tools.namespace.find.functions,
+ :parametric
+ [{:describe "clojure-sources-in-jar",
+   :params
+   {:jar-file ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/clojure-sources-in-jar %jar-file)"}
+  {:describe "find-clojure-sources-in-dir",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/find-clojure-sources-in-dir %dir)"}
+  {:describe "find-namespaces",
+   :params
+   {:files ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.namespace.find/find-namespaces %files)"}
+  {:describe "find-namespaces-in-dir",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/find-namespaces-in-dir %dir)"}
+  {:describe "find-namespaces-in-jarfile",
+   :params
+   {:jarfile ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/find-namespaces-in-jarfile %jarfile)"}
+  {:describe "find-ns-decls",
+   :params
+   {:files ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.namespace.find/find-ns-decls %files)"}
+  {:describe "find-ns-decls-in-dir",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/find-ns-decls-in-dir %dir)"}
+  {:describe "find-ns-decls-in-jarfile",
+   :params
+   {:jarfile ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/find-ns-decls-in-jarfile %jarfile)"}
+  {:describe "find-sources-in-dir",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.namespace.find/find-sources-in-dir %dir)"}
+  {:describe "read-ns-decl-from-jarfile-entry",
+   :params
+   {:jarfile ["nil" "true" "0" "1" "-1"],
+    :entry-name ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.tools.namespace.find/read-ns-decl-from-jarfile-entry %jarfile %entry-name)"}
+  {:describe "sources-in-jar",
+   :params
+   {:jar-file ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.tools.namespace.find/sources-in-jar %jar-file)"}]}
+]

@@ -1,0 +1,652 @@
+{
+  "_meta": {
+    "version": 1,
+    "description": "Complete syscall map for genera. Operations are semantics, targets are syntax. Porting = transpilation.",
+    "generated": "2026-02-13",
+    "categories": ["io", "mem", "proc", "time", "term", "watch", "perf"],
+    "sources": {
+      "conventions": "ref/gcc/libsanitizer/sanitizer_common/sanitizer_syscall_linux_*.inc",
+      "semantics": "ref/gcc/libsanitizer/sanitizer_common/sanitizer_common_syscalls.inc",
+      "linux_x86_64_numbers": "https://github.com/torvalds/linux/blob/master/arch/x86/entry/syscalls/syscall_64.tbl",
+      "linux_generic_numbers": "https://github.com/torvalds/linux/blob/master/include/uapi/asm-generic/unistd.h",
+      "darwin_numbers": "https://github.com/apple/darwin-xnu/blob/main/bsd/kern/syscalls.master",
+      "error_check": "retval >= (uptr)-4095 means error (errno = -retval)"
+    }
+  },
+
+  "targets": {
+    "linux_x86_64":   { "os": "linux",  "arch": "x86_64",  "guard": "__linux__ && __x86_64__",  "status": "implemented" },
+    "linux_aarch64":  { "os": "linux",  "arch": "aarch64", "guard": "__linux__ && __aarch64__",  "status": "planned" },
+    "linux_riscv64":  { "os": "linux",  "arch": "riscv64", "guard": "__linux__ && __riscv && __riscv_xlen == 64", "status": "planned" },
+    "darwin_x86_64":  { "os": "darwin", "arch": "x86_64",  "guard": "__APPLE__ && __x86_64__",  "status": "planned" },
+    "darwin_aarch64": { "os": "darwin", "arch": "aarch64", "guard": "__APPLE__ && __aarch64__", "status": "planned" },
+    "windows_x86_64": { "os": "windows","arch": "x86_64",  "guard": "_WIN64",                   "status": "planned" }
+  },
+
+  "conventions": {
+    "linux_x86_64": {
+      "instruction": "syscall",
+      "nr_reg": "rax",
+      "arg_regs": ["rdi", "rsi", "rdx", "r10", "r8", "r9"],
+      "ret_reg": "rax",
+      "clobbers": ["rcx", "r11"],
+      "max_args": 6,
+      "notes": "r10 instead of rcx (rcx clobbered by syscall instruction)"
+    },
+    "linux_aarch64": {
+      "instruction": "svc #0",
+      "nr_reg": "w8",
+      "arg_regs": ["x0", "x1", "x2", "x3", "x4", "x5"],
+      "ret_reg": "x0",
+      "clobbers": [],
+      "max_args": 6,
+      "notes": "Simpler ABI — no clobbered regs"
+    },
+    "linux_riscv64": {
+      "instruction": "ecall",
+      "nr_reg": "a7",
+      "arg_regs": ["a0", "a1", "a2", "a3", "a4", "a5", "a6"],
+      "ret_reg": "a0",
+      "clobbers": [],
+      "max_args": 7,
+      "notes": "Cleanest ABI — mirrors function call convention. 7 args (a0-a6), nr in a7."
+    },
+    "darwin_x86_64": {
+      "instruction": "syscall",
+      "nr_reg": "rax",
+      "arg_regs": ["rdi", "rsi", "rdx", "r10", "r8", "r9"],
+      "ret_reg": "rax",
+      "clobbers": ["rcx", "r11"],
+      "max_args": 6,
+      "nr_offset": "0x2000000",
+      "notes": "Same regs as Linux x86_64 but syscall number = 0x2000000 + N (BSD class)"
+    },
+    "darwin_aarch64": {
+      "instruction": "svc #0x80",
+      "nr_reg": "x16",
+      "arg_regs": ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"],
+      "ret_reg": "x0",
+      "clobbers": [],
+      "max_args": 8,
+      "nr_offset": "0x2000000",
+      "notes": "CRITICAL: x16 for nr, NOT x8 (Linux uses x8). BSD class offset. svc #0x80 not svc #0."
+    },
+    "windows_x86_64": {
+      "instruction": "syscall",
+      "nr_reg": "rax",
+      "arg_regs": ["r10", "rdx", "r8", "r9"],
+      "ret_reg": "rax",
+      "clobbers": ["rcx", "r11"],
+      "max_args": 4,
+      "shadow_space": 32,
+      "notes": "UNSTABLE ABI — numbers change per Windows build. rcx→r10 before syscall. 32-byte shadow space required. Use kernel32 imports instead."
+    }
+  },
+
+  "windows_overhead": {
+    "_description": "Call chain cost analysis — why kernel32 imports are the right target for Windows.",
+    "call_chains": {
+      "direct_syscall":  "your code → mov rax,NR; mov r10,rcx; syscall → kernel",
+      "ntdll_stub":      "your code → call NtReadFile → [mov r10,rcx; mov eax,NR; syscall; ret] → kernel",
+      "kernel32_wrapper": "your code → call ReadFile → [validate + marshal → call NtReadFile → stub] → kernel"
+    },
+    "cost_cycles": {
+      "direct_syscall":     { "overhead": 0,          "percent_of_total": "baseline" },
+      "ntdll_stub":         { "overhead": "~5",       "percent_of_total": "~0.3%" },
+      "kernel32_wrapper":   { "overhead": "~20-50",   "percent_of_total": "~1-3%" },
+      "kernel_transition":  { "overhead": "~1000-2000", "percent_of_total": "97%+", "notes": "ring3→ring0→ring3, worse post-Meltdown/Spectre mitigations" }
+    },
+    "decision": "kernel32",
+    "rationale": [
+      "1-3% wrapper overhead is noise vs ~1500 cycle kernel transition",
+      "NT syscall numbers change per Windows build (even patches) — Microsoft randomizes as security measure",
+      "Direct syscalls require runtime extraction from ntdll stubs or per-build lookup tables",
+      "Microsoft can change syscall mechanism itself (int 0x2e → sysenter → syscall, WoW64 thunking)",
+      "genera hot paths are in-memory (arena, grammar, eval) — not syscall-bound"
+    ]
+  },
+
+  "entry_points": {
+    "linux_x86_64": {
+      "symbol": "_start",
+      "stack_layout": "[argc, argv..., NULL, envp..., NULL, auxv...]",
+      "setup": "xor rbp,rbp; mov rsp,rdi; and $-16,rsp; call _start_c",
+      "exit_syscall": "exit_group"
+    },
+    "linux_aarch64": {
+      "symbol": "_start",
+      "stack_layout": "[argc, argv..., NULL, envp..., NULL, auxv...]",
+      "setup": "mov x29, #0; mov x30, #0; mov x0, sp; bl _start_c",
+      "exit_syscall": "exit_group"
+    },
+    "linux_riscv64": {
+      "symbol": "_start",
+      "stack_layout": "[argc, argv..., NULL, envp..., NULL, auxv...]",
+      "setup": "li fp, 0; li ra, 0; mv a0, sp; call _start_c",
+      "exit_syscall": "exit_group"
+    },
+    "darwin_x86_64": {
+      "symbol": "_main",
+      "stack_layout": "argc in rdi, argv in rsi (passed by dyld)",
+      "setup": "Standard C calling convention via dyld stub or raw LC_MAIN",
+      "exit_syscall": "exit"
+    },
+    "darwin_aarch64": {
+      "symbol": "_main",
+      "stack_layout": "argc in x0, argv in x1 (passed by dyld)",
+      "setup": "Standard C calling convention via dyld stub or raw LC_MAIN",
+      "exit_syscall": "exit"
+    },
+    "windows_x86_64": {
+      "symbol": "_mainCRTStartup or custom /ENTRY",
+      "stack_layout": "No args on stack — use GetCommandLineA()",
+      "setup": "/NODEFAULTLIB /ENTRY:entry /SUBSYSTEM:CONSOLE. Import kernel32.",
+      "exit_syscall": "ExitProcess"
+    }
+  },
+
+  "operations": {
+    "read": {
+      "category": "io",
+      "signature": "(fd: i32, buf: *u8, len: u64) -> i64",
+      "api_name": "sys_read",
+      "numbers": {
+        "linux_x86_64": 0,
+        "linux_aarch64": 63,
+        "linux_riscv64": 63,
+        "darwin_x86_64": 3,
+        "darwin_aarch64": 3
+      },
+      "windows": { "kernel32": "ReadFile", "ntdll": "NtReadFile" }
+    },
+    "write": {
+      "category": "io",
+      "signature": "(fd: i32, buf: *const u8, len: u64) -> i64",
+      "api_name": "sys_write",
+      "numbers": {
+        "linux_x86_64": 1,
+        "linux_aarch64": 64,
+        "linux_riscv64": 64,
+        "darwin_x86_64": 4,
+        "darwin_aarch64": 4
+      },
+      "windows": { "kernel32": "WriteFile", "ntdll": "NtWriteFile" }
+    },
+    "open": {
+      "category": "io",
+      "signature": "(path: *const u8, flags: i32, mode: i32) -> i32",
+      "api_name": "sys_open",
+      "numbers": {
+        "linux_x86_64": 2,
+        "darwin_x86_64": 5,
+        "darwin_aarch64": 5
+      },
+      "modern_replacement": "openat",
+      "notes": "MISSING on linux_aarch64 and linux_riscv64 — use openat(AT_FDCWD, path, flags, mode)",
+      "windows": { "kernel32": "CreateFileA", "ntdll": "NtCreateFile" }
+    },
+    "openat": {
+      "category": "io",
+      "signature": "(dirfd: i32, path: *const u8, flags: i32, mode: i32) -> i32",
+      "api_name": "sys_openat",
+      "numbers": {
+        "linux_x86_64": 257,
+        "linux_aarch64": 56,
+        "linux_riscv64": 56,
+        "darwin_x86_64": 463,
+        "darwin_aarch64": 463
+      },
+      "notes": "AT_FDCWD = -100 on Linux, -2 on macOS. Preferred over open for portability.",
+      "windows": { "kernel32": "CreateFileA", "ntdll": "NtCreateFile" }
+    },
+    "close": {
+      "category": "io",
+      "signature": "(fd: i32) -> i32",
+      "api_name": "sys_close",
+      "numbers": {
+        "linux_x86_64": 3,
+        "linux_aarch64": 57,
+        "linux_riscv64": 57,
+        "darwin_x86_64": 6,
+        "darwin_aarch64": 6
+      },
+      "windows": { "kernel32": "CloseHandle", "ntdll": "NtClose" }
+    },
+    "lseek": {
+      "category": "io",
+      "signature": "(fd: i32, offset: i64, whence: i32) -> i64",
+      "api_name": "sys_lseek",
+      "numbers": {
+        "linux_x86_64": 8,
+        "linux_aarch64": 62,
+        "linux_riscv64": 62,
+        "darwin_x86_64": 199,
+        "darwin_aarch64": 199
+      },
+      "windows": { "kernel32": "SetFilePointer", "ntdll": "NtSetInformationFile" }
+    },
+    "mmap": {
+      "category": "mem",
+      "signature": "(addr: *void, len: u64, prot: i32, flags: i32, fd: i32, offset: i64) -> *void",
+      "api_name": "sys_mmap",
+      "numbers": {
+        "linux_x86_64": 9,
+        "linux_aarch64": 222,
+        "linux_riscv64": 222,
+        "darwin_x86_64": 197,
+        "darwin_aarch64": 197
+      },
+      "windows": { "kernel32": "VirtualAlloc", "ntdll": "NtAllocateVirtualMemory" },
+      "notes": "MAP_ANON differs: Linux=0x20, macOS=0x1000. Windows VirtualAlloc has different semantics."
+    },
+    "munmap": {
+      "category": "mem",
+      "signature": "(addr: *void, len: u64) -> i32",
+      "api_name": "sys_munmap",
+      "numbers": {
+        "linux_x86_64": 11,
+        "linux_aarch64": 215,
+        "linux_riscv64": 215,
+        "darwin_x86_64": 73,
+        "darwin_aarch64": 73
+      },
+      "windows": { "kernel32": "VirtualFree", "ntdll": "NtFreeVirtualMemory" }
+    },
+    "ioctl": {
+      "category": "term",
+      "signature": "(fd: i32, request: u64, arg: u64) -> i32",
+      "api_name": "sys_ioctl",
+      "numbers": {
+        "linux_x86_64": 16,
+        "linux_aarch64": 29,
+        "linux_riscv64": 29,
+        "darwin_x86_64": 54,
+        "darwin_aarch64": 54
+      },
+      "windows": { "kernel32": "DeviceIoControl", "ntdll": "NtDeviceIoControlFile" },
+      "notes": "ioctl request CODES differ between Linux and macOS — see constants.ioctl"
+    },
+    "fork": {
+      "category": "proc",
+      "signature": "() -> i32",
+      "api_name": "sys_fork",
+      "numbers": {
+        "linux_x86_64": 57,
+        "darwin_x86_64": 2,
+        "darwin_aarch64": 2
+      },
+      "modern_replacement": "clone",
+      "notes": "MISSING on linux_aarch64 and linux_riscv64 — use clone(SIGCHLD, 0, 0, 0, 0)",
+      "windows": { "kernel32": "CreateProcessA", "ntdll": "NtCreateUserProcess" }
+    },
+    "clone": {
+      "category": "proc",
+      "signature": "(flags: u64, stack: *void, ptid: *i32, ctid: *i32, tls: u64) -> i32",
+      "api_name": "sys_clone",
+      "numbers": {
+        "linux_x86_64": 56,
+        "linux_aarch64": 220,
+        "linux_riscv64": 220
+      },
+      "notes": "clone(SIGCHLD, 0, 0, 0, 0) = fork(). Not available on macOS (use fork or posix_spawn)."
+    },
+    "execve": {
+      "category": "proc",
+      "signature": "(path: *const u8, argv: **const u8, envp: **const u8) -> i32",
+      "api_name": "sys_execve",
+      "numbers": {
+        "linux_x86_64": 59,
+        "linux_aarch64": 221,
+        "linux_riscv64": 221,
+        "darwin_x86_64": 59,
+        "darwin_aarch64": 59
+      },
+      "windows": { "kernel32": "CreateProcessA", "ntdll": "NtCreateUserProcess" }
+    },
+    "wait4": {
+      "category": "proc",
+      "signature": "(pid: i32, status: *i32, options: i32, rusage: *void) -> i32",
+      "api_name": "sys_waitpid",
+      "numbers": {
+        "linux_x86_64": 61,
+        "linux_aarch64": 260,
+        "linux_riscv64": 260,
+        "darwin_x86_64": 7,
+        "darwin_aarch64": 7
+      },
+      "windows": { "kernel32": "WaitForSingleObject" }
+    },
+    "pipe": {
+      "category": "proc",
+      "signature": "(fds: *[2]i32) -> i32",
+      "api_name": "sys_pipe",
+      "numbers": {
+        "linux_x86_64": 22,
+        "darwin_x86_64": 42,
+        "darwin_aarch64": 42
+      },
+      "modern_replacement": "pipe2",
+      "notes": "MISSING on linux_aarch64 and linux_riscv64 — use pipe2(fds, 0)"
+    },
+    "pipe2": {
+      "category": "proc",
+      "signature": "(fds: *[2]i32, flags: i32) -> i32",
+      "api_name": "sys_pipe2",
+      "numbers": {
+        "linux_x86_64": 293,
+        "linux_aarch64": 59,
+        "linux_riscv64": 59
+      },
+      "notes": "pipe2(fds, 0) = pipe(fds). Not a direct syscall on macOS — use pipe()."
+    },
+    "dup2": {
+      "category": "proc",
+      "signature": "(oldfd: i32, newfd: i32) -> i32",
+      "api_name": "sys_dup2",
+      "numbers": {
+        "linux_x86_64": 33,
+        "darwin_x86_64": 90,
+        "darwin_aarch64": 90
+      },
+      "modern_replacement": "dup3",
+      "notes": "MISSING on linux_aarch64 and linux_riscv64 — use dup3(old, new, 0)"
+    },
+    "dup3": {
+      "category": "proc",
+      "signature": "(oldfd: i32, newfd: i32, flags: i32) -> i32",
+      "api_name": "sys_dup3",
+      "numbers": {
+        "linux_x86_64": 292,
+        "linux_aarch64": 24,
+        "linux_riscv64": 24
+      },
+      "notes": "dup3(old, new, 0) = dup2(old, new). Not a direct syscall on macOS — use dup2()."
+    },
+    "clock_gettime": {
+      "category": "time",
+      "signature": "(clock_id: i32, tp: *timespec) -> i32",
+      "api_name": "sys_time_ns",
+      "numbers": {
+        "linux_x86_64": 228,
+        "linux_aarch64": 113,
+        "linux_riscv64": 113,
+        "darwin_x86_64": null,
+        "darwin_aarch64": null
+      },
+      "darwin_alternative": "gettimeofday (116) or mach_absolute_time (userspace, zero-cost)",
+      "windows": { "kernel32": "QueryPerformanceCounter + QueryPerformanceFrequency" },
+      "notes": "macOS: clock_gettime is a library function (not a syscall). Use gettimeofday(116) or mach_absolute_time (reads mapped page, no trap)."
+    },
+    "nanosleep": {
+      "category": "time",
+      "signature": "(req: *timespec, rem: *timespec) -> i32",
+      "api_name": "sys_nanosleep",
+      "numbers": {
+        "linux_x86_64": 35,
+        "linux_aarch64": 101,
+        "linux_riscv64": 101,
+        "darwin_x86_64": null,
+        "darwin_aarch64": null
+      },
+      "darwin_alternative": "Mach clock_sleep_trap (-62) or __semwait_signal (334)",
+      "notes": "Not a direct syscall on macOS. Use Mach trap clock_sleep_trap or BSD __semwait_signal."
+    },
+    "poll": {
+      "category": "watch",
+      "signature": "(fds: *pollfd, nfds: u32, timeout_ms: i32) -> i32",
+      "api_name": "sys_poll",
+      "numbers": {
+        "linux_x86_64": 7,
+        "darwin_x86_64": null,
+        "darwin_aarch64": null
+      },
+      "modern_replacement": "ppoll",
+      "notes": "MISSING on linux_aarch64, linux_riscv64. macOS uses select(93) or kqueue. Use ppoll for portability on Linux."
+    },
+    "ppoll": {
+      "category": "watch",
+      "signature": "(fds: *pollfd, nfds: u32, timeout: *timespec, sigmask: *void) -> i32",
+      "api_name": "sys_ppoll",
+      "numbers": {
+        "linux_x86_64": 271,
+        "linux_aarch64": 73,
+        "linux_riscv64": 73
+      },
+      "notes": "ppoll(fds, n, &ts, NULL) = poll with timespec. Not on macOS — use kqueue."
+    },
+    "exit_group": {
+      "category": "proc",
+      "signature": "(status: i32) -> !",
+      "api_name": "sys_exit",
+      "numbers": {
+        "linux_x86_64": 231,
+        "linux_aarch64": 94,
+        "linux_riscv64": 94
+      },
+      "darwin_alternative": "exit (1)",
+      "windows": { "kernel32": "ExitProcess" },
+      "notes": "Linux: exit_group terminates all threads. macOS BSD exit is syscall 1."
+    },
+    "inotify_init1": {
+      "category": "watch",
+      "signature": "(flags: i32) -> i32",
+      "api_name": "sys_inotify_init",
+      "numbers": {
+        "linux_x86_64": 294,
+        "linux_aarch64": 26,
+        "linux_riscv64": 26
+      },
+      "notes": "LINUX ONLY. macOS: use kqueue(362). Windows: use ReadDirectoryChangesW."
+    },
+    "inotify_add_watch": {
+      "category": "watch",
+      "signature": "(fd: i32, path: *const u8, mask: u32) -> i32",
+      "api_name": "sys_inotify_add_watch",
+      "numbers": {
+        "linux_x86_64": 254,
+        "linux_aarch64": 27,
+        "linux_riscv64": 27
+      },
+      "notes": "LINUX ONLY. macOS: use kevent(363) with EVFILT_VNODE."
+    },
+    "perf_event_open": {
+      "category": "perf",
+      "signature": "(attr: *PerfAttr, pid: i32, cpu: i32, group_fd: i32, flags: u32) -> i32",
+      "api_name": "perf_open",
+      "numbers": {
+        "linux_x86_64": 298,
+        "linux_aarch64": 241,
+        "linux_riscv64": 241
+      },
+      "notes": "LINUX ONLY. macOS: no equivalent syscall. Use DTrace, kdebug, or Instruments. Windows: use ETW (Event Tracing for Windows)."
+    },
+    "kqueue": {
+      "category": "watch",
+      "signature": "() -> i32",
+      "numbers": {
+        "darwin_x86_64": 362,
+        "darwin_aarch64": 362
+      },
+      "notes": "MACOS ONLY. Replaces both inotify (EVFILT_VNODE) and epoll (EVFILT_READ/WRITE)."
+    },
+    "kevent": {
+      "category": "watch",
+      "signature": "(kq: i32, changelist: *kevent, nchanges: i32, eventlist: *kevent, nevents: i32, timeout: *timespec) -> i32",
+      "numbers": {
+        "darwin_x86_64": 363,
+        "darwin_aarch64": 363
+      },
+      "notes": "MACOS ONLY. Combined add-watch + poll in one syscall."
+    },
+    "select": {
+      "category": "watch",
+      "signature": "(nfds: i32, readfds: *fd_set, writefds: *fd_set, exceptfds: *fd_set, timeout: *timeval) -> i32",
+      "numbers": {
+        "darwin_x86_64": 93,
+        "darwin_aarch64": 93,
+        "linux_x86_64": 23,
+        "linux_aarch64": null,
+        "linux_riscv64": null
+      },
+      "notes": "Available on macOS and Linux x86_64. MISSING on aarch64/riscv64 — use pselect6."
+    },
+    "gettimeofday": {
+      "category": "time",
+      "signature": "(tp: *timeval, tz: *void) -> i32",
+      "numbers": {
+        "darwin_x86_64": 116,
+        "darwin_aarch64": 116,
+        "linux_x86_64": 96,
+        "linux_aarch64": null,
+        "linux_riscv64": null
+      },
+      "notes": "macOS primary timing syscall. MISSING on Linux aarch64/riscv64 — use clock_gettime."
+    }
+  },
+
+  "constants": {
+    "memory": {
+      "PROT_READ":  { "linux": 1, "darwin": 1, "windows_PAGE_READONLY": "0x02" },
+      "PROT_WRITE": { "linux": 2, "darwin": 2, "windows_PAGE_READWRITE": "0x04" },
+      "PROT_EXEC":  { "linux": 4, "darwin": 4, "windows_PAGE_EXECUTE_READWRITE": "0x40" },
+      "MAP_PRIVATE": { "linux": "0x02", "darwin": "0x02" },
+      "MAP_SHARED":  { "linux": "0x01", "darwin": "0x01" },
+      "MAP_ANON":    { "linux": "0x20", "darwin": "0x1000", "_warning": "DIFFERENT VALUES" },
+      "PAGE_SIZE":   { "linux_x86_64": 4096, "linux_aarch64": 4096, "darwin_x86_64": 4096, "darwin_aarch64": 16384, "_warning": "Apple Silicon = 16KB pages" },
+      "windows_MEM_COMMIT":  "0x1000",
+      "windows_MEM_RESERVE": "0x2000",
+      "windows_MEM_RELEASE": "0x8000"
+    },
+    "file": {
+      "O_RDONLY":  { "linux": 0, "darwin": 0 },
+      "O_WRONLY":  { "linux": 1, "darwin": 1 },
+      "O_CREAT":   { "linux": "0x40", "darwin": "0x200" , "_warning": "DIFFERENT VALUES" },
+      "O_TRUNC":   { "linux": "0x200", "darwin": "0x400", "_warning": "DIFFERENT VALUES" },
+      "AT_FDCWD":  { "linux": -100, "darwin": -2, "_warning": "DIFFERENT VALUES" },
+      "SEEK_SET": 0,
+      "SEEK_CUR": 1,
+      "SEEK_END": 2
+    },
+    "time": {
+      "CLOCK_REALTIME":  { "linux": 0 },
+      "CLOCK_MONOTONIC": { "linux": 1 },
+      "SIGCHLD":         { "linux": 17, "darwin": 20, "_warning": "DIFFERENT VALUES" }
+    },
+    "terminal": {
+      "TIOCGWINSZ": { "linux": "0x5413", "darwin": "0x40087468" , "_warning": "DIFFERENT VALUES — macOS uses _IOR encoding" },
+      "TCGETS":     { "linux": "0x5401", "_darwin_equivalent": "TIOCGETA = 0x402C7413" },
+      "TCSETS":     { "linux": "0x5402", "_darwin_equivalent": "TIOCSETA = 0x802C7414" },
+      "_note": "macOS termios struct has different layout — cc array is 20 bytes (vs 19 on Linux), speed fields added"
+    },
+    "termios_flags": {
+      "BRKINT":  "0x0002",
+      "ICRNL":   { "linux": "0x0100", "darwin": "0x0100" },
+      "INPCK":   "0x0010",
+      "ISTRIP":  "0x0020",
+      "IXON":    "0x0400",
+      "CS8":     { "linux": "0x0030", "darwin": "0x0300", "_warning": "DIFFERENT VALUES" },
+      "ECHO":    "0x0008",
+      "ICANON":  "0x0002",
+      "IEXTEN":  { "linux": "0x8000", "darwin": "0x0400", "_warning": "DIFFERENT VALUES" },
+      "ISIG":    "0x0001",
+      "VMIN":    { "linux": 6, "darwin": 16, "_warning": "DIFFERENT cc INDEX" },
+      "VTIME":   { "linux": 5, "darwin": 17, "_warning": "DIFFERENT cc INDEX" }
+    },
+    "inotify": {
+      "IN_CLOSE_WRITE": "0x00000008",
+      "IN_CREATE":      "0x00000100",
+      "IN_CLOEXEC":     "0x00080000",
+      "_note": "Linux only. macOS uses kqueue EVFILT_VNODE with NOTE_WRITE, NOTE_EXTEND, etc."
+    },
+    "kqueue": {
+      "EVFILT_READ":  -1,
+      "EVFILT_WRITE": -2,
+      "EVFILT_VNODE": -4,
+      "EVFILT_TIMER": -7,
+      "NOTE_WRITE":   "0x0002",
+      "NOTE_EXTEND":  "0x0004",
+      "NOTE_ATTRIB":  "0x0008",
+      "NOTE_DELETE":   "0x0001",
+      "NOTE_RENAME":  "0x0020",
+      "EV_ADD":       "0x0001",
+      "EV_ENABLE":    "0x0004",
+      "EV_CLEAR":     "0x0020",
+      "_note": "macOS only. Replaces inotify+poll."
+    },
+    "poll": {
+      "POLLIN":  "0x0001",
+      "POLLOUT": "0x0004",
+      "POLLERR": "0x0008"
+    },
+    "perf": {
+      "PERF_TYPE_HARDWARE":  0,
+      "PERF_TYPE_HW_CACHE":  3,
+      "PERF_HW_CYCLES":      0,
+      "PERF_HW_INSTRUCTIONS": 1,
+      "PERF_HW_CACHE_MISSES": 3,
+      "PERF_HW_BRANCH_MISSES": 5,
+      "PERF_L1D_READ_MISS":   "0x10000",
+      "PERF_LLC_READ_MISS":   "0x10002",
+      "PERF_IOC_ENABLE":      "0x2400",
+      "PERF_IOC_DISABLE":     "0x2401",
+      "PERF_IOC_RESET":       "0x2403",
+      "_note": "Linux only. macOS: DTrace/Instruments. Windows: ETW."
+    },
+    "windows_console": {
+      "ENABLE_PROCESSED_INPUT":  "0x0001",
+      "ENABLE_LINE_INPUT":       "0x0002",
+      "ENABLE_ECHO_INPUT":       "0x0004",
+      "ENABLE_VIRTUAL_TERMINAL_INPUT":  "0x0200",
+      "ENABLE_VIRTUAL_TERMINAL_PROCESSING": "0x0004",
+      "STD_INPUT_HANDLE":  -10,
+      "STD_OUTPUT_HANDLE": -11,
+      "STD_ERROR_HANDLE":  -12
+    }
+  },
+
+  "platform_equivalences": {
+    "_description": "Semantic operations that have different mechanisms per platform. Each row is ONE genera API function, transpiled to different platform primitives.",
+    "file_watch": {
+      "genera_api": "sys_watch_init / sys_watch_add / sys_watch_poll",
+      "linux":   { "init": "inotify_init1", "add": "inotify_add_watch", "poll": "ppoll" },
+      "darwin":  { "init": "kqueue", "add": "kevent(EV_ADD, EVFILT_VNODE)", "poll": "kevent(wait)" },
+      "windows": { "init": "CreateFileA(dir) + CreateIoCompletionPort", "add": "ReadDirectoryChangesW", "poll": "GetQueuedCompletionStatus" }
+    },
+    "perf_counters": {
+      "genera_api": "perf_init / perf_start / perf_stop / perf_read",
+      "linux":   { "init": "perf_event_open", "ctrl": "ioctl(PERF_IOC_*)", "read": "read(fd)" },
+      "darwin":  { "mechanism": "DTrace probes or kpc_* (private API)", "notes": "No stable userspace perf counter API" },
+      "windows": { "mechanism": "ETW (Event Tracing for Windows)", "notes": "Requires elevated privileges" }
+    },
+    "terminal_raw": {
+      "genera_api": "sys_term_raw / sys_term_cooked",
+      "linux":   { "get": "ioctl(TCGETS)", "set": "ioctl(TCSETS)", "struct": "Termios(36 bytes)" },
+      "darwin":  { "get": "ioctl(TIOCGETA)", "set": "ioctl(TIOCSETA)", "struct": "Termios(72 bytes — includes speed)" },
+      "windows": { "get": "GetConsoleMode", "set": "SetConsoleMode", "struct": "DWORD flags" }
+    },
+    "process_spawn": {
+      "genera_api": "sys_run / sys_run_capture",
+      "linux_x86_64":  { "fork": "fork(57)", "exec": "execve(59)", "wait": "wait4(61)", "pipe": "pipe(22)", "dup": "dup2(33)" },
+      "linux_aarch64": { "fork": "clone(220, SIGCHLD)", "exec": "execve(221)", "wait": "wait4(260)", "pipe": "pipe2(59, 0)", "dup": "dup3(24, 0)" },
+      "linux_riscv64":  { "fork": "clone(220, SIGCHLD)", "exec": "execve(221)", "wait": "wait4(260)", "pipe": "pipe2(59, 0)", "dup": "dup3(24, 0)" },
+      "darwin":        { "fork": "fork(2)", "exec": "execve(59)", "wait": "wait4(7)", "pipe": "pipe(42)", "dup": "dup2(90)" },
+      "windows":       { "spawn": "CreateProcessA", "wait": "WaitForSingleObject", "pipe": "CreatePipe", "dup": "DuplicateHandle" }
+    },
+    "memory_exec": {
+      "genera_api": "sys_alloc_exec / sys_free_exec",
+      "linux":   { "alloc": "mmap(PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON)", "free": "munmap" },
+      "darwin":  { "alloc": "mmap(PROT_READ|PROT_WRITE|PROT_EXEC, MAP_PRIVATE|MAP_ANON)", "free": "munmap", "notes": "MAP_JIT flag (0x0800) required on Apple Silicon with hardened runtime" },
+      "windows": { "alloc": "VirtualAlloc(PAGE_EXECUTE_READWRITE)", "free": "VirtualFree(MEM_RELEASE)", "notes": "Or alloc RW, then VirtualProtect to RX (W^X)" }
+    }
+  },
+
+  "deprecation_map": {
+    "_description": "Legacy syscalls that exist on x86_64 but are ABSENT on aarch64/riscv64. Genera should use the modern column for portability.",
+    "open":  { "legacy_nr": 2,  "modern": "openat",  "modern_nr_aarch64": 56,  "shim": "openat(AT_FDCWD, path, flags, mode)" },
+    "fork":  { "legacy_nr": 57, "modern": "clone",   "modern_nr_aarch64": 220, "shim": "clone(SIGCHLD, 0, 0, 0, 0)" },
+    "pipe":  { "legacy_nr": 22, "modern": "pipe2",   "modern_nr_aarch64": 59,  "shim": "pipe2(fds, 0)" },
+    "dup2":  { "legacy_nr": 33, "modern": "dup3",    "modern_nr_aarch64": 24,  "shim": "dup3(old, new, 0)" },
+    "poll":  { "legacy_nr": 7,  "modern": "ppoll",   "modern_nr_aarch64": 73,  "shim": "ppoll(fds, n, &ts, NULL)" },
+    "select":{ "legacy_nr": 23, "modern": "pselect6","modern_nr_aarch64": 72,  "shim": "pselect6(n, r, w, e, &ts, NULL)" }
+  }
+}

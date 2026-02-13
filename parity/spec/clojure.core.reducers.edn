@@ -1,0 +1,18 @@
+;; clojure.core.reducers namespace
+;; https://clojure.github.io/clojure/clojure.core.reducers-api.html
+
+[{:category :functions
+  :tests
+  [{:it "r/map"                   :eval "(into [] (clojure.core.reducers/map inc) [1 2 3])"}
+   {:it "r/filter"                :eval "(into [] (clojure.core.reducers/filter even?) [1 2 3 4])"}
+   {:it "r/remove"                :eval "(into [] (clojure.core.reducers/remove even?) [1 2 3 4])"}
+   {:it "r/flatten"               :eval "(into [] (clojure.core.reducers/flatten) [[1 2] [3 [4]]])"}
+   {:it "r/take"                  :eval "(into [] (clojure.core.reducers/take 3) [1 2 3 4 5])"}
+   {:it "r/drop"                  :eval "(into [] (clojure.core.reducers/drop 2) [1 2 3 4 5])"}
+   {:it "r/mapcat"                :eval "(into [] (clojure.core.reducers/mapcat reverse) [[1 2] [3 4]])"}
+   {:it "r/reduce"                :eval "(clojure.core.reducers/reduce + [1 2 3])"}
+   {:it "r/reduce init"           :eval "(clojure.core.reducers/reduce + 10 [1 2 3])"}
+   {:it "r/fold"                  :eval "(clojure.core.reducers/fold + [1 2 3 4 5])"}
+   {:it "r/fold combinef"         :eval "(clojure.core.reducers/fold 2 + + [1 2 3 4])"}
+   {:it "r/foldcat"               :eval "(vec (clojure.core.reducers/foldcat (clojure.core.reducers/map inc [1 2 3])))"}
+   {:it "r/monoid"                :eval "((clojure.core.reducers/monoid + (constantly 0)))"}]}]

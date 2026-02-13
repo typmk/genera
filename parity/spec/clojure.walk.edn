@@ -1,0 +1,16 @@
+;; clojure.walk namespace
+;; https://clojure.github.io/clojure/clojure.walk-api.html
+
+[{:category :functions
+  :tests
+  [{:it "postwalk identity"       :eval "(clojure.walk/postwalk identity {:a [1 2] :b #{3}})"}
+   {:it "postwalk inc numbers"    :eval "(clojure.walk/postwalk #(if (number? %) (inc %) %) {:a 1 :b [2 3]})"}
+   {:it "prewalk identity"        :eval "(clojure.walk/prewalk identity [1 [2 [3]]])"}
+   {:it "prewalk transform"       :eval "(clojure.walk/prewalk #(if (list? %) (vec %) %) '(1 (2 (3))))"}
+   {:it "postwalk-replace"        :eval "(clojure.walk/postwalk-replace {:a :x :b :y} [:a :b :c])"}
+   {:it "prewalk-replace"         :eval "(clojure.walk/prewalk-replace {:a :x} {:a 1 :b :a})"}
+   {:it "keywordize-keys"         :eval "(clojure.walk/keywordize-keys {\"a\" 1 \"b\" {\"c\" 2}})"}
+   {:it "stringify-keys"          :eval "(clojure.walk/stringify-keys {:a 1 :b {:c 2}})"}
+   {:it "walk vector"             :eval "(clojure.walk/walk inc reverse [1 2 3])"}
+   {:it "walk map"                :eval "(clojure.walk/walk (fn [[k v]] [k (inc v)]) identity {:a 1 :b 2})"}
+   {:it "macroexpand-all"         :eval "(clojure.walk/macroexpand-all '(when true (and 1 2)))"}]}]

@@ -1,0 +1,78 @@
+[
+{:category :clojure.pprint.functions,
+ :tests
+ [{:it "fresh-line", :eval "(clojure.pprint/fresh-line)"}
+  {:it "pp", :eval "(clojure.pprint/pp)"}],
+ :parametric
+ [{:describe "cl-format",
+   :params
+   {:writer ["nil" "true" "0" "1" "-1"],
+    :format-in ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.pprint/cl-format %writer %format-in)"}
+  {:describe "code-dispatch",
+   :params
+   {:object ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/code-dispatch %object)"}
+  {:describe "formatter",
+   :params
+   {:format-in ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/formatter %format-in)"}
+  {:describe "formatter-out",
+   :params
+   {:format-in ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/formatter-out %format-in)"}
+  {:describe "get-pretty-writer",
+   :params
+   {:writer ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/get-pretty-writer %writer)"}
+  {:describe "pprint",
+   :params
+   {:object ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/pprint %object)"}
+  {:describe "pprint-indent",
+   :params
+   {:relative-to ["nil" "true" "0" "1" "-1"],
+    :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.pprint/pprint-indent %relative-to %n)"}
+  {:describe "pprint-logical-block",
+   :params
+   {:options* ["nil" "true" "0" "1" "-1"],
+    :body ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.pprint/pprint-logical-block %options* %body)"}
+  {:describe "pprint-newline",
+   :params {:kind ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/pprint-newline %kind)"}
+  {:describe "pprint-tab",
+   :params
+   {:kind ["nil" "true" "0"],
+    :colnum ["nil" "true" "0"],
+    :colinc ["nil" "true" "0"]},
+   :template "(clojure.pprint/pprint-tab %kind %colnum %colinc)"}
+  {:describe "print-length-loop",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/print-length-loop %bindings)"}
+  {:describe "print-table",
+   :params {:rows ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/print-table %rows)"}
+  {:describe "set-pprint-dispatch",
+   :params
+   {:function ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/set-pprint-dispatch %function)"}
+  {:describe "simple-dispatch",
+   :params
+   {:object ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/simple-dispatch %object)"}
+  {:describe "with-pprint-dispatch",
+   :params
+   {:function ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/with-pprint-dispatch %function)"}
+  {:describe "write",
+   :params
+   {:object ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/write %object)"}
+  {:describe "write-out",
+   :params
+   {:object ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.pprint/write-out %object)"}]}
+]

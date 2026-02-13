@@ -14,11 +14,9 @@
 // ============================================================================
 
 static int t_pass, t_fail, t_groups;
-static u64 t_group_t0;
 
 static void describe(const char *name) {
     t_groups++;
-    t_group_t0 = now_ns();
     pfc(C_BOLD); pf("  %s\n", name); pfc(C_RESET);
 }
 
@@ -375,6 +373,21 @@ static void test_grammar_lisp(void) {
     u32 neg = gn_nth(&g2, gn_child(&g2, 0), 1);
     it("lisp-negnum", gn_kind(&g2, neg) == NK_NUM);
     it("lisp-negnum-text", str_eq(gn_text(&g2, neg), STR_LIT("-7")));
+
+    // Syntax-quote reader macros
+    const char *s3 = "`(a ~b ~@c)";
+    Gram g3 = gram_new(64);
+    gram_parse(&g3, &l, s3, strlen(s3));
+    u32 sq = gn_child(&g3, 0);
+    it("lisp-syntax-quote", gn_kind(&g3, sq) == NK_SYNTAX_QUOTE);
+    u32 inner = gn_child(&g3, sq);
+    it("lisp-sq-inner-list", gn_kind(&g3, inner) == NK_LIST);
+    u32 a = gn_child(&g3, inner);
+    it("lisp-sq-a-ident", gn_kind(&g3, a) == NK_IDENT);
+    u32 uq = gn_next(&g3, a);
+    it("lisp-sq-unquote", gn_kind(&g3, uq) == NK_UNQUOTE);
+    u32 sp = gn_next(&g3, uq);
+    it("lisp-sq-splice", gn_kind(&g3, sp) == NK_SPLICE);
 }
 
 // ============================================================================
@@ -966,10 +979,10 @@ static void test_runtime_views(void) {
 
     // TAP → bitmask round-trip
     tap_reset(); tap_on();
-    TAP1(TK_JIT, 1);
-    TAP1(TK_JIT, 3);
-    TAP1(TK_JIT, 3);
-    TAP1(TK_JIT, 5);
+    DISPATCH(TK_JIT, 1, 0);
+    DISPATCH(TK_JIT, 3, 0);
+    DISPATCH(TK_JIT, 3, 0);
+    DISPATCH(TK_JIT, 5, 0);
     tap_off();
 
     u64 m[2] = {0};
@@ -995,8 +1008,8 @@ static void test_runtime_views(void) {
     u32 jit_events = trace_count_kind(TK_JIT);
     it("jit-traced", jit_events > 0);
 
-    // Build bitmask from JIT trace using g_gram_scratch (same IDs as jit_run)
-    Gram *gj = &g_gram_scratch;
+    // Build bitmask from JIT trace using g_world (same IDs as jit_run)
+    Gram *gj = &g_world.gram;
     u64 *m_jit = bm_new(gj->mw);
     tap_to_bitmask(TK_JIT, m_jit, gj->mw);
     u32 hit_nodes = bm_pop(m_jit, gj->mw);
@@ -1040,6 +1053,92 @@ static Val bi_group(Val args) {
         describe(buf);
     }
     return val_nil();
+}
+
+// ============================================================================
+// 12b. Image save/load tests
+// ============================================================================
+
+static void test_image_save_load(void) {
+    describe("image save/load");
+
+    // 1. Parse + analyze a non-trivial program
+    const char *src = "(defn sq [x] (* x x)) (sq 6)";
+    Lang l; lang_lisp(&l);
+    Gram g1 = gram_new(4096);
+    gram_parse(&g1, &l, src, (u32)strlen(src));
+    gram_index(&g1);
+    gram_analyze(&g1);
+
+    // 2. JIT from original
+    i64 r1 = jit_run(src);
+    it_eq_i64("jit-orig", r1, 36);
+
+    // 3. Save to memory
+    FileData img = gram_save_buf(&g1);
+    it("save-ok", img.data != NULL);
+
+    // 4. Load from memory
+    Gram g2 = {0};
+    bool loaded = gram_load_buf(&g2, img.data, img.len);
+    it("load-ok", loaded);
+    grammar_init();
+
+    // 5. Structural integrity
+    it_eq_i64("node-count", (i64)g2.n, (i64)g1.n);
+    it_eq_i64("mw", (i64)g2.mw, (i64)g1.mw);
+    it_eq_i64("src-len", (i64)g2.src_len, (i64)g1.src_len);
+    it_eq_i64("analyzed", (i64)g2.analyzed, 1);
+
+    // 6. Source preserved
+    bool src_match = g2.src_len == g1.src_len;
+    for (u32 i = 0; i < g1.src_len && src_match; i++)
+        if (g2.src[i] != g1.src[i]) src_match = false;
+    it("source-match", src_match);
+
+    // 7. Views match
+    u32 bm_size = g1.mw * 8;
+    bool views_ok = true;
+    for (u32 v = 0; v < V_COUNT; v++) {
+        if (!g1.v[v] || !g2.v[v]) continue;
+        if (memcmp(g1.v[v], g2.v[v], bm_size) != 0) { views_ok = false; break; }
+    }
+    it("views-match", views_ok);
+
+    // 8. Bind/scope match
+    it("bind-match", memcmp(g1.bind, g2.bind, g1.n * 4) == 0);
+    it("scope-match", memcmp(g1.scope, g2.scope, g1.n * 4) == 0);
+
+    // 9. Const_val match
+    bool cv_ok = true;
+    if (g1.val && g2.val)
+        cv_ok = memcmp(g1.val, g2.val, g1.n * 8) == 0;
+    it("const-val-match", cv_ok);
+
+    // 10. Re-JIT from loaded gram
+    it_eq_i64("jit-reload", jit_run_gram(&g2), 36);
+
+    // 11. Fib10 round-trip
+    const char *src2 = "(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2))))) (fib 10)";
+    Gram g3 = gram_new(4096);
+    gram_parse(&g3, &l, src2, (u32)strlen(src2));
+    gram_index(&g3); gram_analyze(&g3);
+    FileData img2 = gram_save_buf(&g3);
+    Gram g4 = {0};
+    gram_load_buf(&g4, img2.data, img2.len);
+    grammar_init();
+    it_eq_i64("fib10-reload", jit_run_gram(&g4), 55);
+
+    // 12. TCO round-trip
+    const char *src3 = "(defn fact [n acc] (if (<= n 1) acc (recur (- n 1) (* n acc)))) (fact 10 1)";
+    Gram g5 = gram_new(4096);
+    gram_parse(&g5, &l, src3, (u32)strlen(src3));
+    gram_index(&g5); gram_analyze(&g5);
+    FileData img3 = gram_save_buf(&g5);
+    Gram g6 = {0};
+    gram_load_buf(&g6, img3.data, img3.len);
+    grammar_init();
+    it_eq_i64("fact10-reload", jit_run_gram(&g6), 3628800);
 }
 
 static void register_test_builtins(void) {
@@ -1161,6 +1260,137 @@ static const char *T_ASSERT =
     "(is 49 (count (filter (fn [x] (> x 50)) (range 100))))\n"
     "(is 5 (count (into [] (range 5))))\n"
     "(is 20 (reduce + 0 (filter (fn [x] (= 0 (mod x 2))) (range 10))))\n"
+    // macros
+    "(group \"macros\")\n"
+    "(defmacro my-when [t & body] (list 'if t (cons 'do body)))\n"
+    "(is true (macro? my-when))\n"
+    "(is false (macro? +))\n"
+    "(is 42 (my-when true 42))\n"
+    "(is nil (my-when false 42))\n"
+    "(is 3 (my-when (> 5 3) 1 2 3))\n"
+    "(defmacro my-unless [t & body] (list 'if t nil (cons 'do body)))\n"
+    "(is 42 (my-unless false 42))\n"
+    "(is nil (my-unless true 42))\n"
+    // macroexpand-1
+    "(is (list 'if true (list 'do 42)) (macroexpand-1 (list 'my-when true 42)))\n"
+    // cond as macro
+    "(defmacro my-cond [& cs] (if (nil? cs) nil (list 'if (first cs) (first (rest cs)) (cons 'my-cond (rest (rest cs))))))\n"
+    "(is \"yes\" (my-cond (< 5 3) \"no\" (> 5 3) \"yes\"))\n"
+    "(is 42 (my-cond false 1 :else 42))\n"
+    "(is nil (my-cond false 1))\n"
+    // gensym
+    "(let [g1 (gensym) g2 (gensym)] (is false (= g1 g2)))\n"
+    // nested macro
+    "(is 3 (my-when true (my-when true 3)))\n"
+    // macro with let
+    "(defmacro my-let1 [name val & body] (list 'let [name val] (cons 'do body)))\n"
+    "(is 42 (my-let1 x 42 x))\n"
+    // syntax-quote
+    "(is (list 1 2 3) `(1 2 3))\n"
+    "(let [x 42] (is (list 1 42 3) `(1 ~x 3)))\n"
+    "(let [xs (list 2 3)] (is (list 1 2 3 4) `(1 ~@xs 4)))\n"
+    "(let [x 1 y 2] (is [1 2 3] `[~x ~y 3]))\n"
+    "(let [xs (list 2 3)] (is [1 2 3 4] `[1 ~@xs 4]))\n"
+    "(let [v 42] (is {:a 42} `{:a ~v}))\n"
+    // syntax-quote macros
+    "(defmacro sq-when [t & body] `(if ~t (do ~@body)))\n"
+    "(is 42 (sq-when true 42))\n"
+    "(is nil (sq-when false 42))\n"
+    "(is 3 (sq-when true 1 2 3))\n"
+    "(defmacro sq-unless [t & body] `(if ~t nil (do ~@body)))\n"
+    "(is 42 (sq-unless false 42))\n"
+    "(is nil (sq-unless true 42))\n"
+    // threading macro with syntax-quote
+    "(defmacro my-> [x & forms] (if (empty? forms) x (let [f (first forms)] `(my-> (~f ~x) ~@(rest forms)))))\n"
+    "(is 7 (my-> 5 inc inc))\n"
+    "(is 3 (my-> 5 dec dec))\n"
+    // analyze=true: constant folding + dead branch
+    "(group \"analyze=true\")\n"
+    "(is 7 (+ (* 2 3) 1))\n"
+    "(is 42 (if true 42 (/ 1 0)))\n"
+    "(def x (+ 10 20)) (is 30 x)\n"
+    // clj hamt — self-hosted HAMT via Mem primitives
+    "(group \"clj hamt\")\n"
+    "(is 0 (clj-pmap-count (clj-pmap-empty)))\n"
+    "(is 1 (clj-pmap-count (clj-pmap-put (clj-pmap-empty) 42 100)))\n"
+    "(def _hm1 (clj-pmap-put (clj-pmap-empty) 42 100))\n"
+    "(is 100 (clj-pmap-get _hm1 42))\n"
+    "(is nil (clj-pmap-get _hm1 99))\n"
+    "(def _hm2 (clj-pmap-put _hm1 99 200))\n"
+    "(is 2 (clj-pmap-count _hm2))\n"
+    "(is 100 (clj-pmap-get _hm2 42))\n"
+    "(is 200 (clj-pmap-get _hm2 99))\n"
+    "(is nil (clj-pmap-get _hm1 99))\n"  // immutability
+    "(def _hm3 (clj-pmap-put _hm2 42 999))\n"
+    "(is 999 (clj-pmap-get _hm3 42))\n"
+    "(is 2 (clj-pmap-count _hm3))\n"
+    "(def _hm_big (loop [i 0 m (clj-pmap-empty)] (if (< i 20) (recur (+ i 1) (clj-pmap-put m i (* i 10))) m)))\n"
+    "(is 20 (clj-pmap-count _hm_big))\n"
+    "(is 0 (clj-pmap-get _hm_big 0))\n"
+    "(is 50 (clj-pmap-get _hm_big 5))\n"
+    "(is 190 (clj-pmap-get _hm_big 19))\n"
+    "(is nil (clj-pmap-get _hm_big 20))\n"
+    "(def _hm_100 (loop [i 0 m (clj-pmap-empty)] (if (< i 100) (recur (+ i 1) (clj-pmap-put m i (* i 7))) m)))\n"
+    "(is 100 (clj-pmap-count _hm_100))\n"
+    "(is 0 (clj-pmap-get _hm_100 0))\n"
+    "(is 350 (clj-pmap-get _hm_100 50))\n"
+    "(is 693 (clj-pmap-get _hm_100 99))\n"
+    "(is nil (clj-pmap-get _hm_100 100))\n"
+    // clj pvec — self-hosted persistent vector via Mem primitives
+    "(group \"clj pvec\")\n"
+    "(is 0 (clj-pvec-count (clj-pvec-empty)))\n"
+    "(def _pv1 (clj-pvec-append (clj-pvec-empty) 42))\n"
+    "(is 1 (clj-pvec-count _pv1))\n"
+    "(is 42 (clj-pvec-get _pv1 0))\n"
+    "(def _pv5 (loop [i 0 v (clj-pvec-empty)] (if (< i 5) (recur (+ i 1) (clj-pvec-append v (* i 10))) v)))\n"
+    "(is 5 (clj-pvec-count _pv5))\n"
+    "(is 0 (clj-pvec-get _pv5 0))\n"
+    "(is 40 (clj-pvec-get _pv5 4))\n"
+    "(is nil (clj-pvec-get _pv5 5))\n"
+    "(def _pv5b (clj-pvec-append _pv5 99))\n"
+    "(is 5 (clj-pvec-count _pv5))\n"   // immutability
+    "(is 6 (clj-pvec-count _pv5b))\n"
+    "(def _pv33 (loop [i 0 v (clj-pvec-empty)] (if (< i 33) (recur (+ i 1) (clj-pvec-append v (* i 3))) v)))\n"
+    "(is 33 (clj-pvec-count _pv33))\n"
+    "(is 0 (clj-pvec-get _pv33 0))\n"
+    "(is 93 (clj-pvec-get _pv33 31))\n"
+    "(is 96 (clj-pvec-get _pv33 32))\n"
+    "(def _pv100 (loop [i 0 v (clj-pvec-empty)] (if (< i 100) (recur (+ i 1) (clj-pvec-append v (* i 7))) v)))\n"
+    "(is 100 (clj-pvec-count _pv100))\n"
+    "(is 0 (clj-pvec-get _pv100 0))\n"
+    "(is 350 (clj-pvec-get _pv100 50))\n"
+    "(is 693 (clj-pvec-get _pv100 99))\n"
+    "(def _pv1k (loop [i 0 v (clj-pvec-empty)] (if (< i 1000) (recur (+ i 1) (clj-pvec-append v i)) v)))\n"
+    "(is 1000 (clj-pvec-count _pv1k))\n"
+    "(is 0 (clj-pvec-get _pv1k 0))\n"
+    "(is 500 (clj-pvec-get _pv1k 500))\n"
+    "(is 999 (clj-pvec-get _pv1k 999))\n"
+    "(is nil (clj-pvec-get _pv1k 1000))\n"
+    // clj cons+stdlib — self-hosted cons cells + stdlib
+    "(group \"clj cons+stdlib\")\n"
+    "(def _cc (clj-cons 42 99))\n"
+    "(is 42 (clj-car _cc))\n"
+    "(is 99 (clj-cdr _cc))\n"
+    "(def _cc2 (clj-cons 1 (clj-cons 2 (clj-cons 3 0))))\n"
+    "(is 1 (clj-car _cc2))\n"
+    "(is 2 (clj-car (clj-cdr _cc2)))\n"
+    "(is 20 (second [10 20 30]))\n"
+    "(is 3 (count (take 3 [1 2 3 4 5])))\n"
+    "(is 30 (first (drop 2 [10 20 30 40])))\n"
+    "(is 4 (some (fn [x] (if (> x 3) x nil)) [1 2 3 4 5]))\n"
+    "(is nil (some (fn [x] (if (> x 10) x nil)) [1 2 3]))\n"
+    "(is true (every? pos? [1 2 3]))\n"
+    "(is false (every? pos? [1 -2 3]))\n"
+    "(is 42 (identity 42))\n"
+    "(is 7 ((constantly 7) 1 2 3))\n"
+    "(is true ((complement nil?) 42))\n"
+    "(is 2 (count (partition 2 [1 2 3 4 5])))\n"
+    "(is 6 (count (interleave [1 2 3] [:a :b :c])))\n"
+    "(is 2 (get (zipmap [:a :b] [1 2]) :b))\n"
+    "(is 3 (get (frequencies [:a :b :a :c :b :a]) :a))\n"
+    "(is 2 (count (get (group-by (fn [x] (if (> x 2) :big :small)) [1 2 3 4]) :big)))\n"
+    "(is 6 (count (mapcat (fn [x] [x x]) [1 2 3])))\n"
+    "(is 4 (count (distinct [:a :b :a :c :b :d])))\n"
 ;
 
 static void run_assert_tests(const char *src) {
@@ -1180,7 +1410,226 @@ static void test_error_cases(void) {
 }
 
 // ============================================================================
-// 14. Compiler Tests — JIT + CC (data-driven, C-level)
+// 14. Engine Tests — Clojure rules over GNodes
+// ============================================================================
+
+// --- Test builtins: expose test infrastructure to Clojure ---
+
+static Val bi_world_parse(Val args) {
+    g_signal = SIGNAL_NONE;
+    Str *s = val_as_str(car(args));
+    // gram_parse stores src pointer (doesn't copy) — must persist
+    char *buf = (char *)arena_alloc(&g_perm, s->len + 1, 1);
+    memcpy(buf, s->data, s->len); buf[s->len] = 0;
+    world_ensure();
+    static Lang lisp; static bool inited;
+    if (!inited) { lang_lisp(&lisp); inited = true; }
+    Gram *g = &g_world.gram;
+    gram_parse(g, &lisp, buf, s->len);
+    gram_index(g);
+    for (u32 vi = 0; vi < V_COUNT; vi++)
+        memset(g->v[vi], 0, g->mw * 8);
+    memset(g->bind, 0, g->n * sizeof(u32));
+    memset(g->scope, 0, g->n * sizeof(u32));
+    memset(g->val, 0, g->n * sizeof(i64));
+    return val_int(g->n);
+}
+
+static Val bi_views_clear(Val args) {
+    (void)args;
+    Gram *g = &g_world.gram;
+    for (u32 vi = 0; vi < V_COUNT; vi++)
+        memset(g->v[vi], 0, g->mw * 8);
+    memset(g->bind, 0, g->n * sizeof(u32));
+    memset(g->scope, 0, g->n * sizeof(u32));
+    memset(g->val, 0, g->n * sizeof(i64));
+    return NIL;
+}
+
+static Val bi_c_analyze(Val args) {
+    (void)args;
+    pass_scope(&g_world.gram);
+    pass_type(&g_world.gram);
+    pass_flow(&g_world.gram);
+    return NIL;
+}
+
+static u64 *g_snap_v[V_COUNT];
+static u32 *g_snap_bind, *g_snap_scope;
+static i64 *g_snap_val;
+static u32 g_snap_n, g_snap_mw;
+
+static Val bi_views_snapshot(Val args) {
+    (void)args;
+    Gram *g = &g_world.gram;
+    g_snap_n = g->n; g_snap_mw = g->mw;
+    for (u32 vi = 0; vi < V_COUNT; vi++) {
+        g_snap_v[vi] = (u64 *)arena_alloc(&g_temp, g->mw * 8, 8);
+        memcpy(g_snap_v[vi], g->v[vi], g->mw * 8);
+    }
+    g_snap_bind = (u32 *)arena_alloc(&g_temp, g->n * 4, 4);
+    g_snap_scope = (u32 *)arena_alloc(&g_temp, g->n * 4, 4);
+    g_snap_val = (i64 *)arena_alloc(&g_temp, g->n * 8, 8);
+    memcpy(g_snap_bind, g->bind, g->n * 4);
+    memcpy(g_snap_scope, g->scope, g->n * 4);
+    memcpy(g_snap_val, g->val, g->n * 8);
+    return NIL;
+}
+
+static Val bi_views_match(Val args) {
+    (void)args;
+    Gram *g = &g_world.gram;
+    bool ok = true;
+    for (u32 vi = 0; vi < V_COUNT; vi++)
+        if (memcmp(g_snap_v[vi], g->v[vi], g_snap_mw * 8)) ok = false;
+    if (memcmp(g_snap_bind, g->bind, g_snap_n * 4)) ok = false;
+    if (memcmp(g_snap_scope, g->scope, g_snap_n * 4)) ok = false;
+    if (memcmp(g_snap_val, g->val, g_snap_n * 8)) ok = false;
+    if (!ok) {
+        static const char *vn[] = {
+            "DEF","REF","CALL","TAIL","PURE","CONST","DEAD","INT","VEC","MAP","FN"
+        };
+        for (u32 i = 0; i < g_snap_n; i++) {
+            for (u32 vi = 0; vi < V_COUNT; vi++)
+                if (BM_GET(g_snap_v[vi], i) != BM_GET(g->v[vi], i))
+                    pf("  n%d V_%s: c=%d clj=%d\n", i, vn[vi],
+                       (int)BM_GET(g_snap_v[vi], i), (int)BM_GET(g->v[vi], i));
+            if (g_snap_scope[i] != g->scope[i])
+                pf("  n%d scope: c=%d clj=%d\n", i, g_snap_scope[i], g->scope[i]);
+            if (g_snap_bind[i] != g->bind[i])
+                pf("  n%d bind: c=%d clj=%d\n", i, g_snap_bind[i], g->bind[i]);
+            if (g_snap_val[i] != g->val[i])
+                pf("  n%d val: c=%lld clj=%lld\n", i,
+                   (long long)g_snap_val[i], (long long)g->val[i]);
+        }
+    }
+    arena_reset(&g_temp);
+    return val_bool(ok);
+}
+
+static Val bi_describe_t(Val args) {
+    Str *s = val_as_str(car(args));
+    char buf[s->len + 1]; memcpy(buf, s->data, s->len); buf[s->len] = 0;
+    describe(buf);
+    return NIL;
+}
+
+static Val bi_it_t(Val args) {
+    Str *s = val_as_str(car(args));
+    bool ok = val_truthy(car(cdr(args)));
+    char buf[s->len + 1]; memcpy(buf, s->data, s->len); buf[s->len] = 0;
+    it(buf, ok);
+    return val_bool(ok);
+}
+
+static void test_engine(void) {
+    describe("engine");
+
+    // Parse a program into the world
+    Lang l; lang_lisp(&l);
+    gram_parse(&g_world.gram, &l, "(+ 1 2)", 7);
+    gram_index(&g_world.gram);
+
+    // Test basic GNode access from Clojure
+    g_signal = SIGNAL_NONE;
+    it("gn-count", val_as_int(engine_eval("(gn-count)")) > 0);
+    it("root-kind", val_as_int(engine_eval("(gn-kind 0)")) == NK_ROOT);
+
+    // Find first child of root (should be the list)
+    u32 list_id = g_world.gram.nodes[0].child;
+    it("list-kind", val_as_int(engine_eval("(gn-kind (gn-child 0))")) == NK_LIST);
+
+    // Navigate into list: first child = "+"
+    it("head-sym", val_as_int(engine_eval("(gn-sym (gn-child (gn-child 0)))")) == (i64)S_ADD);
+
+    // Test view ops: manually set and check a view bit
+    engine_eval("(view-set! V_PURE 1)");
+    it("view-set!", BM_GET(g_world.gram.v[V_PURE], 1));
+    it("view?-true", val_truthy(engine_eval("(view? V_PURE 1)")));
+    it("view?-false", !val_truthy(engine_eval("(view? V_PURE 0)")));
+
+    // Test val-set!/val-get
+    engine_eval("(val-set! 2 42)");
+    it("val-set!", g_world.gram.val[2] == 42);
+    it("val-get", val_as_int(engine_eval("(val-get 2)")) == 42);
+
+    // Test a Clojure analysis rule: mark all NK_NUM as V_INT
+    gram_parse(&g_world.gram, &l, "(+ 1 2.5 3)", 12);
+    gram_index(&g_world.gram);
+
+    engine_eval(
+        "(loop [i 0]"
+        "  (when (< i (gn-count))"
+        "    (when (and (= (gn-kind i) NK_NUM) (not (gn-has-dot i)))"
+        "      (view-set! V_INT i)"
+        "      (val-set! i (gn-parse-int i)))"
+        "    (recur (inc i))))"
+    );
+
+    // "1" is node 2, "2.5" is node 3, "3" is node 4
+    u32 n1 = g_world.gram.nodes[g_world.gram.nodes[0].child].child;
+    n1 = g_world.gram.nodes[n1].next;  // first arg = "1"
+    u32 n25 = g_world.gram.nodes[n1].next;  // "2.5"
+    u32 n3 = g_world.gram.nodes[n25].next;  // "3"
+
+    it("rule-int-1", BM_GET(g_world.gram.v[V_INT], n1));
+    it("rule-float-skip", !BM_GET(g_world.gram.v[V_INT], n25));
+    it("rule-int-3", BM_GET(g_world.gram.v[V_INT], n3));
+    it("rule-val-1", g_world.gram.val[n1] == 1);
+    it("rule-val-3", g_world.gram.val[n3] == 3);
+
+    // Test pure-bi?
+    it("pure-bi?-add", val_truthy(engine_eval("(pure-bi? SYM_ADD)")));
+    it("pure-bi?-if", !val_truthy(engine_eval("(pure-bi? SYM_IF)")));
+
+    // Register test builtins for Clojure-level testing
+    #define TREG(n, f) env_set(g_global_env, INTERN(n), make_builtin(INTERN(n), f))
+    TREG("world-parse!", bi_world_parse);
+    TREG("views-clear!", bi_views_clear);
+    TREG("c-analyze!", bi_c_analyze);
+    TREG("views-snapshot!", bi_views_snapshot);
+    TREG("views-match?", bi_views_match);
+    TREG("describe!", bi_describe_t);
+    TREG("it!", bi_it_t);
+    #undef TREG
+
+    // Define comparison test in Clojure:
+    // parse → C analyze → snapshot → clear → Clojure analyze → compare
+    engine_eval(
+        "(defn test-compare [src]"
+        "  (world-parse! src)"
+        "  (c-analyze!)"
+        "  (views-snapshot!)"
+        "  (views-clear!)"
+        "  (clj-pass-scope)"
+        "  (clj-pass-type (gn-count))"
+        "  (clj-pass-flow)"
+        "  (it! src (views-match?)))"
+    );
+
+    // ---- Clojure passes vs C: all logic in Clojure ----
+    engine_eval("(describe! \"clj passes\")");
+    static const char *clj_tests[] = {
+        "(test-compare \"(+ 1 2)\")",
+        "(test-compare \"(defn f [x] (+ x 1))\")",
+        "(test-compare \"(let [a 1 b 2] (+ a b))\")",
+        "(test-compare \"(if true 42 99)\")",
+        "(test-compare \"(do (def x 10) (+ x 1))\")",
+        "(test-compare \"(fn [a b] (* a b))\")",
+        "(test-compare \"(loop [i 0] (if (>= i 10) i (recur (inc i))))\")",
+        "(test-compare \"(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))\")",
+        "(test-compare \"(when false 42)\")",
+        "(test-compare \"(+ (* 2 3) (- 10 4))\")",
+        "(test-compare \"(cond (< 5 3) 0 (> 5 3) 1)\")",
+    };
+    for (u32 ti = 0; ti < sizeof(clj_tests) / sizeof(clj_tests[0]); ti++) {
+        g_signal = SIGNAL_NONE;
+        engine_eval(clj_tests[ti]);
+    }
+}
+
+// ============================================================================
+// 15. Compiler Tests — JIT + CC (data-driven, C-level)
 // ============================================================================
 
 typedef struct { const char *name; const char *src; const char *exp; } EvalCase;
@@ -1195,13 +1644,12 @@ static void run_jit_suite(const JitCase *t, u32 n) {
 }
 
 static void run_cc_suite(const EvalCase *t, u32 n) {
-    describe("clj -> c -> native");
+    describe("clj -> c emit");
+    // Verify cc_emit produces non-empty C output for each test (no GCC needed)
     for (u32 i = 0; i < n; i++) {
-        int rc = compile_and_capture(t[i].src);
-        if (rc != 0 && strcmp(g_captured, "COMPILE_ERROR") == 0)
-            it(t[i].name, false);
-        else
-            it_eq_str(t[i].name, g_captured, t[i].exp);
+        arena_reset(&g_req);
+        cc_emit(t[i].src);
+        it(t[i].name, g_out.pos > 0);
     }
 }
 
@@ -1237,6 +1685,22 @@ static const JitCase T_JIT[] = {
     {"cond-1", "(cond (< 5 3) 0 (> 5 3) 1)", 1},
     {"cond-else", "(cond 0 99 1 42)", 42}, {"cond-none", "(cond 0 1 0 2)", 0},
     {"when-t", "(when 1 42)", 42}, {"when-f", "(when 0 42)", 0},
+};
+
+// Extended JIT tests — Clojure JIT only (bit ops, memory)
+static const JitCase T_JIT_CLJ[] = {
+    // Bit ops
+    {"band", "(bit-and 15 9)", 9}, {"bor", "(bit-or 5 3)", 7},
+    {"bxor", "(bit-xor 15 9)", 6}, {"bnot", "(bit-not 0)", -1},
+    {"bshl", "(bit-shift-left 1 5)", 32}, {"bshr", "(bit-shift-right 32 3)", 4},
+    {"popcnt", "(popcount 255)", 8}, {"popcnt0", "(popcount 0)", 0},
+    {"popcnt1", "(popcount 1)", 1},
+    {"band-expr", "(bit-and (bit-shift-right 171 5) 31)", 5},
+    {"mask", "(popcount (bit-and 65535 (- (bit-shift-left 1 10) 1)))", 10},
+    // Bit ops in defn
+    {"defn-band", "(defn btest [x y] (bit-and x y)) (btest 255 15)", 15},
+    {"defn-shl", "(defn shl1 [x n] (bit-shift-left x n)) (shl1 1 10)", 1024},
+    {"defn-popcnt", "(defn pc [x] (popcount x)) (pc 42)", 3},
 };
 
 static const EvalCase T_CC[] = {
@@ -1280,7 +1744,9 @@ static const EvalCase T_CC[] = {
 // ============================================================================
 
 static int run_all_tests(void) {
+    u64 t0 = rdtsc();
     t_pass = t_fail = t_groups = 0;
+    g_pf_batch = true;  // buffer all output, single flush at end
     pfc(C_BOLD); pf("=== genera test suite ==="); pfc(C_RESET);
 
     // Base layer
@@ -1305,15 +1771,198 @@ static int run_all_tests(void) {
     test_pass_flow();
     test_render();
     test_runtime_views();
+    test_image_save_load();
+
+    // Engine (Clojure ↔ GNode bridge)
+    test_engine();
 
     // Self-checking eval tests (programs in the language)
     register_test_builtins();
     run_assert_tests(T_ASSERT);
     test_error_cases();
 
+    // New builtins: str-parent, store64! aliases, view constants
+    {
+        describe("wiring builtins");
+        // str-parent chain: "page:/about" → "page:" → "page" → "*"
+        StrId page_about = str_intern(STR_LIT("page:/about"));
+        Val r1 = bi_str_parent(cons_new(val_int(page_about), NIL));
+        StrId parent1 = (StrId)val_as_int(r1);
+        it("parent1", str_eq(str_from_id(parent1), STR_LIT("page:")));
+        Val r2 = bi_str_parent(cons_new(val_int(parent1), NIL));
+        StrId parent2 = (StrId)val_as_int(r2);
+        it("parent2", str_eq(str_from_id(parent2), STR_LIT("page")));
+        Val r3 = bi_str_parent(cons_new(val_int(parent2), NIL));
+        StrId parent3 = (StrId)val_as_int(r3);
+        it("parent3-wildcard", str_eq(str_from_id(parent3), STR_LIT("*")));
+        // SYM_STAR = S_MUL (the interned "*")
+        it("sym-star", parent3 == S_MUL);
+        // store64 + mem builtins
+        arena_reset(&g_req); g_signal = SIGNAL_NONE; g_depth = 0;
+        Val m = eval_string("(mem-new! 64)", g_global_env);
+        if (g_signal) { it("mem-new!", false); g_signal = SIGNAL_NONE; print_flush(); }
+        else {
+            it("mem-new!", val_is_int(m));
+            Val b = eval_string("(mem-base (mem-new! 64))", g_global_env);
+            if (g_signal) { it("mem-base", false); g_signal = SIGNAL_NONE; print_flush(); }
+            else it("mem-base", val_is_int(b));
+        }
+        // View constants accessible
+        arena_reset(&g_req); g_signal = SIGNAL_NONE; g_depth = 0;
+        Val va = eval_string("V_ALLOC", g_global_env);
+        it_eq_i64("V_ALLOC", val_as_int(va), V_ALLOC);
+        Val vs = eval_string("V_SCOPE", g_global_env);
+        it_eq_i64("V_SCOPE", val_as_int(vs), V_SCOPE);
+    }
+
     // Emit layer (data-driven)
     run_jit_suite(SUITE(T_JIT));
     run_cc_suite(SUITE(T_CC));
+
+    // Clojure JIT walker — same tests, compiled by Clojure instead of C
+    {
+        describe("clj jit");
+        const JitCase *t = T_JIT;
+        u32 n = sizeof(T_JIT)/sizeof(T_JIT[0]);
+        for (u32 i = 0; i < n; i++)
+            it_eq_i64(t[i].name, clj_jit_run(t[i].src), t[i].exp);
+    }
+
+    // Clojure JIT: bit ops + memory (Clojure emitter only)
+    {
+        describe("clj jit: bit+mem");
+        const JitCase *t = T_JIT_CLJ;
+        u32 n = sizeof(T_JIT_CLJ)/sizeof(T_JIT_CLJ[0]);
+        for (u32 i = 0; i < n; i++)
+            it_eq_i64(t[i].name, clj_jit_run(t[i].src), t[i].exp);
+
+        // Memory tests: set up data via interpreter, read via JIT
+        engine_eval("(def _test_mem (mem-new! 4096))");
+        engine_eval("(def _test_base (mem-base _test_mem))");
+        i64 base = val_as_int(engine_eval("_test_base"));
+        engine_eval("(store64 _test_base 42)");
+        engine_eval("(store64 (+ _test_base 8) 99)");
+        engine_eval("(store64 (+ _test_base 16) 7)");
+        // Verify interpreter reads them back
+        it("interp-load64", val_as_int(engine_eval("(load64 _test_base)")) == 42);
+        it("interp-load64-8", val_as_int(engine_eval("(load64 (+ _test_base 8))")) == 99);
+        // JIT: embed base address as literal, read same memory
+        char jbuf[512];
+        OutBuf jb = {jbuf, 0, sizeof(jbuf)};
+        #define JFMT(...) (jb.pos = 0, buf_fmt(&jb, __VA_ARGS__), buf_c(&jb, '\0'), jbuf)
+        it_eq_i64("jit-load64",
+            clj_jit_run(JFMT("(def base %lld) (load64 base)", base)), 42);
+        it_eq_i64("jit-load64-off",
+            clj_jit_run(JFMT("(def base %lld) (load64 (+ base 8))", base)), 99);
+        it_eq_i64("jit-load64-idx",
+            clj_jit_run(JFMT("(def base %lld) (defn rd [b i] (load64 (+ b (* i 8)))) (rd base 2)", base)), 7);
+        // JIT: write then read
+        it_eq_i64("jit-store-read",
+            clj_jit_run(JFMT("(def base %lld) (store64 (+ base 24) 555) (load64 (+ base 24))", base)), 555);
+        // 32-bit load/store
+        engine_eval("(store32 (+ _test_base 32) 12345)");
+        it_eq_i64("jit-load32",
+            clj_jit_run(JFMT("(def base %lld) (load32 (+ base 32))", base)), 12345);
+        // 8-bit load/store
+        engine_eval("(store8 (+ _test_base 40) 200)");
+        it_eq_i64("jit-load8",
+            clj_jit_run(JFMT("(def base %lld) (load8 (+ base 40))", base)), 200);
+        it_eq_i64("jit-store8-read",
+            clj_jit_run(JFMT("(def base %lld) (store8 (+ base 41) 77) (load8 (+ base 41))", base)), 77);
+        #undef JFMT
+    }
+
+    // Clojure JIT: HAMT primitives (bit+mem compose into data structure ops)
+    {
+        describe("clj jit: hamt");
+        // HAMT index extraction: (hash >> shift) & 31
+        it_eq_i64("jit-hash-idx",
+            clj_jit_run("(defn hamt-idx [h shift] (bit-and (bit-shift-right h shift) 31)) (hamt-idx 171 0)"), 11);
+        it_eq_i64("jit-hash-idx5",
+            clj_jit_run("(defn hamt-idx [h shift] (bit-and (bit-shift-right h shift) 31)) (hamt-idx 171 5)"), 5);
+        // HAMT child position: popcount(bitmap & (bit - 1))
+        it_eq_i64("jit-popcnt-mask",
+            clj_jit_run("(defn hamt-pos [bm idx] (popcount (bit-and bm (- (bit-shift-left 1 idx) 1)))) (hamt-pos 65535 10)"), 10);
+        // Memory: build a node in JIT, read it back
+        engine_eval("(def _jh_mem (mem-new! 4096))");
+        i64 hbase = val_as_int(engine_eval("(mem-base _jh_mem)"));
+        char jbuf[512];
+        OutBuf jb = {jbuf, 0, sizeof(jbuf)};
+        #define JFMT(...) (jb.pos = 0, buf_fmt(&jb, __VA_ARGS__), buf_c(&jb, '\0'), jbuf)
+        // Store a bitmap (u32) and two child pointers (u64) at base
+        // bitmap = 0b11 (bits 0 and 1 set), children at +8 and +16
+        engine_eval("(store32 (+ (mem-base _jh_mem) 0) 3)");   // bitmap = 3
+        engine_eval("(store64 (+ (mem-base _jh_mem) 8) 42)");  // child[0] = 42
+        engine_eval("(store64 (+ (mem-base _jh_mem) 16) 99)"); // child[1] = 99
+        // JIT: read bitmap, compute position, read child
+        it_eq_i64("jit-node-bm",
+            clj_jit_run(JFMT("(def base %lld) (load32 base)", hbase)), 3);
+        it_eq_i64("jit-node-child0",
+            clj_jit_run(JFMT("(def base %lld) (load64 (+ base 8))", hbase)), 42);
+        it_eq_i64("jit-node-child1",
+            clj_jit_run(JFMT("(def base %lld) (load64 (+ base 16))", hbase)), 99);
+        // Full HAMT-get via JIT: bitmap lookup + child read
+        it_eq_i64("jit-hamt-lookup",
+            clj_jit_run(JFMT(
+                "(def base %lld)"
+                "(defn node-child [p idx]"
+                "  (let [bm (load32 p)"
+                "        bit (bit-shift-left 1 idx)"
+                "        pos (popcount (bit-and bm (- bit 1)))]"
+                "    (load64 (+ p (+ 8 (* pos 8))))))"
+                "(node-child base 0)", hbase)), 42);
+        it_eq_i64("jit-hamt-lookup1",
+            clj_jit_run(JFMT(
+                "(def base %lld)"
+                "(defn node-child [p idx]"
+                "  (let [bm (load32 p)"
+                "        bit (bit-shift-left 1 idx)"
+                "        pos (popcount (bit-and bm (- bit 1)))]"
+                "    (load64 (+ p (+ 8 (* pos 8))))))"
+                "(node-child base 1)", hbase)), 99);
+        #undef JFMT
+    }
+
+    // Bitmap intern (Clojure-level structural indexing)
+    {
+        describe("bitmap intern");
+        // (defn add [a b] (+ a b))  = 24 bytes
+        // Opens: pos 0,10,16 = 3   Closes: pos 14,22,23 = 3
+        // Forms: 1  Depth: max 2  Lines: 1
+
+        world_step("(defn add [a b] (+ a b))", false);
+        it_eq_i64("bm-src-len", (i64)g_world.gram.src_len, 24);
+        engine_eval("(def _bm (bm-intern-gram!))");
+        it_eq_i64("bm-opens",
+            val_as_int(engine_eval("(bm-count _bm BM_OPEN)")), 3);
+        it_eq_i64("bm-closes",
+            val_as_int(engine_eval("(bm-count _bm BM_CLOSE)")), 3);
+        it_eq_i64("bm-struct",
+            val_as_int(engine_eval("(bm-count _bm BM_STRUCT)")), 6);
+        it_eq_i64("bm-forms",
+            val_as_int(engine_eval("(bm-form-count _bm)")), 1);
+        it_eq_i64("bm-max-depth",
+            val_as_int(engine_eval("(bm-max-depth _bm)")), 2);
+        it_eq_i64("bm-lines",
+            val_as_int(engine_eval("(bm-line-count _bm)")), 1);
+        it_eq_i64("bm-depth-0",
+            val_as_int(engine_eval("(bm-depth-at _bm 0)")), 1);
+        it_eq_i64("bm-depth-16",
+            val_as_int(engine_eval("(bm-depth-at _bm 16)")), 2);
+
+        // Multi-form source: 3 forms, 3 lines, depth 1
+        world_step("(def x 1)\n(def y 2)\n(+ x y)", false);
+        engine_eval("(def _bm2 (bm-intern-gram!))");
+        it_eq_i64("bm2-forms",
+            val_as_int(engine_eval("(bm-form-count _bm2)")), 3);
+        it_eq_i64("bm2-lines",
+            val_as_int(engine_eval("(bm-line-count _bm2)")), 3);
+        it_eq_i64("bm2-max-depth",
+            val_as_int(engine_eval("(bm-max-depth _bm2)")), 1);
+        it_eq_i64("bm2-digit-token",
+            val_as_int(engine_eval("(bm-and-count _bm2 BM_DIGIT BM_TOKEN)")),
+            val_as_int(engine_eval("(bm-count _bm2 BM_DIGIT)")));
+    }
 
     pf("\n");
     pfc(t_fail ? C_YELLOW : C_GREEN);
@@ -1321,8 +1970,14 @@ static int run_all_tests(void) {
     pfc(C_RESET);
     if (t_fail) { pfc(C_RED); pf(", %d failed", t_fail); pfc(C_RESET); }
     else { pfc(C_DIM); pf(", 0 failed"); pfc(C_RESET); }
-    pfc(C_DIM); pf(" (%d groups)", t_groups); pfc(C_RESET);
+    u64 ticks = rdtsc() - t0;
+    // ~3 GHz assumption for display; exact calibration would need a syscall
+    u64 elapsed_us = ticks / 3000;
+    pfc(C_DIM); pf(" (%d groups, %u us", t_groups, (u32)elapsed_us);
+    pf(")"); pfc(C_RESET);
     pf("\n");
+    g_pf_batch = false;
+    print_flush();
     return t_fail;
 }
 

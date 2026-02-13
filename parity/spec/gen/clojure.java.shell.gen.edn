@@ -1,0 +1,10 @@
+[
+{:category :clojure.java.shell.functions,
+ :parametric
+ [{:describe "with-sh-dir",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.shell/with-sh-dir %dir)"}
+  {:describe "with-sh-env",
+   :params {:env ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.shell/with-sh-env %env)"}]}
+]

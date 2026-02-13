@@ -1,0 +1,42 @@
+;; clojure.string namespace — comprehensive
+;; https://clojure.github.io/clojure/clojure.string-api.html
+
+[{:category :functions
+  :tests
+  [{:it "blank? nil"              :eval "(clojure.string/blank? nil)"}
+   {:it "blank? empty"            :eval "(clojure.string/blank? \"\")"}
+   {:it "blank? spaces"           :eval "(clojure.string/blank? \"   \")"}
+   {:it "blank? tabs"             :eval "(clojure.string/blank? \"\\t\\n\")"}
+   {:it "blank? content"          :eval "(clojure.string/blank? \"hi\")"}
+   {:it "capitalize"              :eval "(clojure.string/capitalize \"hello world\")"}
+   {:it "capitalize empty"        :eval "(clojure.string/capitalize \"\")"}
+   {:it "ends-with? true"         :eval "(clojure.string/ends-with? \"hello\" \"llo\")"}
+   {:it "ends-with? false"        :eval "(clojure.string/ends-with? \"hello\" \"xyz\")"}
+   {:it "escape"                  :eval "(clojure.string/escape \"<b>\" {\\< \"&lt;\" \\> \"&gt;\"})"}
+   {:it "includes? true"          :eval "(clojure.string/includes? \"hello\" \"ell\")"}
+   {:it "includes? false"         :eval "(clojure.string/includes? \"hello\" \"xyz\")"}
+   {:it "index-of"                :eval "(clojure.string/index-of \"hello\" \"ll\")"}
+   {:it "index-of missing"        :eval "(clojure.string/index-of \"hello\" \"xyz\")"}
+   {:it "index-of from"           :eval "(clojure.string/index-of \"abcabc\" \"bc\" 2)"}
+   {:it "join"                    :eval "(clojure.string/join \", \" [1 2 3])"}
+   {:it "join no sep"             :eval "(clojure.string/join [\"a\" \"b\" \"c\"])"}
+   {:it "join empty"              :eval "(clojure.string/join \",\" [])"}
+   {:it "last-index-of"           :eval "(clojure.string/last-index-of \"abcabc\" \"bc\")"}
+   {:it "lower-case"              :eval "(clojure.string/lower-case \"HELLO\")"}
+   {:it "lower-case mixed"        :eval "(clojure.string/lower-case \"Hello World\")"}
+   {:it "replace string"          :eval "(clojure.string/replace \"hello world\" \"world\" \"clojure\")"}
+   {:it "replace regex"           :eval "(clojure.string/replace \"a1b2c3\" #\"\\d\" \"X\")"}
+   {:it "replace-first string"    :eval "(clojure.string/replace-first \"aaa\" \"a\" \"b\")"}
+   {:it "replace-first regex"     :eval "(clojure.string/replace-first \"a1b2\" #\"\\d\" \"X\")"}
+   {:it "reverse"                 :eval "(clojure.string/reverse \"hello\")"}
+   {:it "reverse empty"           :eval "(clojure.string/reverse \"\")"}
+   {:it "split"                   :eval "(clojure.string/split \"a,b,c\" #\",\")"}
+   {:it "split limit"             :eval "(clojure.string/split \"a,b,c,d\" #\",\" 2)"}
+   {:it "split-lines"             :eval "(clojure.string/split-lines \"a\\nb\\nc\")"}
+   {:it "starts-with? true"       :eval "(clojure.string/starts-with? \"hello\" \"hel\")"}
+   {:it "starts-with? false"      :eval "(clojure.string/starts-with? \"hello\" \"xyz\")"}
+   {:it "trim"                    :eval "(clojure.string/trim \"  hello  \")"}
+   {:it "trim-newline"            :eval "(clojure.string/trim-newline \"hello\\n\")"}
+   {:it "triml"                   :eval "(clojure.string/triml \"  hello  \")"}
+   {:it "trimr"                   :eval "(clojure.string/trimr \"  hello  \")"}
+   {:it "upper-case"              :eval "(clojure.string/upper-case \"hello\")"}]}]

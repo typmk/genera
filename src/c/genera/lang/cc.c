@@ -10,15 +10,10 @@
 #define CC_C_INCLUDED
 
 // ============================================================================
-// 1. Output Buffer + Name Mangling
+// 1. Name Mangling + C Emitter Helpers
 // ============================================================================
 
-static char g_out_data[1 << 20];
-static OutBuf g_out;
-
-static void out_reset(void) {
-    g_out = (OutBuf){g_out_data, 0, sizeof(g_out_data)};
-}
+// g_out, g_out_data, out_reset() now in eval.c (shared with Clojure emitters)
 
 static void out(const char *fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -277,7 +272,7 @@ static void emg_loop(u32 bv, int d) {
 // --- Main dispatcher ---
 
 static void emg_expr(u32 id, int d) {
-    TAP1(TK_CC, id);
+    DISPATCH(TK_CC, id, 0);
     Gram *g = g_cc;
     GNode *n = &g->nodes[id];
 
@@ -285,7 +280,7 @@ static void emg_expr(u32 id, int d) {
     if (g->analyzed) {
         if (BM_GET(g->v[V_DEAD], id)) { out("0"); return; }
         if (BM_GET(g->v[V_CONST], id) && BM_GET(g->v[V_INT], id)) {
-            out("%lld", (long long)g->const_val[id]); return;
+            out("%lld", (long long)g->val[id]); return;
         }
     }
 
@@ -473,13 +468,7 @@ static void emg_program(u32 *defn_ids, u32 n_defns,
 
 // cc_emit — parse source and emit C to g_out (no GCC)
 static void cc_emit(const char *source) {
-    gram_ensure_scratch();
-    static Lang lisp; static bool inited;
-    if (!inited) { lang_lisp(&lisp); inited = true; }
-    Gram *g = &g_gram_scratch;
-    gram_parse(g, &lisp, source, (u32)strlen(source));
-    gram_index(g);
-    gram_analyze(g);
+    Gram *g = world_step(source, true);
     g_cc = g;
 
     u32 defn_ids[256]; u32 n_defns = 0;

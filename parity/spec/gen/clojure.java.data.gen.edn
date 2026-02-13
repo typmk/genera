@@ -1,0 +1,18 @@
+[
+{:category :clojure.java.data.functions,
+ :tests
+ [{:it "defn-log-or-throw",
+   :eval "(clojure.java.data/defn-log-or-throw)"}],
+ :parametric
+ [{:describe "log-or-throw",
+   :params
+   {:message__11524__auto__
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.java.data/log-or-throw %message__11524__auto__)"}
+  {:describe "set-properties",
+   :params
+   {:instance ["nil" "true" "0" "1" "-1"],
+    :props ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.data/set-properties %instance %props)"}]}
+]

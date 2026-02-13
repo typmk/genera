@@ -1,0 +1,56 @@
+[
+{:category :clojure.data.int-map.functions,
+ :tests
+ [{:it "dense-int-set", :eval "(clojure.data.int-map/dense-int-set)"}
+  {:it "int-map", :eval "(clojure.data.int-map/int-map)"}
+  {:it "int-set", :eval "(clojure.data.int-map/int-set)"}
+  {:it "merge", :eval "(clojure.data.int-map/merge)"}],
+ :parametric
+ [{:describe "dense-int-set",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.data.int-map/dense-int-set %s)"}
+  {:describe "difference",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.int-map/difference %a %b)"}
+  {:describe "int-map",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.int-map/int-map %a %b)"}
+  {:describe "int-set",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.data.int-map/int-set %s)"}
+  {:describe "intersection",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.int-map/intersection %a %b)"}
+  {:describe "merge",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.int-map/merge %a %b)"}
+  {:describe "merge-with",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.data.int-map/merge-with %f)"}
+  {:describe "range",
+   :params
+   {:x ["0" "1" "-1"],
+    :min ["nil" "true" "0"],
+    :max ["nil" "true" "0"]},
+   :template "(clojure.data.int-map/range %x %min %max)"}
+  {:describe "union",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.int-map/union %a %b)"}
+  {:describe "update",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :k [":a" ":b" ":foo"],
+    :f ["inc" "dec" "identity"]},
+   :template "(clojure.data.int-map/update %m %k %f)"}
+  {:describe "update!",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :k [":a" ":b" ":foo"],
+    :f ["inc" "dec" "identity"]},
+   :template "(clojure.data.int-map/update! %m %k %f)"}]}
+]

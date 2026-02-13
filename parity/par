@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# =============================================================================
+# par — Clojure Parity Toolkit
+#
+# One CLI for all parity tools. Everything runs on JVM Clojure.
+# =============================================================================
+
+set -euo pipefail
+cd "$(dirname "$0")"
+
+cmd="${1:-}"
+shift 2>/dev/null || true
+
+run() { clojure -M "$@"; }
+
+case "$cmd" in
+  # ── DISCOVER ──────────────────────────────────────────────────────────────
+  discover|lang)
+    run langmap.clj "$@"
+    ;;
+  deps|dep)
+    run depgraph.clj "$@"
+    ;;
+  host)
+    run depgraph.clj --host "$@"
+    ;;
+
+  # ── GENERATE ──────────────────────────────────────────────────────────────
+  specgen|gen)
+    run specgen.clj "$@"
+    ;;
+  port)
+    run portabilize.clj "$@"
+    ;;
+
+  # ── TEST ──────────────────────────────────────────────────────────────────
+  expand)
+    run parity.clj expand "$@"
+    ;;
+  capture)
+    run parity.clj capture "$@"
+    ;;
+  test)
+    run parity.clj test "$@"
+    ;;
+  stats)
+    run parity.clj stats "$@"
+    ;;
+
+  # ── UTIL ──────────────────────────────────────────────────────────────────
+  check|br)
+    run utils.clj brackets "$@"
+    ;;
+  forms)
+    run utils.clj forms "$@"
+    ;;
+
+  # ── ANALYZE ──────────────────────────────────────────────────────────────
+  tree)
+    src="${1:?usage: par tree <clojure-src> [--edn]}"
+    shift
+    tmp_graph=$(mktemp) tmp_host=$(mktemp)
+    trap "rm -f $tmp_graph $tmp_host" EXIT
+    run depgraph.clj "$src" --edn > "$tmp_graph"
+    run langmap.clj --edn > "$tmp_host"
+    run tree.clj "$tmp_graph" "$tmp_host" "$@"
+    ;;
+  coverage|cov)
+    ported="${1:?usage: par coverage <ported-dir> <clojure-src>}"
+    src="${2:?usage: par coverage <ported-dir> <clojure-src>}"
+    tmp=$(mktemp)
+    trap "rm -f $tmp" EXIT
+    run depgraph.clj "$src" --host-edn > "$tmp"
+    run specgen.clj --coverage "$ported" --host-data "$tmp"
+    ;;
+
+  # ── PIPELINE ──────────────────────────────────────────────────────────────
+  full)
+    echo "=== specgen ==="
+    run specgen.clj --write spec/gen/ "$@"
+    echo ""
+    echo "=== expand ==="
+    run parity.clj expand
+    echo ""
+    echo "=== capture ==="
+    run parity.clj capture
+    echo ""
+    echo "=== stats ==="
+    run parity.clj stats
+    ;;
+
+  # ── HELP ──────────────────────────────────────────────────────────────────
+  *)
+    cat <<'EOF'
+
+  Clojure Parity Toolkit
+
+  DISCOVER   what Clojure is
+    par discover               JVM host contract (reflection)
+    par deps <dir> [--edn|--dot|--host]  source dependency graph
+    par host [ns...]           per-var host dependency (via deps)
+
+  GENERATE   test specifications
+    par specgen [--write dir] [--stats] [ns...]
+    par port <in.clj> [out.cljc]  rewrite JVM→portable
+
+  ANALYZE    dependency tree + coverage
+    par tree <clj-src> [--edn]   complete dependency tree with host contract
+    par coverage <ported-dir> <clj-src>  host coverage analysis
+
+  TEST       validate implementation
+    par expand                   specs → expressions.edn
+    par capture                  eval on JVM → reference.edn
+    par test [results.edn]       compare against reference
+    par stats                    coverage overview
+
+  UTIL
+    par check <file...>          bracket balance
+    par forms <file>             debug-print top-level forms
+
+  PIPELINE
+    par full                     specgen → expand → capture → stats
+
+  Aliases: dep=deps, gen=specgen, lang=discover, br=check
+
+EOF
+    ;;
+esac

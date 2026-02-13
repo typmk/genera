@@ -1,0 +1,12 @@
+[
+{:category :clojure.edn.functions,
+ :tests [{:it "read", :eval "(clojure.edn/read)"}],
+ :parametric
+ [{:describe "read",
+   :params
+   {:stream ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.edn/read %stream)"}
+  {:describe "read-string",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.edn/read-string %s)"}]}
+]

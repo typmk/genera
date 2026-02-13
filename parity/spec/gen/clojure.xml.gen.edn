@@ -1,0 +1,28 @@
+[
+{:category :clojure.xml.functions,
+ :tests [{:it "sax-parser", :eval "(clojure.xml/sax-parser)"}],
+ :parametric
+ [{:describe "disable-external-entities",
+   :params
+   {:parser ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.xml/disable-external-entities %parser)"}
+  {:describe "emit",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.xml/emit %x)"}
+  {:describe "emit-element",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.xml/emit-element %e)"}
+  {:describe "parse",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.xml/parse %s)"}
+  {:describe "startparse-sax",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :ch ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.xml/startparse-sax %s %ch)"}
+  {:describe "startparse-sax-safe",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :ch ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.xml/startparse-sax-safe %s %ch)"}]}
+]

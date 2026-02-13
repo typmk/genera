@@ -1,0 +1,77 @@
+;; clojure.edn — Clojure reader grammar for genera
+;;
+;; Defines the syntax of Clojure as data:
+;;   delimiters, special forms, reader macros, literal syntax.
+;; Used by the grammar engine to parse Clojure source.
+
+{:meta {:version 1
+        :description "Clojure reader grammar — syntax as data"}
+
+ ;; ================================================================
+ ;; Delimiters — matched pairs that create structure
+ ;; ================================================================
+
+ :delimiters
+ {:list   {:open "(" :close ")" :node-kind :NK_LIST}
+  :vector {:open "[" :close "]" :node-kind :NK_VEC}
+  :map    {:open "{" :close "}" :node-kind :NK_MAP}
+  :set    {:open "#{" :close "}" :node-kind :NK_SET}}
+
+ ;; ================================================================
+ ;; Reader macros — single-char prefixes that transform the next form
+ ;; ================================================================
+
+ :reader-macros
+ {:quote         {:char "'"  :expands-to (quote ~form)}
+  :syntax-quote  {:char "`"  :expands-to (syntax-quote ~form)}
+  :unquote       {:char "~"  :expands-to (unquote ~form)}
+  :unquote-splice {:char "~@" :expands-to (unquote-splicing ~form)}
+  :deref         {:char "@"  :expands-to (deref ~form)}
+  :meta          {:char "^"  :attaches-metadata true}
+  :dispatch      {:char "#"  :subtable true}}
+
+ ;; ================================================================
+ ;; Dispatch macros — #X prefixes
+ ;; ================================================================
+
+ :dispatch
+ {:set       {:char "{"  :node-kind :NK_SET}
+  :regex     {:char "\""  :node-kind :NK_REGEX}
+  :fn        {:char "("  :expands-to (fn [%1 %2 ...] ~body)}
+  :ignore    {:char "_"  :discards-next true}
+  :tag       {:char ":"  :tagged-literal true}
+  :cond      {:char "?"  :platform-conditional true}}
+
+ ;; ================================================================
+ ;; Special forms — handled by the compiler, not as function calls
+ ;; ================================================================
+
+ :special-forms
+ #{def if do let fn quote loop recur
+   defmacro try catch throw
+   . new set! var}
+
+ ;; ================================================================
+ ;; Literals
+ ;; ================================================================
+
+ :literals
+ {:nil     {:pattern "nil"   :value nil}
+  :true    {:pattern "true"  :value true}
+  :false   {:pattern "false" :value false}
+  :integer {:pattern "[+-]?\\d+" :radix-prefix "0x|0b|0o|\\dr"}
+  :float   {:pattern "[+-]?\\d+\\.\\d*([eE][+-]?\\d+)?"}
+  :ratio   {:pattern "[+-]?\\d+/\\d+"}
+  :string  {:open "\"" :close "\"" :escapes {"\\n" "\n" "\\t" "\t" "\\\\" "\\" "\\\"" "\""}}
+  :char    {:prefix "\\" :names {"newline" "\n" "space" " " "tab" "\t" "return" "\r"}}
+  :keyword {:prefix ":" :namespaced "::" :pattern ":[a-zA-Z_][a-zA-Z0-9_.-/]*"}
+  :symbol  {:pattern "[a-zA-Z_*+!?<>=.-][a-zA-Z0-9_*+!?<>=.-/]*"}}
+
+ ;; ================================================================
+ ;; Whitespace and comments
+ ;; ================================================================
+
+ :whitespace
+ {:chars " \t\n\r,"
+  :comment {:line ";" :to-eol true}
+  :discard {:prefix "#_" :discards-next-form true}}}

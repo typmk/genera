@@ -1,0 +1,36 @@
+[
+{:category :clojure.tools.reader.functions,
+ :tests
+ [{:it "read", :eval "(clojure.tools.reader/read)"}
+  {:it "read+string", :eval "(clojure.tools.reader/read+string)"}],
+ :parametric
+ [{:describe "map-func",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.tools.reader/map-func %coll)"}
+  {:describe "read",
+   :params
+   {:reader ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.reader/read %reader)"}
+  {:describe "read+string",
+   :params
+   {:stream ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.reader/read+string %stream)"}
+  {:describe "read-regex",
+   :params
+   {:rdr ["nil" "true"],
+    :ch ["nil" "true"],
+    :opts ["nil" "true"],
+    :pending-forms ["nil" "true"]},
+   :template
+   "(clojure.tools.reader/read-regex %rdr %ch %opts %pending-forms)"}
+  {:describe "read-string",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.tools.reader/read-string %s)"}
+  {:describe "resolve-symbol",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.tools.reader/resolve-symbol %s)"}
+  {:describe "syntax-quote",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.reader/syntax-quote %form)"}]}
+]

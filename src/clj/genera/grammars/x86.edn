@@ -1,0 +1,128 @@
+;; x86.edn — x86-64 instruction encoding grammar for genera
+;;
+;; Opcodes, registers, calling convention, condition codes.
+;; Used by the JIT and emit.clj to produce native x86-64 code.
+
+{:meta {:version 1
+        :description "x86-64 instruction encoding — opcodes as data"}
+
+ ;; ================================================================
+ ;; Registers — the fixed set of x86-64 GPRs
+ ;; ================================================================
+
+ :registers
+ {:gpr64
+  {:rax 0 :rcx 1 :rdx 2 :rbx 3 :rsp 4 :rbp 5 :rsi 6 :rdi 7
+   :r8 8 :r9 9 :r10 10 :r11 11 :r12 12 :r13 13 :r14 14 :r15 15}
+
+  :gpr32
+  {:eax 0 :ecx 1 :edx 2 :ebx 3 :esp 4 :ebp 5 :esi 6 :edi 7
+   :r8d 8 :r9d 9 :r10d 10 :r11d 11 :r12d 12 :r13d 13 :r14d 14 :r15d 15}
+
+  :callee-saved #{:rbx :rbp :r12 :r13 :r14 :r15}
+  :caller-saved #{:rax :rcx :rdx :rsi :rdi :r8 :r9 :r10 :r11}}
+
+ ;; ================================================================
+ ;; System V AMD64 ABI — calling convention
+ ;; ================================================================
+
+ :abi
+ {:args    [:rdi :rsi :rdx :rcx :r8 :r9]
+  :ret     :rax
+  :stack-align 16
+  :red-zone 128
+  :varargs-in :rax}
+
+ ;; ================================================================
+ ;; Condition codes — for Jcc and SETcc
+ ;; ================================================================
+
+ :condition-codes
+ {:o  0x0  :no 0x1  :b  0x2  :nb 0x3
+  :e  0x4  :ne 0x5  :be 0x6  :a  0x7
+  :s  0x8  :ns 0x9  :p  0xA  :np 0xB
+  :l  0xC  :ge 0xD  :le 0xE  :g  0xF
+
+  ;; Aliases
+  :z :e :nz :ne :c :b :nc :nb
+  :nae :b :ae :nb :na :be}
+
+ ;; ================================================================
+ ;; Core opcodes — the instructions genera's JIT emits
+ ;; ================================================================
+
+ :opcodes
+ {;; MOV variants
+  :mov-r64-r64     {:bytes [0x48 0x89] :modrm true :note "REX.W + MOV r/m64, r64"}
+  :mov-r64-imm64   {:bytes [0x48 0xB8] :plus-rd true :imm64 true :note "REX.W + MOV r64, imm64"}
+  :mov-r32-imm32   {:bytes [0xB8] :plus-rd true :imm32 true}
+  :mov-r64-rm64    {:bytes [0x48 0x8B] :modrm true :note "REX.W + MOV r64, r/m64 (load)"}
+  :mov-rm64-r64    {:bytes [0x48 0x89] :modrm true :note "REX.W + MOV r/m64, r64 (store)"}
+  :mov-r32-rm32    {:bytes [0x8B] :modrm true :note "MOV r32, r/m32 (load u32)"}
+  :mov-rm32-r32    {:bytes [0x89] :modrm true :note "MOV r/m32, r32 (store u32)"}
+
+  ;; Arithmetic
+  :add-r64-r64     {:bytes [0x48 0x01] :modrm true}
+  :sub-r64-r64     {:bytes [0x48 0x29] :modrm true}
+  :imul-r64-r64    {:bytes [0x48 0x0F 0xAF] :modrm true}
+  :cmp-r64-r64     {:bytes [0x48 0x39] :modrm true}
+  :add-r64-imm8    {:bytes [0x48 0x83] :modrm-ext 0 :imm8 true}
+  :sub-r64-imm8    {:bytes [0x48 0x83] :modrm-ext 5 :imm8 true}
+  :cmp-r64-imm8    {:bytes [0x48 0x83] :modrm-ext 7 :imm8 true}
+
+  ;; Logic
+  :and-r64-r64     {:bytes [0x48 0x21] :modrm true}
+  :or-r64-r64      {:bytes [0x48 0x09] :modrm true}
+  :xor-r64-r64     {:bytes [0x48 0x31] :modrm true}
+  :not-r64         {:bytes [0x48 0xF7] :modrm-ext 2}
+  :neg-r64         {:bytes [0x48 0xF7] :modrm-ext 3}
+
+  ;; Shifts
+  :shl-r64-imm8    {:bytes [0x48 0xC1] :modrm-ext 4 :imm8 true}
+  :shr-r64-imm8    {:bytes [0x48 0xC1] :modrm-ext 5 :imm8 true}
+  :sar-r64-imm8    {:bytes [0x48 0xC1] :modrm-ext 7 :imm8 true}
+  :shl-r64-cl      {:bytes [0x48 0xD3] :modrm-ext 4}
+  :shr-r64-cl      {:bytes [0x48 0xD3] :modrm-ext 5}
+
+  ;; Stack
+  :push-r64        {:bytes [0x50] :plus-rd true}
+  :pop-r64         {:bytes [0x58] :plus-rd true}
+
+  ;; Control flow
+  :call-rel32      {:bytes [0xE8] :rel32 true}
+  :jmp-rel32       {:bytes [0xE9] :rel32 true}
+  :jmp-rel8        {:bytes [0xEB] :rel8 true}
+  :jcc-rel32       {:bytes [0x0F 0x80] :plus-cc true :rel32 true}
+  :jcc-rel8        {:bytes [0x70] :plus-cc true :rel8 true}
+  :ret             {:bytes [0xC3]}
+
+  ;; Special
+  :nop             {:bytes [0x90]}
+  :syscall         {:bytes [0x0F 0x05]}
+  :lea-r64         {:bytes [0x48 0x8D] :modrm true}
+  :cdq             {:bytes [0x99] :note "sign-extend EAX → EDX:EAX"}
+  :cqo             {:bytes [0x48 0x99] :note "sign-extend RAX → RDX:RAX"}
+  :idiv-r64        {:bytes [0x48 0xF7] :modrm-ext 7}
+  :rep-movsb       {:bytes [0xF3 0xA4] :note "memcpy: RCX bytes from [RSI] to [RDI]"}}
+
+ ;; ================================================================
+ ;; ModR/M encoding
+ ;; ================================================================
+
+ :modrm
+ {:mod {:indirect 0x00 :disp8 0x40 :disp32 0x80 :register 0xC0}
+  :encode "(mod << 6) | (reg << 3) | rm"
+  :sib-marker 0x04
+  :rip-relative 0x05}
+
+ ;; ================================================================
+ ;; REX prefix
+ ;; ================================================================
+
+ :rex
+ {:base 0x40
+  :W 0x08  ;; 64-bit operand
+  :R 0x04  ;; extends modrm.reg
+  :X 0x02  ;; extends SIB.index
+  :B 0x01  ;; extends modrm.rm or SIB.base
+  :encode "(0x40 | W | R | X | B)"}}

@@ -1,0 +1,24 @@
+[
+{:category :clojure.reflect.functions,
+ :parametric
+ [{:describe "do-reflect",
+   :params
+   {:reflector ["nil" "true" "0" "1" "-1"],
+    :typeref ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.reflect/do-reflect %reflector %typeref)"}
+  {:describe "reflect",
+   :params {:obj ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.reflect/reflect %obj)"}
+  {:describe "resolve-class",
+   :params
+   {:this ["nil" "true" "0" "1" "-1"],
+    :name ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.reflect/resolve-class %this %name)"}
+  {:describe "type-reflect",
+   :params
+   {:typeref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.reflect/type-reflect %typeref)"}
+  {:describe "typename",
+   :params {:o ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.reflect/typename %o)"}]}
+]

@@ -1,0 +1,70 @@
+;; Host interop (JVM-specific)
+;; These tests verify Java interop — expected to FAIL on non-JVM platforms.
+;; That's the point: identifies what's host-specific vs portable.
+
+[{:category :java-interop
+  :tests
+  [;; Constructor
+   {:it "new Object"              :eval "(some? (Object.))"}
+   {:it "new String"              :eval "(String. \"hello\")"}
+   {:it "new ArrayList"           :eval "(str (java.util.ArrayList. [1 2 3]))"}
+   {:it "new HashMap"             :eval "(.size (java.util.HashMap. {:a 1 :b 2}))"}
+
+   ;; Instance methods
+   {:it ".length"                 :eval "(.length \"hello\")"}
+   {:it ".toUpperCase"            :eval "(.toUpperCase \"hello\")"}
+   {:it ".charAt"                 :eval "(.charAt \"hello\" 0)"}
+   {:it ".contains"               :eval "(.contains \"hello\" \"ell\")"}
+   {:it ".substring"              :eval "(.substring \"hello\" 1 4)"}
+   {:it ".toString"               :eval "(.toString 42)"}
+
+   ;; Static methods
+   {:it "Math/abs"                :eval "(Math/abs -42)"}
+   {:it "Math/max"                :eval "(Math/max 3 7)"}
+   {:it "Math/min"                :eval "(Math/min 3 7)"}
+   {:it "Math/pow"                :eval "(long (Math/pow 2 10))"}
+   {:it "Math/sqrt"               :eval "(Math/sqrt 4.0)"}
+   {:it "Integer/parseInt"        :eval "(Integer/parseInt \"42\")"}
+   {:it "Long/parseLong"          :eval "(Long/parseLong \"1000000\")"}
+   {:it "String/valueOf"          :eval "(String/valueOf 42)"}
+   {:it "String/format"           :eval "(String/format \"%s=%d\" (into-array Object [\"x\" 1]))"}
+
+   ;; Static fields
+   {:it "Integer/MAX_VALUE"       :eval "Integer/MAX_VALUE"}
+   {:it "Long/MAX_VALUE"          :eval "Long/MAX_VALUE"}
+   {:it "Double/NaN"              :eval "(Double/isNaN Double/NaN)"}
+   {:it "Math/PI"                 :eval "(< (abs (- Math/PI 3.14159)) 0.001)"}
+   {:it "Boolean/TRUE"            :eval "Boolean/TRUE"}
+
+   ;; doto
+   {:it "doto"                    :eval "(str (doto (java.util.ArrayList.) (.add 1) (.add 2)))"}
+
+   ;; .. threading
+   {:it ".. chain"                :eval "(.. \"hello\" toUpperCase (substring 0 3))"}
+
+   ;; instance? / class
+   {:it "instance? String"        :eval "(instance? String \"hello\")"}
+   {:it "instance? Long"          :eval "(instance? Long 42)"}
+   {:it "class of string"         :eval "(str (class \"hello\"))"}
+   {:it "class of int"            :eval "(str (class 42))"}
+
+   ;; Collections interop
+   {:it "java list to vec"        :eval "(vec (java.util.Arrays/asList (into-array [1 2 3])))"}
+   {:it "iterate java map"        :eval "(count (java.util.HashMap. {:a 1 :b 2 :c 3}))"}
+
+   ;; proxy
+   {:it "proxy Runnable"          :eval "(let [ran (atom false)
+                                               r (proxy [Runnable] [] (run [] (reset! ran true)))]
+                                           (.run r) @ran)"}
+   ;; bean
+   {:it "bean"                    :eval "(contains? (bean (java.util.Date.)) :time)"}
+
+   ;; System
+   {:it "System/getenv"           :eval "(string? (or (System/getenv \"PATH\") \"\"))"}
+   {:it "System/currentTimeMillis" :eval "(> (System/currentTimeMillis) 0)"}]}
+
+ {:category :java-types
+  :parametric
+  [{:describe "type identity"
+    :params {:val ["42" "3.14" "\"hello\"" "true" "\\a"]}
+    :template "(str (class %val))"}]}]

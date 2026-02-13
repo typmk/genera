@@ -25,12 +25,14 @@
 #define CL_STR   0x20
 
 enum {
-    NK_ROOT=0, NK_LIST, NK_VEC, NK_MAP,
+    NK_ROOT=0, NK_LIST, NK_VEC, NK_MAP, NK_QUOTE,
+    NK_SYNTAX_QUOTE, NK_UNQUOTE, NK_SPLICE,
     NK_IDENT, NK_NUM, NK_STR_NODE, NK_OP, NK_KW, NK_OTHER,
     NK_COUNT
 };
 static const char *NK_NAME[] = {
-    "root","list","vec","map","ident","num","str","op","kw","other"
+    "root","list","vec","map","quote","syntax-quote","unquote","splice",
+    "ident","num","str","op","kw","other"
 };
 
 typedef struct {
@@ -56,6 +58,9 @@ typedef struct {
     bool negnum;
     bool kwcolon;
     bool opgrp;
+    u8   qc;            // quote reader macro char (e.g. '\'' for lisp)
+    u8   sqc;           // syntax-quote char (e.g. '`' for lisp)
+    u8   uqc;           // unquote char (e.g. '~' for lisp, ~@ = splice)
 } Lang;
 
 // Semantic views — derived bitmasks over GNode tree
@@ -63,10 +68,12 @@ enum {
     V_DEF=0, V_REF, V_CALL,            // Pass 1: scope + binding
     V_TAIL, V_PURE, V_CONST, V_DEAD,   // Pass 2-3: type + flow
     V_INT, V_VEC, V_MAP, V_FN,         // Pass 2: type tags
+    V_ALLOC, V_SCOPE, V_DYNAMIC, V_LIVE, // Allocation views
     V_COUNT
 };
 static const char *V_NAME[] = {
-    "def","ref","call","tail","pure","const","dead","int","vec","map","fn"
+    "def","ref","call","tail","pure","const","dead","int","vec","map","fn",
+    "alloc","scope","dynamic","live"
 };
 
 typedef struct {
@@ -82,9 +89,15 @@ typedef struct {
     u64 *v[V_COUNT];        // semantic views (analysis passes)
     u32 *bind;              // bind[ref_id] = def_id (0 = unbound)
     u32 *scope;             // scope[id] = enclosing fn node (0 = top-level)
-    i64 *const_val;         // const_val[id] for V_CONST+V_INT nodes
+    i64 *val;         // val[id] — computed value for any node
     bool analyzed;
 } Gram;
+
+typedef struct {
+    Gram gram;          // nodes + views + bind/scope/val
+    u32  version;       // monotonic step counter
+    u32  epoch;         // retention group
+} World;
 
 // ============================================================================
 // 2. Bitmask Operations — the query engine
@@ -171,7 +184,7 @@ static void lang_lisp(Lang *l) {
     for (int c = '0'; c <= '9'; c++) l->cc[c] = CL_DIG;
     for (int c = 'a'; c <= 'z'; c++) l->cc[c] = CL_ID;
     for (int c = 'A'; c <= 'Z'; c++) l->cc[c] = CL_ID;
-    const char *sc = "!%&*+-./<=>?_";
+    const char *sc = "!%&*+-./<=>?_@";
     for (const char *p = sc; *p; p++) l->cc[(u8)*p] = CL_ID;
     l->cc['('] = l->cc[')'] = CL_DELIM;
     l->cc['['] = l->cc[']'] = CL_DELIM;
@@ -183,6 +196,9 @@ static void lang_lisp(Lang *l) {
     l->open[2]='{'; l->close[2]='}'; l->dkind[2]=NK_MAP;
     l->lc1 = ';'; l->sq = '"'; l->esc = '\\';
     l->negnum = true; l->kwcolon = true;
+    l->qc = '\'';   // 'x → (quote x) reader macro
+    l->sqc = '`';   // `x → syntax-quote reader macro
+    l->uqc = '~';   // ~x → unquote, ~@x → splice
 }
 
 static void lang_c(Lang *l) {
@@ -216,24 +232,26 @@ static Gram gram_new(u32 cap) {
     Gram g = {0};
     g.cap = cap;
     g.nodes = (GNode *)arena_alloc(&g_perm, cap * sizeof(GNode), 8);
-    // Pre-allocate bitmask arrays (reused across gram_index calls)
+    // Pre-allocate bitmask arrays at cap size (reused across parses)
     g.mw = (cap + 63) / 64;
     for (u32 k = 0; k < NK_COUNT; k++) g.m[k] = bm_new(g.mw);
     g.m_group = bm_new(g.mw);
     g.m_leaf  = bm_new(g.mw);
     g.m_first = bm_new(g.mw);
+    for (u32 i = 0; i < V_COUNT; i++) g.v[i] = bm_new(g.mw);
     g.bind  = (u32 *)arena_alloc(&g_perm, cap * sizeof(u32), 4);
     g.scope = (u32 *)arena_alloc(&g_perm, cap * sizeof(u32), 4);
+    g.val   = (i64 *)arena_alloc(&g_perm, cap * sizeof(i64), 8);
     return g;
 }
 
 // Trace kind StrIds (initialized by grammar_init)
 static StrId TK_NODE, TK_PARSE, TK_INDEX, TK_JIT, TK_CC;
+static StrId TK_EVAL, TK_CALL, TK_MACRO, TK_SIG, TK_INTERN;
 
 static u32 gn_add(Gram *g, u8 kind, u32 start, u16 len, u32 parent, u8 dep) {
     u32 id = g->n++;
     g->nodes[id] = (GNode){start, len, kind, dep, parent, 0, 0, id + 1};
-    TAP(TK_NODE, id, kind, start);
     return id;
 }
 
@@ -244,8 +262,8 @@ static u32 gn_add(Gram *g, u8 kind, u32 start, u16 len, u32 parent, u8 dep) {
 } while(0)
 
 static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
-    g->src = src; g->src_len = len; g->n = 0;
-    TAP1(TK_PARSE, len);
+    g->src = src; g->src_len = len; g->n = 0; g->analyzed = false;
+    DISPATCH(TK_PARSE, len, 0);
 
     gn_add(g, NK_ROOT, 0, (u16)(len > 65535 ? 65535 : len), 0, 0);
 
@@ -256,6 +274,14 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
     u32 cur = 0;
     u8  dep = 0;
     u32 pos = 0;
+    // Auto-close wrapper nodes: after each complete form,
+    // if current node wraps one child, pop it
+    #define IS_WRAPPER(k) ((k)==NK_QUOTE||(k)==NK_SYNTAX_QUOTE||(k)==NK_UNQUOTE||(k)==NK_SPLICE)
+    #define QPOP() while (sp > 0 && IS_WRAPPER(g->nodes[cur].kind)) { \
+        g->nodes[cur].len = (u16)(pos - g->nodes[cur].start); \
+        g->nodes[cur].end = g->n; \
+        cur = stk[--sp]; dep--; \
+    }
 
     while (pos < len) {
         u8 c = (u8)src[pos];
@@ -287,7 +313,7 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
             }
             if (pos < len) pos++;
             u32 id = gn_add(g, NK_STR_NODE, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
             continue;
         }
 
@@ -310,7 +336,7 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
                 g->nodes[cur].len = (u16)(pos + 1 - g->nodes[cur].start);
                 g->nodes[cur].end = g->n;
                 if (sp > 0) { cur = stk[--sp]; dep--; }
-                pos++; hit = true; break;
+                pos++; hit = true; QPOP(); break;
             }
         }
         if (hit) continue;
@@ -326,20 +352,27 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
                 while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
             }
             u32 id = gn_add(g, NK_NUM, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
             continue;
         }
 
-        // Number
+        // Number (including 0x hex)
         if (cl & CL_DIG) {
             u32 s = pos;
-            while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
-            if (pos < len && src[pos] == '.' && pos+1 < len && (l->cc[(u8)src[pos+1]] & CL_DIG)) {
-                pos++;
+            if (src[pos] == '0' && pos + 1 < len && (src[pos+1] == 'x' || src[pos+1] == 'X')) {
+                pos += 2;  // skip 0x
+                while (pos < len && (((u8)src[pos] >= '0' && (u8)src[pos] <= '9') ||
+                       ((u8)src[pos] >= 'a' && (u8)src[pos] <= 'f') ||
+                       ((u8)src[pos] >= 'A' && (u8)src[pos] <= 'F'))) pos++;
+            } else {
                 while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+                if (pos < len && src[pos] == '.' && pos+1 < len && (l->cc[(u8)src[pos+1]] & CL_DIG)) {
+                    pos++;
+                    while (pos < len && (l->cc[(u8)src[pos]] & CL_DIG)) pos++;
+                }
             }
             u32 id = gn_add(g, NK_NUM, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
             continue;
         }
 
@@ -348,7 +381,7 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
             u32 s = pos++;
             while (pos < len && (l->cc[(u8)src[pos]] & (CL_ID | CL_DIG))) pos++;
             u32 id = gn_add(g, NK_KW, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
             continue;
         }
 
@@ -357,7 +390,7 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
             u32 s = pos;
             while (pos < len && (l->cc[(u8)src[pos]] & (CL_ID | CL_DIG))) pos++;
             u32 id = gn_add(g, NK_IDENT, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
             continue;
         }
 
@@ -366,7 +399,37 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
             u32 s = pos++;
             if (l->opgrp) while (pos < len && (l->cc[(u8)src[pos]] & CL_OP)) pos++;
             u32 id = gn_add(g, NK_OP, s, (u16)(pos - s), cur, dep + 1);
-            LINK(g, last, cur, id);
+            LINK(g, last, cur, id); QPOP();
+            continue;
+        }
+
+        // Quote reader macro: 'x → NK_QUOTE wrapping x
+        if (l->qc && c == l->qc) {
+            pos++; dep++;
+            u32 qid = gn_add(g, NK_QUOTE, pos - 1, 0, cur, dep);
+            LINK(g, last, cur, qid);
+            stk[sp++] = cur; cur = qid; last[cur] = 0;
+            continue;
+        }
+
+        // Syntax-quote reader macro: `x → NK_SYNTAX_QUOTE wrapping x
+        if (l->sqc && c == l->sqc) {
+            pos++; dep++;
+            u32 qid = gn_add(g, NK_SYNTAX_QUOTE, pos - 1, 0, cur, dep);
+            LINK(g, last, cur, qid);
+            stk[sp++] = cur; cur = qid; last[cur] = 0;
+            continue;
+        }
+
+        // Unquote reader macro: ~x → NK_UNQUOTE, ~@x → NK_SPLICE
+        if (l->uqc && c == l->uqc) {
+            u32 s = pos++;
+            u8 kind = NK_UNQUOTE;
+            if (pos < len && src[pos] == '@') { kind = NK_SPLICE; pos++; }
+            dep++;
+            u32 qid = gn_add(g, kind, s, 0, cur, dep);
+            LINK(g, last, cur, qid);
+            stk[sp++] = cur; cur = qid; last[cur] = 0;
             continue;
         }
 
@@ -383,7 +446,7 @@ static void gram_parse(Gram *g, const Lang *l, const char *src, u32 len) {
 // ============================================================================
 
 static void gram_index(Gram *g) {
-    TAP2(TK_INDEX, g->n, g->src_len);
+    DISPATCH(TK_INDEX, g->n, 0);
     u32 mw = (g->n + 63) / 64;
     g->mw = mw;
     // Clear pre-allocated bitmasks
@@ -413,16 +476,13 @@ static void pass_flow(Gram *g);   // forward decl
 static void gram_analyze(Gram *g) {
     if (!g->mw) gram_index(g);
     u32 mw = g->mw;
-    for (u32 i = 0; i < V_COUNT; i++) {
-        if (!g->v[i]) g->v[i] = bm_new(mw);
-        else memset(g->v[i], 0, mw * 8);
-    }
+    for (u32 i = 0; i < V_COUNT; i++)
+        memset(g->v[i], 0, mw * 8);
     memset(g->bind,  0, g->n * sizeof(u32));
     memset(g->scope, 0, g->n * sizeof(u32));
-    if (!g->const_val) g->const_val = (i64 *)arena_alloc(&g_perm, g->cap * sizeof(i64), 8);
-    memset(g->const_val, 0, g->n * sizeof(i64));
+    memset(g->val, 0, g->n * sizeof(i64));
     pass_scope(g);      // Pass 1: V_DEF, V_REF, V_CALL, bind[], scope[]
-    pass_type(g);       // Pass 2: V_INT, V_VEC, V_MAP, V_FN, V_PURE, V_CONST + const_val
+    pass_type(g);       // Pass 2: V_INT, V_VEC, V_MAP, V_FN, V_PURE, V_CONST + val
     pass_flow(g);       // Pass 3: V_TAIL, V_DEAD
     g->analyzed = true;
 }
@@ -475,9 +535,45 @@ static i64 gn_parse_int(Gram *g, u32 id) {
     Str t = gn_text(g, id);
     bool neg = false; u32 i = 0;
     if (t.len && t.data[0] == '-') { neg = true; i++; }
+    // Hex: 0x...
+    if (i + 1 < t.len && t.data[i] == '0' && (t.data[i+1] == 'x' || t.data[i+1] == 'X')) {
+        i += 2;
+        i64 v = 0;
+        while (i < t.len) {
+            u8 c = t.data[i++];
+            if (c >= '0' && c <= '9') v = v * 16 + (c - '0');
+            else if (c >= 'a' && c <= 'f') v = v * 16 + (c - 'a' + 10);
+            else if (c >= 'A' && c <= 'F') v = v * 16 + (c - 'A' + 10);
+            else break;
+        }
+        return neg ? -v : v;
+    }
     i64 v = 0;
     while (i < t.len && t.data[i] != '.') v = v * 10 + (t.data[i++] - '0');
     return neg ? -v : v;
+}
+
+// Parse number node → Val (int or f64)
+static Val gn_parse_num(Gram *g, u32 id) {
+    Str t = gn_text(g, id);
+    bool neg = false; u32 i = 0;
+    if (t.len && t.data[0] == '-') { neg = true; i++; }
+    // Hex → always int
+    if (i + 1 < t.len && t.data[i] == '0' && (t.data[i+1] == 'x' || t.data[i+1] == 'X'))
+        return val_int(gn_parse_int(g, id));
+    bool has_dot = false;
+    for (u32 j = i; j < t.len; j++) if (t.data[j] == '.') { has_dot = true; break; }
+    if (has_dot) {
+        f64 d = 0;
+        while (i < t.len && t.data[i] != '.') d = d * 10 + (t.data[i++] - '0');
+        if (i < t.len) i++;
+        f64 frac = 0.1;
+        while (i < t.len) { d += (t.data[i++] - '0') * frac; frac *= 0.1; }
+        return val_f64(neg ? -d : d);
+    }
+    i64 v = 0;
+    while (i < t.len) v = v * 10 + (t.data[i++] - '0');
+    return val_int(neg ? -v : v);
 }
 
 static void pr_text(Gram *g, u32 id) {
@@ -718,16 +814,246 @@ static void gram_annotate(Gram *g, const u64 *hit_m, const u32 *counts) {
 }
 
 // ============================================================================
-// 9. Symbols — interned once, compared as integers
+// 9. Image Save/Load — snapshot Gram + views + intern table
+//
+// Save: parse once, analyze once, write to file.
+// Load: mmap/read, restore Gram + views + intern table, re-JIT.
+// Views survive across sessions — O(0) analysis on reload.
+// ============================================================================
+
+typedef struct {
+    u32 magic;          // 'GNA1'
+    u32 node_count;
+    u32 mw;             // bitmask words
+    u32 src_len;
+    u32 intern_count;
+    u32 intern_pool;    // total string bytes
+    u32 analyzed;
+    u32 reserved;
+} ImageHeader;
+
+#define IMAGE_MAGIC 0x31414E47  // "GNA1" little-endian
+
+static bool gram_save(Gram *g, const char *path) {
+    // Calculate sizes
+    u32 nc = g->n, mw = g->mw, slen = g->src_len;
+    u32 bm_size = mw * 8;
+
+    // Build intern pool: packed [u16 len][bytes]...
+    u32 pool_size = 0;
+    for (u32 i = 0; i < g_intern.count; i++)
+        pool_size += 2 + g_intern.strings[i].len;
+
+    // Total size
+    u32 total = sizeof(ImageHeader)
+        + slen                              // source
+        + nc * sizeof(GNode)                // nodes
+        + NK_COUNT * bm_size                // structural masks
+        + 3 * bm_size                       // group, leaf, first
+        + V_COUNT * bm_size                 // semantic views
+        + nc * 4                            // bind
+        + nc * 4                            // scope
+        + nc * 8                            // val
+        + pool_size;                        // intern pool
+
+    char *buf = (char *)sys_alloc(total);
+    if (!buf) return false;
+    char *p = buf;
+
+    // Header
+    ImageHeader hdr = {
+        IMAGE_MAGIC, nc, mw, slen,
+        g_intern.count, pool_size,
+        g->analyzed ? 1 : 0, 0
+    };
+    memcpy(p, &hdr, sizeof(hdr)); p += sizeof(hdr);
+
+    // Source
+    memcpy(p, g->src, slen); p += slen;
+
+    // Nodes
+    memcpy(p, g->nodes, nc * sizeof(GNode)); p += nc * sizeof(GNode);
+
+    // Structural bitmasks
+    for (u32 k = 0; k < NK_COUNT; k++) { memcpy(p, g->m[k], bm_size); p += bm_size; }
+    memcpy(p, g->m_group, bm_size); p += bm_size;
+    memcpy(p, g->m_leaf,  bm_size); p += bm_size;
+    memcpy(p, g->m_first, bm_size); p += bm_size;
+
+    // Semantic views
+    for (u32 v = 0; v < V_COUNT; v++) {
+        if (g->v[v]) { memcpy(p, g->v[v], bm_size); }
+        else { memset(p, 0, bm_size); }
+        p += bm_size;
+    }
+
+    // Bind, scope, val
+    memcpy(p, g->bind, nc * 4); p += nc * 4;
+    memcpy(p, g->scope, nc * 4); p += nc * 4;
+    if (g->val) { memcpy(p, g->val, nc * 8); }
+    else { memset(p, 0, nc * 8); }
+    p += nc * 8;
+
+    // Intern pool: [u16 len][bytes]...
+    for (u32 i = 0; i < g_intern.count; i++) {
+        Str s = g_intern.strings[i];
+        u16 len = (u16)s.len;
+        memcpy(p, &len, 2); p += 2;
+        memcpy(p, s.data, s.len); p += s.len;
+    }
+
+    bool ok = sys_write_file(path, buf, total);
+    sys_free(buf, total);
+    return ok;
+}
+
+// Save to memory buffer (arena-allocated). Returns {data, len} or {NULL, 0}.
+static FileData gram_save_buf(Gram *g) {
+    u32 nc = g->n, mw = g->mw, slen = g->src_len;
+    u32 bm_size = mw * 8;
+    u32 pool_size = 0;
+    for (u32 i = 0; i < g_intern.count; i++)
+        pool_size += 2 + g_intern.strings[i].len;
+    u32 total = sizeof(ImageHeader) + slen + nc * sizeof(GNode)
+        + NK_COUNT * bm_size + 3 * bm_size + V_COUNT * bm_size
+        + nc * 4 + nc * 4 + nc * 8 + pool_size;
+    char *buf = (char *)arena_alloc(&g_perm, total, 8);
+    char *p = buf;
+    ImageHeader hdr = { IMAGE_MAGIC, nc, mw, slen, g_intern.count, pool_size, g->analyzed ? 1 : 0, 0 };
+    memcpy(p, &hdr, sizeof(hdr)); p += sizeof(hdr);
+    memcpy(p, g->src, slen); p += slen;
+    memcpy(p, g->nodes, nc * sizeof(GNode)); p += nc * sizeof(GNode);
+    for (u32 k = 0; k < NK_COUNT; k++) { memcpy(p, g->m[k], bm_size); p += bm_size; }
+    memcpy(p, g->m_group, bm_size); p += bm_size;
+    memcpy(p, g->m_leaf,  bm_size); p += bm_size;
+    memcpy(p, g->m_first, bm_size); p += bm_size;
+    for (u32 v = 0; v < V_COUNT; v++) {
+        if (g->v[v]) memcpy(p, g->v[v], bm_size); else memset(p, 0, bm_size);
+        p += bm_size;
+    }
+    memcpy(p, g->bind, nc * 4); p += nc * 4;
+    memcpy(p, g->scope, nc * 4); p += nc * 4;
+    if (g->val) memcpy(p, g->val, nc * 8); else memset(p, 0, nc * 8);
+    p += nc * 8;
+    for (u32 i = 0; i < g_intern.count; i++) {
+        Str s = g_intern.strings[i]; u16 len = (u16)s.len;
+        memcpy(p, &len, 2); p += 2; memcpy(p, s.data, s.len); p += s.len;
+    }
+    return (FileData){buf, total};
+}
+
+// Load from memory buffer (same format as file).
+static bool gram_load_buf(Gram *g, const char *data, u32 len) {
+    (void)len;
+    const char *p = data;
+    ImageHeader hdr;
+    memcpy(&hdr, p, sizeof(hdr)); p += sizeof(hdr);
+    if (hdr.magic != IMAGE_MAGIC) return false;
+    u32 nc = hdr.node_count, mw = hdr.mw, slen = hdr.src_len;
+    u32 bm_size = mw * 8;
+    *g = gram_new(nc < 4096 ? 4096 : nc);
+    g->n = nc; g->mw = mw; g->src_len = slen;
+    char *src_copy = (char *)arena_alloc(&g_perm, slen + 1, 1);
+    memcpy(src_copy, p, slen); src_copy[slen] = '\0'; g->src = src_copy; p += slen;
+    memcpy(g->nodes, p, nc * sizeof(GNode)); p += nc * sizeof(GNode);
+    for (u32 k = 0; k < NK_COUNT; k++) { memcpy(g->m[k], p, bm_size); p += bm_size; }
+    memcpy(g->m_group, p, bm_size); p += bm_size;
+    memcpy(g->m_leaf,  p, bm_size); p += bm_size;
+    memcpy(g->m_first, p, bm_size); p += bm_size;
+    for (u32 v = 0; v < V_COUNT; v++) {
+        if (!g->v[v]) g->v[v] = bm_new(mw);
+        memcpy(g->v[v], p, bm_size); p += bm_size;
+    }
+    memcpy(g->bind, p, nc * 4); p += nc * 4;
+    memcpy(g->scope, p, nc * 4); p += nc * 4;
+    if (!g->val) g->val = (i64 *)arena_alloc(&g_perm, nc * sizeof(i64), 8);
+    memcpy(g->val, p, nc * 8); p += nc * 8;
+    g->analyzed = hdr.analyzed;
+    // Restore intern pool
+    for (u32 i = 0; i < hdr.intern_count; i++) {
+        u16 slen2; memcpy(&slen2, p, 2); p += 2;
+        str_intern((Str){(u8 *)p, slen2}); p += slen2;
+    }
+    return true;
+}
+
+static bool gram_load(Gram *g, const char *path) {
+    FileData f = sys_read_file(path, sys_alloc);
+    if (!f.data) return false;
+    char *p = f.data;
+
+    // Header
+    ImageHeader hdr;
+    memcpy(&hdr, p, sizeof(hdr)); p += sizeof(hdr);
+    if (hdr.magic != IMAGE_MAGIC) { sys_free(f.data, f.len + 1); return false; }
+
+    u32 nc = hdr.node_count, mw = hdr.mw, slen = hdr.src_len;
+    u32 bm_size = mw * 8;
+
+    // Allocate Gram
+    *g = gram_new(nc < 4096 ? 4096 : nc);
+    g->n = nc;
+    g->mw = mw;
+    g->src_len = slen;
+
+    // Source — copy to perm arena so it outlives the file buffer
+    char *src_copy = (char *)arena_alloc(&g_perm, slen + 1, 1);
+    memcpy(src_copy, p, slen); src_copy[slen] = '\0';
+    g->src = src_copy;
+    p += slen;
+
+    // Nodes
+    memcpy(g->nodes, p, nc * sizeof(GNode)); p += nc * sizeof(GNode);
+
+    // Structural bitmasks
+    for (u32 k = 0; k < NK_COUNT; k++) { memcpy(g->m[k], p, bm_size); p += bm_size; }
+    memcpy(g->m_group, p, bm_size); p += bm_size;
+    memcpy(g->m_leaf,  p, bm_size); p += bm_size;
+    memcpy(g->m_first, p, bm_size); p += bm_size;
+
+    // Semantic views
+    for (u32 v = 0; v < V_COUNT; v++) {
+        if (!g->v[v]) g->v[v] = bm_new(mw);
+        memcpy(g->v[v], p, bm_size);
+        p += bm_size;
+    }
+
+    // Bind, scope, val
+    memcpy(g->bind, p, nc * 4); p += nc * 4;
+    memcpy(g->scope, p, nc * 4); p += nc * 4;
+    if (!g->val) g->val = (i64 *)arena_alloc(&g_perm, nc * sizeof(i64), 8);
+    memcpy(g->val, p, nc * 8); p += nc * 8;
+    g->analyzed = hdr.analyzed;
+
+    // Intern pool: restore in same order → same StrIds
+    // First: reset intern table (grammar_init symbols will be re-interned after)
+    g_intern.count = 0;
+    memset(g_intern.table, 0, (g_intern.table_mask + 1) * sizeof(u32));
+    for (u32 i = 0; i < hdr.intern_count; i++) {
+        u16 len;
+        memcpy(&len, p, 2); p += 2;
+        str_intern((Str){(u8 *)p, len});
+        p += len;
+    }
+
+    sys_free(f.data, f.len + 1);
+    return true;
+}
+
+// ============================================================================
+// 10. Symbols — interned once, compared as integers
 // ============================================================================
 
 static StrId S_NIL, S_TRUE, S_FALSE;
 static StrId S_DEF, S_DEFN, S_FN, S_IF, S_LET, S_DO, S_LOOP, S_RECUR, S_QUOTE;
-static StrId S_AND, S_OR, S_COND, S_WHEN;
+static StrId S_AND, S_OR, S_COND, S_WHEN, S_DEFMACRO;
+static StrId S_SYNTAX_QUOTE, S_UNQUOTE, S_UNQUOTE_SPLICING;
 static StrId S_ADD, S_SUB, S_MUL, S_DIV, S_MOD;
 static StrId S_EQ, S_LT, S_GT, S_LTE, S_GTE;
 static StrId S_NOT, S_INC, S_DEC, S_PRINTLN;
 static StrId S_ZEROQ, S_POSQ, S_NEGQ;
+static StrId S_BAND, S_BOR, S_BXOR, S_BNOT, S_BSHL, S_BSHR, S_POPCNT;
+static StrId S_LOAD64, S_LOAD32, S_LOAD8, S_STORE64, S_STORE32, S_STORE8;
 static StrId S_ELSE;
 
 #define INTERN(s) str_intern(STR_LIT(s))
@@ -866,7 +1192,7 @@ static void p1_walk(Gram *g, u32 id) {
                 g_sn = sv;
                 return;
             }
-            if (sym == S_QUOTE) return;  // quoted data — don't walk
+            if (sym == S_QUOTE || sym == S_SYNTAX_QUOTE) return;  // quoted/template data
             if (is_special(sym)) { p1_kids(g, id); return; }
         }
 
@@ -875,6 +1201,10 @@ static void p1_walk(Gram *g, u32 id) {
         p1_kids(g, id);
         return;
     }
+
+    // Wrapper nodes: quote/syntax-quote are data (skip), unquote/splice are code (walk)
+    if (n->kind == NK_QUOTE || n->kind == NK_SYNTAX_QUOTE) return;
+    if (n->kind == NK_UNQUOTE || n->kind == NK_SPLICE) { p1_kids(g, id); return; }
 
     if (n->kind == NK_IDENT) {
         if (BM_GET(g->v[V_DEF], id)) return;
@@ -907,7 +1237,7 @@ static void pass_scope(Gram *g) {
 // ============================================================================
 
 static i64 cv_eval(Gram *g, StrId op, u32 first_arg) {
-    i64 *cv = g->const_val;
+    i64 *cv = g->val;
     u32 a = first_arg;
     if (!a) return (op == S_MUL) ? 1 : 0;
     i64 r = cv[a];
@@ -936,14 +1266,17 @@ static i64 cv_eval(Gram *g, StrId op, u32 first_arg) {
 }
 
 static void pass_type(Gram *g) {
-    i64 *cv = g->const_val;
+    i64 *cv = g->val;
     for (i32 i = (i32)g->n - 1; i >= 0; i--) {
         GNode *n = &g->nodes[i];
 
         // Leaf types
         if (n->kind == NK_NUM) {
-            BM_SET(g->v[V_INT], i); BM_SET(g->v[V_CONST], i);
-            cv[i] = gn_parse_int(g, i);
+            BM_SET(g->v[V_CONST], i);
+            Str t = gn_text(g, i);
+            bool is_float = false;
+            for (u32 j = 0; j < t.len; j++) if (t.data[j] == '.') { is_float = true; break; }
+            if (!is_float) { BM_SET(g->v[V_INT], i); cv[i] = gn_parse_int(g, i); }
             continue;
         }
         if (n->kind == NK_STR_NODE) { BM_SET(g->v[V_CONST], i); continue; }
@@ -1090,13 +1423,13 @@ static void pass_flow(Gram *g) {
             u32 then = g->nodes[test].next; if (!then) continue;
             u32 els  = g->nodes[then].next;
             if (BM_GET(g->v[V_CONST], test) && BM_GET(g->v[V_INT], test)) {
-                i64 tv = g->const_val[test];
+                i64 tv = g->val[test];
                 if (tv == 0) BM_SET(g->v[V_DEAD], then);
                 else if (els) BM_SET(g->v[V_DEAD], els);
             }
         } else if (sym == S_WHEN) {
             u32 test = g->nodes[fc].next; if (!test) continue;
-            if (BM_GET(g->v[V_CONST], test) && BM_GET(g->v[V_INT], test) && g->const_val[test] == 0) {
+            if (BM_GET(g->v[V_CONST], test) && BM_GET(g->v[V_INT], test) && g->val[test] == 0) {
                 u32 b = g->nodes[test].next;
                 while (b) { BM_SET(g->v[V_DEAD], b); b = g->nodes[b].next; }
             }
@@ -1123,15 +1456,36 @@ static Val entity_to_val(Gram *g, u32 id) {
             }
             return result;
         }
+        case NK_QUOTE: {
+            // 'x → (quote x)
+            u32 c = n->child;
+            Val inner = c ? entity_to_val(g, c) : NIL;
+            return cons_new(val_sym(S_QUOTE), cons_new(inner, NIL));
+        }
+        case NK_SYNTAX_QUOTE: {
+            u32 c = n->child;
+            Val inner = c ? entity_to_val(g, c) : NIL;
+            return cons_new(val_sym(S_SYNTAX_QUOTE), cons_new(inner, NIL));
+        }
+        case NK_UNQUOTE: {
+            u32 c = n->child;
+            Val inner = c ? entity_to_val(g, c) : NIL;
+            return cons_new(val_sym(S_UNQUOTE), cons_new(inner, NIL));
+        }
+        case NK_SPLICE: {
+            u32 c = n->child;
+            Val inner = c ? entity_to_val(g, c) : NIL;
+            return cons_new(val_sym(S_UNQUOTE_SPLICING), cons_new(inner, NIL));
+        }
         case NK_VEC: {
-            CPVec *v = arena_push(&g_req, CPVec);
+            CPVec *v = arena_push(VAL_ARENA, CPVec);
             *v = cpvec_empty();
             u32 c = n->child;
             while (c) { *v = cpvec_append(*v, entity_to_val(g, c)); c = g->nodes[c].next; }
             return val_pvec(v);
         }
         case NK_MAP: {
-            CPMap *m = arena_push(&g_req, CPMap);
+            CPMap *m = arena_push(VAL_ARENA, CPMap);
             *m = cpmap_empty();
             u32 c = n->child;
             while (c) {
@@ -1190,23 +1544,35 @@ static Val entity_to_val(Gram *g, u32 id) {
 }
 
 // ============================================================================
-// 10. Convenience — gram_read, scratch gram
+// 10. World — versioned gram, step function
 // ============================================================================
 
-static Gram g_gram_scratch;
+static World g_world;
 
-static void gram_ensure_scratch(void) {
-    if (!g_gram_scratch.cap) g_gram_scratch = gram_new(4096);
+static void world_ensure(void) {
+    if (!g_world.gram.cap) g_world.gram = gram_new(4096);
 }
 
-// Parse single expression → Val (used by eval)
-static Val gram_read(const char *source) {
-    gram_ensure_scratch();
+// world_step — parse source into the world, optionally analyze.
+// Returns gram pointer for backend-specific tree walk.
+// All backends use analyze=true: views enable constant fold + dead branch elim.
+// V_DEAD only fires on provably-constant if/when tests — semantically safe.
+static Gram *world_step(const char *source, bool analyze) {
+    world_ensure();
     static Lang lisp; static bool inited;
     if (!inited) { lang_lisp(&lisp); inited = true; }
-    gram_parse(&g_gram_scratch, &lisp, source, (u32)strlen(source));
-    u32 first = g_gram_scratch.nodes[0].child;
-    return first ? entity_to_val(&g_gram_scratch, first) : NIL;
+    Gram *g = &g_world.gram;
+    gram_parse(g, &lisp, source, (u32)strlen(source));
+    if (analyze) { gram_index(g); gram_analyze(g); }
+    g_world.version++;
+    return g;
+}
+
+// Parse single expression → Val (used by observe command)
+static Val gram_read(const char *source) {
+    Gram *g = world_step(source, false);
+    u32 first = g->nodes[0].child;
+    return first ? entity_to_val(g, first) : NIL;
 }
 
 // ============================================================================
@@ -1220,6 +1586,11 @@ static void grammar_init(void) {
     TK_INDEX = str_intern(STR_LIT("index"));
     TK_JIT   = str_intern(STR_LIT("jit"));
     TK_CC    = str_intern(STR_LIT("cc"));
+    TK_EVAL  = str_intern(STR_LIT("eval"));
+    TK_CALL  = str_intern(STR_LIT("call"));
+    TK_MACRO = str_intern(STR_LIT("macro"));
+    TK_SIG   = str_intern(STR_LIT("sig"));
+    TK_INTERN = str_intern(STR_LIT("intern"));
 
     // Symbols — interned once, compared as integers
     S_NIL = INTERN("nil"); S_TRUE = INTERN("true"); S_FALSE = INTERN("false");
@@ -1227,7 +1598,9 @@ static void grammar_init(void) {
     S_IF = INTERN("if"); S_LET = INTERN("let"); S_DO = INTERN("do");
     S_LOOP = INTERN("loop"); S_RECUR = INTERN("recur"); S_QUOTE = INTERN("quote");
     S_AND = INTERN("and"); S_OR = INTERN("or"); S_COND = INTERN("cond"); S_WHEN = INTERN("when");
-    S_ELSE = INTERN("else");
+    S_DEFMACRO = INTERN("defmacro"); S_ELSE = INTERN("else");
+    S_SYNTAX_QUOTE = INTERN("syntax-quote");
+    S_UNQUOTE = INTERN("unquote"); S_UNQUOTE_SPLICING = INTERN("unquote-splicing");
     S_ADD = INTERN("+"); S_SUB = INTERN("-"); S_MUL = INTERN("*");
     S_DIV = INTERN("/"); S_MOD = INTERN("mod");
     S_EQ = INTERN("="); S_LT = INTERN("<"); S_GT = INTERN(">");
@@ -1235,21 +1608,35 @@ static void grammar_init(void) {
     S_NOT = INTERN("not"); S_INC = INTERN("inc"); S_DEC = INTERN("dec");
     S_PRINTLN = INTERN("println");
     S_ZEROQ = INTERN("zero?"); S_POSQ = INTERN("pos?"); S_NEGQ = INTERN("neg?");
+    S_BAND = INTERN("bit-and"); S_BOR = INTERN("bit-or"); S_BXOR = INTERN("bit-xor");
+    S_BNOT = INTERN("bit-not"); S_BSHL = INTERN("bit-shift-left");
+    S_BSHR = INTERN("bit-shift-right"); S_POPCNT = INTERN("popcount");
+    S_LOAD64 = INTERN("load64"); S_LOAD32 = INTERN("load32"); S_LOAD8 = INTERN("load8");
+    S_STORE64 = INTERN("store64"); S_STORE32 = INTERN("store32"); S_STORE8 = INTERN("store8");
 
     g_special_mask = (1ULL<<S_DEF) | (1ULL<<S_DEFN) | (1ULL<<S_FN) |
         (1ULL<<S_IF) | (1ULL<<S_LET) | (1ULL<<S_DO) |
         (1ULL<<S_LOOP) | (1ULL<<S_RECUR) | (1ULL<<S_QUOTE) |
-        (1ULL<<S_AND) | (1ULL<<S_OR) | (1ULL<<S_COND) | (1ULL<<S_WHEN);
+        (1ULL<<S_AND) | (1ULL<<S_OR) | (1ULL<<S_COND) | (1ULL<<S_WHEN) |
+        (1ULL<<S_DEFMACRO) | (1ULL<<S_SYNTAX_QUOTE);
     g_builtin_mask = (1ULL<<S_ADD) | (1ULL<<S_SUB) | (1ULL<<S_MUL) |
         (1ULL<<S_DIV) | (1ULL<<S_MOD) | (1ULL<<S_EQ) | (1ULL<<S_LT) |
         (1ULL<<S_GT) | (1ULL<<S_LTE) | (1ULL<<S_GTE) | (1ULL<<S_NOT) |
         (1ULL<<S_INC) | (1ULL<<S_DEC) | (1ULL<<S_PRINTLN) |
-        (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ);
-    g_pure_bi_mask = g_builtin_mask & ~(1ULL << S_PRINTLN);
+        (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ) |
+        (1ULL<<S_BAND) | (1ULL<<S_BOR) | (1ULL<<S_BXOR) | (1ULL<<S_BNOT) |
+        (1ULL<<S_BSHL) | (1ULL<<S_BSHR) | (1ULL<<S_POPCNT) |
+        (1ULL<<S_LOAD64) | (1ULL<<S_LOAD32) | (1ULL<<S_LOAD8) |
+        (1ULL<<S_STORE64) | (1ULL<<S_STORE32) | (1ULL<<S_STORE8);
+    g_pure_bi_mask = g_builtin_mask & ~((1ULL << S_PRINTLN) |
+        (1ULL<<S_STORE64) | (1ULL<<S_STORE32) | (1ULL<<S_STORE8));
     g_int_ret_mask = (1ULL<<S_ADD) | (1ULL<<S_SUB) | (1ULL<<S_MUL) |
         (1ULL<<S_DIV) | (1ULL<<S_MOD) | (1ULL<<S_INC) | (1ULL<<S_DEC) |
         (1ULL<<S_EQ) | (1ULL<<S_LT) | (1ULL<<S_GT) | (1ULL<<S_LTE) | (1ULL<<S_GTE) |
-        (1ULL<<S_NOT) | (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ);
+        (1ULL<<S_NOT) | (1ULL<<S_ZEROQ) | (1ULL<<S_POSQ) | (1ULL<<S_NEGQ) |
+        (1ULL<<S_BAND) | (1ULL<<S_BOR) | (1ULL<<S_BXOR) | (1ULL<<S_BNOT) |
+        (1ULL<<S_BSHL) | (1ULL<<S_BSHR) | (1ULL<<S_POPCNT) |
+        (1ULL<<S_LOAD64) | (1ULL<<S_LOAD32) | (1ULL<<S_LOAD8);
 }
 
 #endif // GRAMMAR_C_INCLUDED

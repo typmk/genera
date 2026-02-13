@@ -1,0 +1,78 @@
+;; clojure.core.async namespace
+;; https://clojure.github.io/core.async/
+
+[{:category :channels
+  :tests
+  [{:it "chan create"              :eval "(some? (async/chan))"}
+   {:it "chan buffered"            :eval "(some? (async/chan 10))"}
+   {:it "chan dropping"            :eval "(some? (async/chan (async/dropping-buffer 5)))"}
+   {:it "chan sliding"             :eval "(some? (async/chan (async/sliding-buffer 5)))"}
+   {:it "put! take!"              :eval "(let [c (async/chan 1)] (async/>!! c 42) (async/<!! c))"}
+   {:it "put! multiple"           :eval "(let [c (async/chan 3)] (async/>!! c 1) (async/>!! c 2) (async/>!! c 3) [(async/<!! c) (async/<!! c) (async/<!! c)])"}
+   {:it "close!"                  :eval "(let [c (async/chan 1)] (async/close! c) (async/<!! c))"}
+   {:it "closed returns nil"      :eval "(let [c (async/chan)] (async/close! c) (nil? (async/<!! c)))"}
+   {:it "offer! success"          :eval "(let [c (async/chan 1)] (async/offer! c 42))"}
+   {:it "poll! empty"             :eval "(let [c (async/chan 1)] (async/poll! c))"}
+   {:it "poll! has value"         :eval "(let [c (async/chan 1)] (async/>!! c 99) (async/poll! c))"}]}
+
+ {:category :go-blocks
+  :tests
+  [{:it "go returns chan"          :eval "(some? (async/go 42))"}
+   {:it "go value"                 :eval "(async/<!! (async/go 42))"}
+   {:it "go computation"           :eval "(async/<!! (async/go (+ 1 2 3)))"}
+   {:it "go with channel"          :eval "(let [c (async/chan 1)] (async/go (async/>! c 42)) (async/<!! c))"}
+   {:it "go-loop"                  :eval "(let [c (async/chan 10)]
+                                            (async/go-loop [i 0]
+                                              (when (< i 5) (async/>! c i) (recur (inc i)))
+                                              (async/close! c))
+                                            (async/<!! (async/into [] c)))"}]}
+
+ {:category :operations
+  :tests
+  [{:it "timeout"                  :eval "(some? (async/timeout 100))"}
+   {:it "alts!! first ready"       :eval "(let [c (async/chan 1)]
+                                            (async/>!! c 42)
+                                            (first (async/alts!! [c])))"}
+   {:it "alts!! timeout"           :eval "(let [c (async/chan)]
+                                            (second (async/alts!! [c (async/timeout 10)])))"}
+   {:it "pipe"                     :eval "(let [from (async/chan 3) to (async/chan 3)]
+                                            (async/pipe from to)
+                                            (async/>!! from 1) (async/>!! from 2) (async/close! from)
+                                            [(async/<!! to) (async/<!! to)])"}
+   {:it "onto-chan!!"              :eval "(let [c (async/chan 10)]
+                                            (async/onto-chan!! c [1 2 3])
+                                            (async/<!! (async/into [] c)))"}
+   {:it "to-chan!!"                :eval "(async/<!! (async/into [] (async/to-chan!! [1 2 3])))"}
+   {:it "into"                     :eval "(let [c (async/to-chan!! [1 2 3])]
+                                            (async/<!! (async/into [] c)))"}
+   {:it "reduce"                   :eval "(async/<!! (async/reduce + 0 (async/to-chan!! [1 2 3])))"}]}
+
+ {:category :mult-pub-sub
+  :tests
+  [{:it "mult tap"                 :eval "(let [src (async/chan 1)
+                                                m (async/mult src)
+                                                t1 (async/chan 1)
+                                                t2 (async/chan 1)]
+                                            (async/tap m t1)
+                                            (async/tap m t2)
+                                            (async/>!! src 42)
+                                            [(async/<!! t1) (async/<!! t2)])"}
+   {:it "pub sub"                  :eval "(let [src (async/chan 1)
+                                                p (async/pub src :type)
+                                                s1 (async/chan 1)]
+                                            (async/sub p :greeting s1)
+                                            (async/>!! src {:type :greeting :msg \"hi\"})
+                                            (:msg (async/<!! s1)))"}]}
+
+ {:category :transducers
+  :tests
+  [{:it "chan with xf"             :eval "(let [c (async/chan 10 (map inc))]
+                                            (async/>!! c 1) (async/>!! c 2) (async/>!! c 3)
+                                            [(async/<!! c) (async/<!! c) (async/<!! c)])"}
+   {:it "chan filter xf"           :eval "(let [c (async/chan 10 (filter even?))]
+                                            (async/>!! c 1) (async/>!! c 2) (async/>!! c 3) (async/>!! c 4)
+                                            [(async/<!! c) (async/<!! c)])"}
+   {:it "pipeline"                 :eval "(let [from (async/to-chan!! [1 2 3])
+                                                to (async/chan 10)]
+                                            (async/pipeline 2 to (map inc) from)
+                                            (async/<!! (async/into [] to)))"}]}]

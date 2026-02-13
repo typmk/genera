@@ -54,13 +54,13 @@ static void cmd_trace(Str args) {
 
 static void cmd_tap(Str args) {
     if (args.len >= 2 && args.data[0] == 'o' && args.data[1] == 'n')
-        { tap_on(); pf("  tap: on\n"); }
+        { g_obs_level = 2; tap_on(); pf("  timing: on\n"); }
     else if (args.len >= 3 && args.data[0] == 'o' && args.data[1] == 'f')
-        { tap_off(); pf("  tap: off\n"); }
+        { tap_off(); g_obs_level = 1; pf("  timing: off\n"); }
     else if (args.len >= 1 && args.data[0] == 'r')
-        { tap_reset(); pf("  tap: reset\n"); }
+        { tap_reset(); obs_reset(); pf("  tap: reset\n"); }
     else
-        pf("  tap: %s  (usage: tap on|off|reset)\n", g_tap_on ? "on" : "off");
+        pf("  tier %u  (usage: tap on|off|reset)\n", g_obs_level);
 }
 
 static void cmd_arena(Str args) {
@@ -442,9 +442,9 @@ static void repl_init(void) {
 static void base_init(void) {
     print_init();
     g_color = sys_isatty(1);
-    g_temp = arena_create(64 * 1024);
-    g_req  = arena_create(1 << 20);
-    g_perm = arena_create(1 << 20);
+    g_temp = arena_create(1 << 20);   g_temp.name = "temp";   // 1 MB
+    g_req  = arena_create(1 << 20);   g_req.name  = "req";    // 1 MB
+    g_perm = arena_create(8 << 20);   g_perm.name = "perm";   // 8 MB
     intern_init();
     repl_init();
 }

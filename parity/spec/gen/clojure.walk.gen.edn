@@ -1,0 +1,45 @@
+[
+{:category :clojure.walk.functions,
+ :parametric
+ [{:describe "keywordize-keys",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.walk/keywordize-keys %m)"}
+  {:describe "macroexpand-all",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.walk/macroexpand-all %form)"}
+  {:describe "postwalk",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.walk/postwalk %f %form)"}
+  {:describe "postwalk-demo",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.walk/postwalk-demo %form)"}
+  {:describe "postwalk-replace",
+   :params
+   {:smap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.walk/postwalk-replace %smap %form)"}
+  {:describe "prewalk",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.walk/prewalk %f %form)"}
+  {:describe "prewalk-demo",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.walk/prewalk-demo %form)"}
+  {:describe "prewalk-replace",
+   :params
+   {:smap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.walk/prewalk-replace %smap %form)"}
+  {:describe "stringify-keys",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.walk/stringify-keys %m)"}
+  {:describe "walk",
+   :params
+   {:inner ["nil" "true" "0"],
+    :outer ["nil" "true" "0"],
+    :form ["nil" "true" "0"]},
+   :template "(clojure.walk/walk %inner %outer %form)"}]}
+]

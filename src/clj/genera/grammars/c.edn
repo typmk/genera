@@ -1,0 +1,68 @@
+;; c.edn — C grammar for genera's CC emitter
+;;
+;; Keywords, operators, types, precedence.
+;; Used by lang/cc.c and lang/php.clj for C code generation.
+
+{:meta {:version 1
+        :description "C11 grammar — keywords, types, operators as data"}
+
+ ;; ================================================================
+ ;; Keywords
+ ;; ================================================================
+
+ :keywords
+ #{auto break case char const continue default do double else
+   enum extern float for goto if inline int long register
+   restrict return short signed sizeof static struct switch
+   typedef union unsigned void volatile while
+   ;; C11
+   _Alignas _Alignof _Atomic _Bool _Complex _Generic
+   _Imaginary _Noreturn _Static_assert _Thread_local}
+
+ ;; ================================================================
+ ;; Types — fundamental and genera's mapping
+ ;; ================================================================
+
+ :types
+ {:fundamental
+  {:void    {:size 0  :align 0}
+   :char    {:size 1  :align 1  :signed :impl-defined}
+   :short   {:size 2  :align 2  :signed true}
+   :int     {:size 4  :align 4  :signed true}
+   :long    {:size 8  :align 8  :signed true  :note "LP64 (Linux/macOS)"}
+   :float   {:size 4  :align 4}
+   :double  {:size 8  :align 8}}
+
+  :fixed-width
+  {:u8  "uint8_t"  :i8  "int8_t"
+   :u16 "uint16_t" :i16 "int16_t"
+   :u32 "uint32_t" :i32 "int32_t"
+   :u64 "uint64_t" :i64 "int64_t"}
+
+  :genera-mapping
+  {:Val  :u64   ;; NaN-boxed value
+   :StrId :u32  ;; interned string index
+   :GNode :u32  ;; grammar node index
+   :Mem  {:base :u64 :used :u32 :cap :u32}}}
+
+ ;; ================================================================
+ ;; Operators — precedence (1=highest) and associativity
+ ;; ================================================================
+
+ :operators
+ {:postfix     {:prec 1  :assoc :left  :ops ["()" "[]" "." "->" "++" "--"]}
+  :unary       {:prec 2  :assoc :right :ops ["!" "~" "++" "--" "+" "-" "*" "&" "sizeof"]}
+  :cast        {:prec 2  :assoc :right :ops ["(type)"]}
+  :mult        {:prec 3  :assoc :left  :ops ["*" "/" "%"]}
+  :add         {:prec 4  :assoc :left  :ops ["+" "-"]}
+  :shift       {:prec 5  :assoc :left  :ops ["<<" ">>"]}
+  :relational  {:prec 6  :assoc :left  :ops ["<" "<=" ">" ">="]}
+  :equality    {:prec 7  :assoc :left  :ops ["==" "!="]}
+  :bitand      {:prec 8  :assoc :left  :ops ["&"]}
+  :bitxor      {:prec 9  :assoc :left  :ops ["^"]}
+  :bitor       {:prec 10 :assoc :left  :ops ["|"]}
+  :logand      {:prec 11 :assoc :left  :ops ["&&"]}
+  :logor       {:prec 12 :assoc :left  :ops ["||"]}
+  :ternary     {:prec 13 :assoc :right :ops ["?:"]}
+  :assignment  {:prec 14 :assoc :right :ops ["=" "+=" "-=" "*=" "/=" "%=" "<<=" ">>=" "&=" "^=" "|="]}
+  :comma       {:prec 15 :assoc :left  :ops [","]}}}
