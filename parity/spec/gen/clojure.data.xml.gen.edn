@@ -1,0 +1,109 @@
+[
+{:category :clojure.data.xml.functions,
+ :tests
+ [{:it "sexps-as-fragment",
+   :eval "(clojure.data.xml/sexps-as-fragment)"}],
+ :parametric
+ [{:describe "aggregate-xmlns",
+   :params {:xml ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/aggregate-xmlns %xml)"}
+  {:describe "as-qname",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.xml/as-qname %n)"}
+  {:describe "cdata",
+   :params
+   {:content ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/cdata %content)"}
+  {:describe "element",
+   :params {:tag [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.data.xml/element %tag)"}
+  {:describe "element*",
+   :params
+   {:tag [":a" ":b" ":foo"],
+    :attrs ["nil" "true" "0"],
+    :content ["nil" "true" "0"]},
+   :template "(clojure.data.xml/element* %tag %attrs %content)"}
+  {:describe "element-nss",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/element-nss %m)"}
+  {:describe "element?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.data.xml/element? %val)"}
+  {:describe "emit",
+   :params
+   {:e ["nil" "true" "0" "1" "-1"],
+    :writer ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.data.xml/emit %e %writer)"}
+  {:describe "emit-str",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/emit-str %e)"}
+  {:describe "event-seq",
+   :params
+   {:source ["nil" "true" "0" "1" "-1"],
+    :m ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.data.xml/event-seq %source %m)"}
+  {:describe "find-xmlns",
+   :params {:xml ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/find-xmlns %xml)"}
+  {:describe "indent",
+   :params
+   {:e ["nil" "true" "0" "1" "-1"],
+    :writer ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.data.xml/indent %e %writer)"}
+  {:describe "indent-str",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/indent-str %e)"}
+  {:describe "parse",
+   :params
+   {:source ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/parse %source)"}
+  {:describe "parse-str",
+   :params {:string ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.data.xml/parse-str %string)"}
+  {:describe "print-uri-file-command!",
+   :params {:uri ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/print-uri-file-command! %uri)"}
+  {:describe "qname",
+   :params
+   {:local ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/qname %local)"}
+  {:describe "qname-local",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/qname-local %v)"}
+  {:describe "qname-uri",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/qname-uri %v)"}
+  {:describe "sexp-as-element",
+   :params {:sexp ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/sexp-as-element %sexp)"}
+  {:describe "sexps-as-fragment",
+   :params {:sexp ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/sexps-as-fragment %sexp)"}
+  {:describe "symbol-uri",
+   :params {:ss ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/symbol-uri %ss)"}
+  {:describe "uri-file",
+   :params {:uri ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/uri-file %uri)"}
+  {:describe "uri-symbol",
+   :params {:uri ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/uri-symbol %uri)"}
+  {:describe "xml-comment",
+   :params
+   {:content ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.xml/xml-comment %content)"}]}
+]

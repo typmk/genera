@@ -1,0 +1,79 @@
+[
+{:category :clojure.core.reducers.functions,
+ :tests
+ [{:it "cat", :eval "(clojure.core.reducers/cat)"}
+  {:it "flatten", :eval "(clojure.core.reducers/flatten)"}],
+ :parametric
+ [{:describe "append!",
+   :params
+   {:acc ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.reducers/append! %acc %x)"}
+  {:describe "cat",
+   :params {:ctor ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.reducers/cat %ctor)"}
+  {:describe "coll-fold",
+   :params
+   {:coll ["[]" "[1 2 3]"],
+    :n ["0" "1"],
+    :combinef ["nil" "true"],
+    :reducef ["nil" "true"]},
+   :template
+   "(clojure.core.reducers/coll-fold %coll %n %combinef %reducef)"}
+  {:describe "drop",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.reducers/drop %n)"}
+  {:describe "filter",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/filter %pred)"}
+  {:describe "fjtask",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/fjtask %f)"}
+  {:describe "flatten",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.reducers/flatten %coll)"}
+  {:describe "fold",
+   :params
+   {:reducef ["nil" "true" "0" "1" "-1"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.reducers/fold %reducef %coll)"}
+  {:describe "foldcat",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.reducers/foldcat %coll)"}
+  {:describe "folder",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :xf ["(map inc)" "(filter even?)" "(take 3)"]},
+   :template "(clojure.core.reducers/folder %coll %xf)"}
+  {:describe "map",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/map %f)"}
+  {:describe "mapcat",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/mapcat %f)"}
+  {:describe "monoid",
+   :params
+   {:op ["nil" "true" "0" "1" "-1"],
+    :ctor ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.reducers/monoid %op %ctor)"}
+  {:describe "reduce",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.reducers/reduce %f %coll)"}
+  {:describe "reducer",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :xf ["(map inc)" "(filter even?)" "(take 3)"]},
+   :template "(clojure.core.reducers/reducer %coll %xf)"}
+  {:describe "remove",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/remove %pred)"}
+  {:describe "take",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.reducers/take %n)"}
+  {:describe "take-while",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.reducers/take-while %pred)"}]}
+]

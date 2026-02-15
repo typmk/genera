@@ -1,0 +1,58 @@
+[
+{:category :clojure.java.io.functions,
+ :parametric
+ [{:describe "as-file",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/as-file %x)"}
+  {:describe "as-relative-path",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/as-relative-path %x)"}
+  {:describe "as-url",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/as-url %x)"}
+  {:describe "copy",
+   :params
+   {:input ["nil" "true" "0" "1" "-1"],
+    :output ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.io/copy %input %output)"}
+  {:describe "delete-file",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.java.io/delete-file %f)"}
+  {:describe "file",
+   :params {:arg ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.io/file %arg)"}
+  {:describe "input-stream",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/input-stream %x)"}
+  {:describe "make-input-stream",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :opts ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.io/make-input-stream %x %opts)"}
+  {:describe "make-output-stream",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :opts ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.io/make-output-stream %x %opts)"}
+  {:describe "make-parents",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.java.io/make-parents %f)"}
+  {:describe "make-reader",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :opts ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.io/make-reader %x %opts)"}
+  {:describe "make-writer",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :opts ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.java.io/make-writer %x %opts)"}
+  {:describe "output-stream",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/output-stream %x)"}
+  {:describe "reader",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/reader %x)"}
+  {:describe "resource",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/resource %n)"}
+  {:describe "writer",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.java.io/writer %x)"}]}
+]

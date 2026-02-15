@@ -1,0 +1,784 @@
+[
+{:category :clojure.core.logic.functions,
+ :tests
+ [{:it "all", :eval "(clojure.core.logic/all)"}
+  {:it "answer-cache", :eval "(clojure.core.logic/answer-cache)"}
+  {:it "composeg", :eval "(clojure.core.logic/composeg)"}
+  {:it "ifa*", :eval "(clojure.core.logic/ifa*)"}
+  {:it "ifu*", :eval "(clojure.core.logic/ifu*)"}
+  {:it "lvar", :eval "(clojure.core.logic/lvar)"}
+  {:it "make-cs", :eval "(clojure.core.logic/make-cs)"}
+  {:it "tabled-s", :eval "(clojure.core.logic/tabled-s)"}
+  {:it "trace-s", :eval "(clojure.core.logic/trace-s)"}],
+ :parametric
+ [{:describe "!=",
+   :params
+   {:u ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/!= %u %v)"}
+  {:describe "!=c",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/!=c %p)"}
+  {:describe "-conjo",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :args ["nil" "true" "0"],
+    :out ["nil" "true" "0"]},
+   :template "(clojure.core.logic/-conjo %coll %args %out)"}
+  {:describe "-featurec",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :fs ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-featurec %x %fs)"}
+  {:describe "-fixc",
+   :params
+   {:x ["0" "1" "-1"],
+    :f ["inc" "dec" "identity"],
+    :reifier ["nil" "true" "0"]},
+   :template "(clojure.core.logic/-fixc %x %f %reifier)"}
+  {:describe "-fnm",
+   :params
+   {:fn-gen ["nil" "true" "0"],
+    :t [":a" ":b" ":foo"],
+    :as ["nil" "true" "0"]},
+   :template "(clojure.core.logic/-fnm %fn-gen %t %as)"}
+  {:describe "-nafc",
+   :params
+   {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :args ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-nafc %c %args)"}
+  {:describe "-predc",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :p ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-predc %x %p)"}
+  {:describe "-reify",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-reify %s %v)"}
+  {:describe "-reify*",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-reify* %s %v)"}
+  {:describe "-run",
+   :params
+   {:opts ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/-run %opts %v)"}
+  {:describe "==",
+   :params
+   {:u ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/== %u %v)"}
+  {:describe "add-attr",
+   :params
+   {:s ["\"\"" "\"hello\""],
+    :x ["0" "1"],
+    :attr ["nil" "true"],
+    :attrv ["nil" "true"]},
+   :template "(clojure.core.logic/add-attr %s %x %attr %attrv)"}
+  {:describe "add-dom",
+   :params
+   {:s ["\"\"" "\"hello\""],
+    :x ["0" "1"],
+    :dom ["nil" "true"],
+    :domv ["nil" "true"]},
+   :template "(clojure.core.logic/add-dom %s %x %dom %domv)"}
+  {:describe "add-var",
+   :params
+   {:cs ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :c ["[]" "[1 2 3]" "'(1 2 3)"]},
+   :template "(clojure.core.logic/add-var %cs %x %c)"}
+  {:describe "addcg",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/addcg %c)"}
+  {:describe "and*",
+   :params
+   {:goals ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/and* %goals)"}
+  {:describe "annotate",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/annotate %k %v)"}
+  {:describe "appendo",
+   :params
+   {:x ["0" "1" "-1"], :y ["0" "1" "-1"], :z ["nil" "true" "0"]},
+   :template "(clojure.core.logic/appendo %x %y %z)"}
+  {:describe "assoc-dom",
+   :params
+   {:x ["0" "1" "-1"], :k [":a" ":b" ":foo"], :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/assoc-dom %x %k %v)"}
+  {:describe "assoc-meta",
+   :params
+   {:x ["0" "1" "-1"], :k [":a" ":b" ":foo"], :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/assoc-meta %x %k %v)"}
+  {:describe "bind*",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :g ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/bind* %a %g)"}
+  {:describe "bindable?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/bindable? %val)"}
+  {:describe "build",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :u ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/build %s %u)"}
+  {:describe "cgoal",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/cgoal %c)"}
+  {:describe "choice",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/choice %a %f)"}
+  {:describe "composeg",
+   :params
+   {:g0 ["nil" "true" "0" "1" "-1"], :g1 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/composeg %g0 %g1)"}
+  {:describe "composeg*",
+   :params {:g0 ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/composeg* %g0)"}
+  {:describe "conjo",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/conjo %coll)"}
+  {:describe "conso",
+   :params
+   {:a ["0" "1" "-1"], :d ["nil" "true" "0"], :l ["nil" "true" "0"]},
+   :template "(clojure.core.logic/conso %a %d %l)"}
+  {:describe "constrain-tree",
+   :params
+   {:t [":a" ":b" ":foo" ":bar/baz"], :fc ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/constrain-tree %t %fc)"}
+  {:describe "copy-term",
+   :params
+   {:u ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/copy-term %u %v)"}
+  {:describe "defnc",
+   :params
+   {:name ["nil" "true" "0" "1" "-1"],
+    :args ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/defnc %name %args)"}
+  {:describe "defnm",
+   :params
+   {:t [":a" ":b" ":foo" ":bar/baz"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/defnm %t %n)"}
+  {:describe "dissoc-dom",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.logic/dissoc-dom %x %k)"}
+  {:describe "dissoc-meta",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.logic/dissoc-meta %x %k)"}
+  {:describe "distincto",
+   :params {:l ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/distincto %l)"}
+  {:describe "distribute",
+   :params
+   {:v* ["nil" "true" "0" "1" "-1"],
+    :strategy ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/distribute %v* %strategy)"}
+  {:describe "disunify",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :u ["nil" "true" "0"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/disunify %s %u %v)"}
+  {:describe "emptyo",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/emptyo %a)"}
+  {:describe "enforce-constraints",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/enforce-constraints %x)"}
+  {:describe "enforceable-constrained",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/enforceable-constrained %a)"}
+  {:describe "entailed?",
+   :params
+   {:c ["[]" "[1 2 3]" "'(1 2 3)"],
+    :c' ["nil" "true" "0"],
+    :a ["0" "1" "-1"]},
+   :template "(clojure.core.logic/entailed? %c %c' %a)"}
+  {:describe "entangle",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :y ["0" "1" "-1"]},
+   :template "(clojure.core.logic/entangle %s %x %y)"}
+  {:describe "everyg",
+   :params
+   {:g ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/everyg %g %coll)"}
+  {:describe "ext",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :u ["nil" "true" "0"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/ext %s %u %v)"}
+  {:describe "ext-run-csg",
+   :params
+   {:u ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/ext-run-csg %u %v)"}
+  {:describe "fail",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/fail %a)"}
+  {:describe "featurec",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :fs ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/featurec %x %fs)"}
+  {:describe "firsto",
+   :params
+   {:l ["nil" "true" "0" "1" "-1"], :a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/firsto %l %a)"}
+  {:describe "fix-constraints",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/fix-constraints %a)"}
+  {:describe "fixc",
+   :params
+   {:x ["0" "1" "-1"],
+    :f ["inc" "dec" "identity"],
+    :reifier ["nil" "true" "0"]},
+   :template "(clojure.core.logic/fixc %x %f %reifier)"}
+  {:describe "fnc",
+   :params {:args ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/fnc %args)"}
+  {:describe "fnm",
+   :params
+   {:t [":a" ":b" ":foo"],
+    :as ["nil" "true" "0"],
+    :tabled? ["nil" "true" "0"]},
+   :template "(clojure.core.logic/fnm %t %as %tabled?)"}
+  {:describe "force-ans",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/force-ans %x)"}
+  {:describe "fresh",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/fresh %v)"}
+  {:describe "get-attr",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :attr ["nil" "true" "0"]},
+   :template "(clojure.core.logic/get-attr %s %x %attr)"}
+  {:describe "get-dom",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :dom ["nil" "true" "0"]},
+   :template "(clojure.core.logic/get-dom %s %x %dom)"}
+  {:describe "get-dom-fd",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/get-dom-fd %a %x)"}
+  {:describe "ground-term?",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.core.logic/ground-term? %x %s)"}
+  {:describe "ientailed?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/ientailed? %val)"}
+  {:describe "ifa*",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/ifa* %v)"}
+  {:describe "ifu*",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/ifu* %v)"}
+  {:describe "is",
+   :params
+   {:u ["nil" "true" "0"],
+    :v ["nil" "true" "0"],
+    :op ["nil" "true" "0"]},
+   :template "(clojure.core.logic/is %u %v %op)"}
+  {:describe "lcons",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :d ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/lcons %a %d)"}
+  {:describe "lcons?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/lcons? %val)"}
+  {:describe "let-dom",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :vars ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/let-dom %a %vars)"}
+  {:describe "llist",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.core.logic/llist %f %s)"}
+  {:describe "lvar",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/lvar %name)"}
+  {:describe "lvar?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/lvar? %val)"}
+  {:describe "lvaro",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/lvaro %v)"}
+  {:describe "lvars",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/lvars %n)"}
+  {:describe "make-suspended-stream",
+   :params
+   {:cache ["nil" "true" "0"],
+    :ansv* ["nil" "true" "0"],
+    :f ["inc" "dec" "identity"]},
+   :template
+   "(clojure.core.logic/make-suspended-stream %cache %ansv* %f)"}
+  {:describe "master",
+   :params
+   {:argv ["nil" "true" "0" "1" "-1"],
+    :cache ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/master %argv %cache)"}
+  {:describe "matcha",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/matcha %xs)"}
+  {:describe "matche",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/matche %xs)"}
+  {:describe "matchu",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/matchu %xs)"}
+  {:describe "member1o",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :l ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/member1o %x %l)"}
+  {:describe "membero",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :l ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/membero %x %l)"}
+  {:describe "merge-doms",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :doms ["nil" "true" "0"]},
+   :template "(clojure.core.logic/merge-doms %s %x %doms)"}
+  {:describe "merge-with-root",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :root ["nil" "true" "0"]},
+   :template "(clojure.core.logic/merge-with-root %s %x %root)"}
+  {:describe "mplus*",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/mplus* %e)"}
+  {:describe "nafc",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/nafc %c)"}
+  {:describe "nilo",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/nilo %a)"}
+  {:describe "nonlvaro",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/nonlvaro %v)"}
+  {:describe "occurs-check",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :u ["nil" "true" "0"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/occurs-check %s %u %v)"}
+  {:describe "onceo",
+   :params {:g ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/onceo %g)"}
+  {:describe "or*",
+   :params
+   {:goals ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/or* %goals)"}
+  {:describe "partial-map",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.core.logic/partial-map %m)"}
+  {:describe "partial-map?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/partial-map? %val)"}
+  {:describe "permuteo",
+   :params
+   {:xl ["nil" "true" "0" "1" "-1"], :yl ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/permuteo %xl %yl)"}
+  {:describe "pred",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/pred %v %f)"}
+  {:describe "predc",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :p ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/predc %x %p)"}
+  {:describe "project",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/project %v)"}
+  {:describe "recover-vars",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/recover-vars %p)"}
+  {:describe "recover-vars-from-term",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/recover-vars-from-term %x)"}
+  {:describe "reify-constraints",
+   :params
+   {:v ["nil" "true" "0"], :r ["nil" "true" "0"], :a ["0" "1" "-1"]},
+   :template "(clojure.core.logic/reify-constraints %v %r %a)"}
+  {:describe "reify-lvar-name",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.core.logic/reify-lvar-name %s)"}
+  {:describe "reifyg",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/reifyg %x)"}
+  {:describe "rem-attr",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :attr ["nil" "true" "0"]},
+   :template "(clojure.core.logic/rem-attr %s %x %attr)"}
+  {:describe "rem-dom",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :x ["0" "1" "-1"],
+    :dom ["nil" "true" "0"]},
+   :template "(clojure.core.logic/rem-dom %s %x %dom)"}
+  {:describe "rembero",
+   :params
+   {:x ["0" "1" "-1"], :l ["nil" "true" "0"], :o ["nil" "true" "0"]},
+   :template "(clojure.core.logic/rembero %x %l %o)"}
+  {:describe "remcg",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/remcg %c)"}
+  {:describe "resto",
+   :params
+   {:l ["nil" "true" "0" "1" "-1"], :d ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/resto %l %d)"}
+  {:describe "run",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :bindings ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/run %n %bindings)"}
+  {:describe "run*",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/run* %bindings)"}
+  {:describe "run-constraint",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/run-constraint %c)"}
+  {:describe "run-constraints",
+   :params {:xcs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/run-constraints %xcs)"}
+  {:describe "run-constraints*",
+   :params
+   {:xs ["nil" "true" "0"],
+    :cs ["\"\"" "\"hello\"" "\"hello world\""],
+    :ws ["nil" "true" "0"]},
+   :template "(clojure.core.logic/run-constraints* %xs %cs %ws)"}
+  {:describe "run-db",
+   :params
+   {:n ["0" "1" "-1"],
+    :db ["nil" "true" "0"],
+    :bindings ["nil" "true" "0"]},
+   :template "(clojure.core.logic/run-db %n %db %bindings)"}
+  {:describe "run-db*",
+   :params
+   {:db ["nil" "true" "0" "1" "-1"],
+    :bindings ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/run-db* %db %bindings)"}
+  {:describe "run-nc",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :bindings ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/run-nc %n %bindings)"}
+  {:describe "runcg",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/runcg %c)"}
+  {:describe "seqc",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/seqc %v)"}
+  {:describe "solutions",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :g ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/solutions %s %g)"}
+  {:describe "sort-by-member-count",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/sort-by-member-count %a)"}
+  {:describe "sort-by-strategy",
+   :params
+   {:v ["nil" "true" "0"], :x ["0" "1" "-1"], :a ["0" "1" "-1"]},
+   :template "(clojure.core.logic/sort-by-strategy %v %x %a)"}
+  {:describe "stopcg",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/stopcg %c)"}
+  {:describe "subst-val",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/subst-val %x)"}
+  {:describe "subst-val?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/subst-val? %val)"}
+  {:describe "subst?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/subst? %val)"}
+  {:describe "succeed",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.logic/succeed %a)"}
+  {:describe "suspended-stream?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/suspended-stream? %val)"}
+  {:describe "sync-eset",
+   :params
+   {:s ["\"\"" "\"hello\""],
+    :v ["nil" "true"],
+    :seenset ["#{}" "#{1 2 3}"],
+    :f ["inc" "dec"]},
+   :template "(clojure.core.logic/sync-eset %s %v %seenset %f)"}
+  {:describe "tabled",
+   :params {:args ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/tabled %args)"}
+  {:describe "tabled-s",
+   :params {:oc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/tabled-s %oc)"}
+  {:describe "to-s",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/to-s %v)"}
+  {:describe "to-stream",
+   :params {:aseq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/to-stream %aseq)"}
+  {:describe "to-subst-val",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/to-subst-val %v)"}
+  {:describe "trace-lvar",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :lvar ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/trace-lvar %a %lvar)"}
+  {:describe "trace-lvars",
+   :params
+   {:title ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.logic/trace-lvars %title)"}
+  {:describe "tramp",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/tramp %f)"}
+  {:describe "tree-term?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/tree-term? %val)"}
+  {:describe "treec",
+   :params
+   {:x ["0" "1" "-1"],
+    :fc ["nil" "true" "0"],
+    :reifier ["nil" "true" "0"]},
+   :template "(clojure.core.logic/treec %x %fc %reifier)"}
+  {:describe "unbound-rands",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/unbound-rands %a %c)"}
+  {:describe "unify",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :u ["nil" "true" "0"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.core.logic/unify %s %u %v)"}
+  {:describe "unify-with-map*",
+   :params
+   {:u ["nil" "true" "0"],
+    :v ["nil" "true" "0"],
+    :s ["\"\"" "\"hello\"" "\"hello world\""]},
+   :template "(clojure.core.logic/unify-with-map* %u %v %s)"}
+  {:describe "unify-with-pmap*",
+   :params
+   {:u ["nil" "true" "0"],
+    :v ["nil" "true" "0"],
+    :s ["\"\"" "\"hello\"" "\"hello world\""]},
+   :template "(clojure.core.logic/unify-with-pmap* %u %v %s)"}
+  {:describe "unify-with-sequential*",
+   :params
+   {:u ["nil" "true" "0"],
+    :v ["nil" "true" "0"],
+    :s ["\"\"" "\"hello\"" "\"hello world\""]},
+   :template "(clojure.core.logic/unify-with-sequential* %u %v %s)"}
+  {:describe "update-dom",
+   :params
+   {:s ["\"\"" "\"hello\""],
+    :x ["0" "1"],
+    :dom ["nil" "true"],
+    :f ["inc" "dec"]},
+   :template "(clojure.core.logic/update-dom %s %x %dom %f)"}
+  {:describe "update-eset",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :doms ["nil" "true" "0"],
+    :eset ["#{}" "#{1 2 3}" "#{:a :b}"]},
+   :template "(clojure.core.logic/update-eset %s %doms %eset)"}
+  {:describe "update-pvars!",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :vars ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/update-pvars! %x %vars)"}
+  {:describe "updatecg",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/updatecg %c)"}
+  {:describe "var-rands",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.core.logic/var-rands %a %c)"}
+  {:describe "verify-all-bound",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :constrained ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/verify-all-bound %a %constrained)"}
+  {:describe "waiting-stream-check",
+   :params
+   {:w ["nil" "true" "0"],
+    :success-cont ["nil" "true" "0"],
+    :failure-cont ["nil" "true" "0"]},
+   :template
+   "(clojure.core.logic/waiting-stream-check %w %success-cont %failure-cont)"}
+  {:describe "waiting-stream?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.logic/waiting-stream? %val)"}
+  {:describe "walk*",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :v ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.logic/walk* %s %v)"}
+  {:describe "walk-record-term",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.logic/walk-record-term %v %f)"}]}
+]

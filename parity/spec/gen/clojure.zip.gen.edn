@@ -1,0 +1,136 @@
+[
+{:category :clojure.zip.functions,
+ :parametric
+ [{:describe "append-child",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.zip/append-child %loc %item)"}
+  {:describe "branch?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.zip/branch? %val)"}
+  {:describe "children",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/children %loc)"}
+  {:describe "down",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/down %loc)"}
+  {:describe "edit",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.zip/edit %loc %f)"}
+  {:describe "end?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.zip/end? %val)"}
+  {:describe "insert-child",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.zip/insert-child %loc %item)"}
+  {:describe "insert-left",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.zip/insert-left %loc %item)"}
+  {:describe "insert-right",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.zip/insert-right %loc %item)"}
+  {:describe "left",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/left %loc)"}
+  {:describe "leftmost",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/leftmost %loc)"}
+  {:describe "lefts",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/lefts %loc)"}
+  {:describe "make-node",
+   :params
+   {:loc ["nil" "true" "0"],
+    :node ["nil" "true" "0"],
+    :children ["nil" "true" "0"]},
+   :template "(clojure.zip/make-node %loc %node %children)"}
+  {:describe "next",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/next %loc)"}
+  {:describe "node",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/node %loc)"}
+  {:describe "path",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/path %loc)"}
+  {:describe "prev",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/prev %loc)"}
+  {:describe "remove",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/remove %loc)"}
+  {:describe "replace",
+   :params
+   {:loc ["nil" "true" "0" "1" "-1"],
+    :node ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.zip/replace %loc %node)"}
+  {:describe "right",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/right %loc)"}
+  {:describe "rightmost",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/rightmost %loc)"}
+  {:describe "rights",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/rights %loc)"}
+  {:describe "root",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/root %loc)"}
+  {:describe "seq-zip",
+   :params {:root ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/seq-zip %root)"}
+  {:describe "up",
+   :params {:loc ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/up %loc)"}
+  {:describe "vector-zip",
+   :params {:root ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/vector-zip %root)"}
+  {:describe "xml-zip",
+   :params {:root ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.zip/xml-zip %root)"}
+  {:describe "zipper",
+   :params
+   {:branch? ["nil" "true"],
+    :children ["nil" "true"],
+    :make-node ["nil" "true"],
+    :root ["nil" "true"]},
+   :template
+   "(clojure.zip/zipper %branch? %children %make-node %root)"}]}
+]

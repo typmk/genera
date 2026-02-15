@@ -1,0 +1,327 @@
+[
+{:category :clojure.spec.alpha.functions,
+ :tests
+ [{:it "check-asserts?", :eval "(clojure.spec.alpha/check-asserts?)"}
+  {:it "registry", :eval "(clojure.spec.alpha/registry)"}],
+ :parametric
+ [{:describe "&",
+   :params {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.spec.alpha/& %re)"}
+  {:describe "*",
+   :params
+   {:pred-form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/* %pred-form)"}
+  {:describe "+",
+   :params
+   {:pred-form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/+ %pred-form)"}
+  {:describe "?",
+   :params
+   {:pred-form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/? %pred-form)"}
+  {:describe "abbrev",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/abbrev %form)"}
+  {:describe "alt-impl",
+   :params
+   {:ks [":a" ":b" ":foo"],
+    :ps ["nil" "true" "0"],
+    :forms ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/alt-impl %ks %ps %forms)"}
+  {:describe "amp-impl",
+   :params
+   {:re ["#\"\\\\d+\"" "#\"[a-z]+\""],
+    :re-form ["nil" "true"],
+    :preds ["nil" "true"],
+    :pred-forms ["nil" "true"]},
+   :template
+   "(clojure.spec.alpha/amp-impl %re %re-form %preds %pred-forms)"}
+  {:describe "and-spec-impl",
+   :params
+   {:forms ["nil" "true" "0"],
+    :preds ["nil" "true" "0"],
+    :gfn ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/and-spec-impl %forms %preds %gfn)"}
+  {:describe "assert",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/assert %spec %x)"}
+  {:describe "assert*",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/assert* %spec %x)"}
+  {:describe "cat-impl",
+   :params
+   {:ks [":a" ":b" ":foo"],
+    :ps ["nil" "true" "0"],
+    :forms ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/cat-impl %ks %ps %forms)"}
+  {:describe "check-asserts",
+   :params {:flag ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/check-asserts %flag)"}
+  {:describe "coll-of",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.spec.alpha/coll-of %pred)"}
+  {:describe "conform",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/conform %spec %x)"}
+  {:describe "conform*",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/conform* %spec %x)"}
+  {:describe "conformer",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.spec.alpha/conformer %f)"}
+  {:describe "def",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"],
+    :spec-form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/def %k %spec-form)"}
+  {:describe "def-impl",
+   :params
+   {:k [":a" ":b" ":foo"],
+    :form ["nil" "true" "0"],
+    :spec ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/def-impl %k %form %spec)"}
+  {:describe "describe",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/describe %spec)"}
+  {:describe "describe*",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/describe* %spec)"}
+  {:describe "every",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.spec.alpha/every %pred)"}
+  {:describe "every-impl",
+   :params
+   {:form ["nil" "true" "0"],
+    :pred ["inc" "dec" "identity"],
+    :opts ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/every-impl %form %pred %opts)"}
+  {:describe "every-kv",
+   :params
+   {:kpred ["nil" "true" "0" "1" "-1"],
+    :vpred ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/every-kv %kpred %vpred)"}
+  {:describe "exercise",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/exercise %spec)"}
+  {:describe "exercise-fn",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/exercise-fn %sym)"}
+  {:describe "explain",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/explain %spec %x)"}
+  {:describe "explain-data",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/explain-data %spec %x)"}
+  {:describe "explain-out",
+   :params {:ed ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/explain-out %ed)"}
+  {:describe "explain-printer",
+   :params {:ed ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/explain-printer %ed)"}
+  {:describe "explain-str",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/explain-str %spec %x)"}
+  {:describe "fdef",
+   :params
+   {:fn-sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/fdef %fn-sym)"}
+  {:describe "form",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/form %spec)"}
+  {:describe "gen",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/gen %spec)"}
+  {:describe "gen*",
+   :params
+   {:spec ["nil" "true"],
+    :overrides ["nil" "true"],
+    :path ["nil" "true"],
+    :rmap ["{}" "{:a 1}"]},
+   :template "(clojure.spec.alpha/gen* %spec %overrides %path %rmap)"}
+  {:describe "get-spec",
+   :params {:k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.spec.alpha/get-spec %k)"}
+  {:describe "inst-in",
+   :params
+   {:start ["0" "1" "-1" "42" "3.14"],
+    :end ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/inst-in %start %end)"}
+  {:describe "inst-in-range?",
+   :params
+   {:start ["0" "1" "-1"],
+    :end ["0" "1" "-1"],
+    :inst ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/inst-in-range? %start %end %inst)"}
+  {:describe "int-in",
+   :params
+   {:start ["0" "1" "-1" "42" "3.14"],
+    :end ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/int-in %start %end)"}
+  {:describe "int-in-range?",
+   :params
+   {:start ["0" "1" "-1"],
+    :end ["0" "1" "-1"],
+    :val ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/int-in-range? %start %end %val)"}
+  {:describe "invalid?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.spec.alpha/invalid? %val)"}
+  {:describe "map-of",
+   :params
+   {:kpred ["nil" "true" "0" "1" "-1"],
+    :vpred ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/map-of %kpred %vpred)"}
+  {:describe "map-spec-impl",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/map-spec-impl %m)"}
+  {:describe "maybe-impl",
+   :params
+   {:p ["nil" "true" "0" "1" "-1"], :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/maybe-impl %p %form)"}
+  {:describe "merge-spec-impl",
+   :params
+   {:forms ["nil" "true" "0"],
+    :preds ["nil" "true" "0"],
+    :gfn ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/merge-spec-impl %forms %preds %gfn)"}
+  {:describe "multi-spec",
+   :params
+   {:mm ["nil" "true" "0" "1" "-1"],
+    :retag ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/multi-spec %mm %retag)"}
+  {:describe "multi-spec-impl",
+   :params
+   {:form ["nil" "true" "0"],
+    :mmvar ["nil" "true" "0"],
+    :retag ["nil" "true" "0"]},
+   :template
+   "(clojure.spec.alpha/multi-spec-impl %form %mmvar %retag)"}
+  {:describe "nilable",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.spec.alpha/nilable %pred)"}
+  {:describe "nilable-impl",
+   :params
+   {:form ["nil" "true" "0"],
+    :pred ["inc" "dec" "identity"],
+    :gfn ["nil" "true" "0"]},
+   :template "(clojure.spec.alpha/nilable-impl %form %pred %gfn)"}
+  {:describe "nonconforming",
+   :params {:spec ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/nonconforming %spec)"}
+  {:describe "or-spec-impl",
+   :params
+   {:keys [":a" ":b"],
+    :forms ["nil" "true"],
+    :preds ["nil" "true"],
+    :gfn ["nil" "true"]},
+   :template
+   "(clojure.spec.alpha/or-spec-impl %keys %forms %preds %gfn)"}
+  {:describe "regex-spec-impl",
+   :params
+   {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :gfn ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/regex-spec-impl %re %gfn)"}
+  {:describe "regex?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.spec.alpha/regex? %val)"}
+  {:describe "rep+impl",
+   :params
+   {:form ["nil" "true" "0" "1" "-1"], :p ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/rep+impl %form %p)"}
+  {:describe "rep-impl",
+   :params
+   {:form ["nil" "true" "0" "1" "-1"], :p ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/rep-impl %form %p)"}
+  {:describe "spec",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/spec %form)"}
+  {:describe "spec-impl",
+   :params
+   {:form ["nil" "true"],
+    :pred ["inc" "dec"],
+    :gfn ["nil" "true"],
+    :cpred? ["nil" "true"]},
+   :template "(clojure.spec.alpha/spec-impl %form %pred %gfn %cpred?)"}
+  {:describe "spec?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.spec.alpha/spec? %val)"}
+  {:describe "specize*",
+   :params {:_ ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.alpha/specize* %_)"}
+  {:describe "tuple-impl",
+   :params
+   {:forms ["nil" "true" "0" "1" "-1"],
+    :preds ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/tuple-impl %forms %preds)"}
+  {:describe "unform",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/unform %spec %x)"}
+  {:describe "unform*",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/unform* %spec %y)"}
+  {:describe "valid?",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.alpha/valid? %spec %x)"}
+  {:describe "with-gen",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"],
+    :gen-fn ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/with-gen %spec %gen-fn)"}
+  {:describe "with-gen*",
+   :params
+   {:spec ["nil" "true" "0" "1" "-1"],
+    :gfn ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.alpha/with-gen* %spec %gfn)"}]}
+]

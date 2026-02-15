@@ -1,0 +1,35 @@
+[
+{:category :clojure.core.protocols.functions,
+ :parametric
+ [{:describe "coll-reduce",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.protocols/coll-reduce %coll %f)"}
+  {:describe "datafy",
+   :params {:o ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.protocols/datafy %o)"}
+  {:describe "internal-reduce",
+   :params
+   {:seq ["nil" "true" "0"],
+    :f ["inc" "dec" "identity"],
+    :start ["0" "1" "-1"]},
+   :template "(clojure.core.protocols/internal-reduce %seq %f %start)"}
+  {:describe "iterator-reduce!",
+   :params
+   {:iter ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.core.protocols/iterator-reduce! %iter %f)"}
+  {:describe "kv-reduce",
+   :params
+   {:amap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :f ["inc" "dec" "identity"],
+    :init ["0" "1" "-1"]},
+   :template "(clojure.core.protocols/kv-reduce %amap %f %init)"}
+  {:describe "nav",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :k [":a" ":b" ":foo"],
+    :v ["nil" "true" "0"]},
+   :template "(clojure.core.protocols/nav %coll %k %v)"}]}
+]

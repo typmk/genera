@@ -1,0 +1,9 @@
+[
+{:category :clojure.test.check.functions,
+ :parametric
+ [{:describe "quick-check",
+   :params
+   {:num-tests ["nil" "true" "0" "1" "-1"],
+    :property ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check/quick-check %num-tests %property)"}]}
+]

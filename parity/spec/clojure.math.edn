@@ -1,0 +1,41 @@
+;; clojure.math namespace (Clojure 1.11+)
+;; https://clojure.github.io/clojure/clojure.math-api.html
+
+[{:category :functions
+  :tests
+  [{:it "ceil"                    :eval "(clojure.math/ceil 3.2)"}
+   {:it "ceil negative"           :eval "(clojure.math/ceil -3.2)"}
+   {:it "floor"                   :eval "(clojure.math/floor 3.8)"}
+   {:it "floor negative"          :eval "(clojure.math/floor -3.8)"}
+   {:it "round"                   :eval "(clojure.math/round 3.5)"}
+   {:it "round down"              :eval "(clojure.math/round 3.4)"}
+   {:it "sqrt"                    :eval "(clojure.math/sqrt 4.0)"}
+   {:it "sqrt 2"                  :eval "(< (abs (- (clojure.math/sqrt 2.0) 1.41421356)) 0.0001)"}
+   {:it "cbrt"                    :eval "(clojure.math/cbrt 27.0)"}
+   {:it "pow"                     :eval "(clojure.math/pow 2 10)"}
+   {:it "pow float"               :eval "(clojure.math/pow 2.0 0.5)"}
+   {:it "exp"                     :eval "(< (abs (- (clojure.math/exp 1.0) 2.71828)) 0.001)"}
+   {:it "log"                     :eval "(< (abs (- (clojure.math/log (clojure.math/E)) 1.0)) 0.0001)"}
+   {:it "log10"                   :eval "(clojure.math/log10 1000.0)"}
+   {:it "sin 0"                   :eval "(clojure.math/sin 0.0)"}
+   {:it "cos 0"                   :eval "(clojure.math/cos 0.0)"}
+   {:it "tan 0"                   :eval "(clojure.math/tan 0.0)"}
+   {:it "asin"                    :eval "(< (abs (- (clojure.math/asin 1.0) (/ (clojure.math/PI) 2))) 0.0001)"}
+   {:it "atan2"                   :eval "(< (abs (- (clojure.math/atan2 1.0 1.0) (/ (clojure.math/PI) 4))) 0.0001)"}
+   {:it "abs"                     :eval "(clojure.math/abs -42.0)"}
+   {:it "signum positive"         :eval "(clojure.math/signum 42.0)"}
+   {:it "signum negative"         :eval "(clojure.math/signum -42.0)"}
+   {:it "signum zero"             :eval "(clojure.math/signum 0.0)"}
+   {:it "min"                     :eval "(clojure.math/min 3 5)"}
+   {:it "max"                     :eval "(clojure.math/max 3 5)"}
+   {:it "PI"                      :eval "(< (abs (- clojure.math/PI 3.14159)) 0.001)"}
+   {:it "E"                       :eval "(< (abs (- clojure.math/E 2.71828)) 0.001)"}
+   {:it "IEEE-remainder"          :eval "(clojure.math/IEEE-remainder 10.0 3.0)"}
+   {:it "floor-div"               :eval "(clojure.math/floor-div 7 2)"}
+   {:it "floor-mod"               :eval "(clojure.math/floor-mod 7 2)"}
+   {:it "floor-mod negative"      :eval "(clojure.math/floor-mod -7 3)"}]
+  :parametric
+  [{:describe "trig functions"
+    :params {:f   ["sin" "cos" "tan"]
+             :val ["0.0" "1.0" "-1.0" "0.5"]}
+    :template "(format \"%.6f\" (clojure.math/%f %val))"}]}]

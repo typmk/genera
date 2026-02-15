@@ -1,0 +1,39 @@
+[
+{:category :clojure.data.avl.functions,
+ :parametric
+ [{:describe "nearest",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :test ["nil" "true" "0"],
+    :x ["0" "1" "-1"]},
+   :template "(clojure.data.avl/nearest %coll %test %x)"}
+  {:describe "rank-of",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.avl/rank-of %coll %x)"}
+  {:describe "sorted-map-by",
+   :params
+   {:comparator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.avl/sorted-map-by %comparator)"}
+  {:describe "sorted-set-by",
+   :params
+   {:comparator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.avl/sorted-set-by %comparator)"}
+  {:describe "split-at",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.data.avl/split-at %n %coll)"}
+  {:describe "split-key",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.data.avl/split-key %k %coll)"}
+  {:describe "subrange",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :test ["nil" "true" "0"],
+    :limit ["nil" "true" "0"]},
+   :template "(clojure.data.avl/subrange %coll %test %limit)"}]}
+]

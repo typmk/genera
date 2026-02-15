@@ -1,0 +1,23 @@
+[
+{:category :clojure.spec.gen.alpha.functions,
+ :parametric
+ [{:describe "delay-impl",
+   :params {:gfnd ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.gen.alpha/delay-impl %gfnd)"}
+  {:describe "gen-for-name",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.spec.gen.alpha/gen-for-name %s)"}
+  {:describe "gen-for-pred",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.spec.gen.alpha/gen-for-pred %pred)"}
+  {:describe "generate",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.gen.alpha/generate %generator)"}
+  {:describe "lazy-combinator",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.spec.gen.alpha/lazy-combinator %s)"}
+  {:describe "lazy-prim",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.spec.gen.alpha/lazy-prim %s)"}]}
+]

@@ -1,0 +1,20 @@
+[
+{:category :clojure.stacktrace.functions,
+ :tests [{:it "e", :eval "(clojure.stacktrace/e)"}],
+ :parametric
+ [{:describe "print-cause-trace",
+   :params {:tr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.stacktrace/print-cause-trace %tr)"}
+  {:describe "print-stack-trace",
+   :params {:tr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.stacktrace/print-stack-trace %tr)"}
+  {:describe "print-throwable",
+   :params {:tr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.stacktrace/print-throwable %tr)"}
+  {:describe "print-trace-element",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.stacktrace/print-trace-element %e)"}
+  {:describe "root-cause",
+   :params {:tr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.stacktrace/root-cause %tr)"}]}
+]

@@ -1,0 +1,28 @@
+;; clojure.set namespace — comprehensive
+;; https://clojure.github.io/clojure/clojure.set-api.html
+
+[{:category :functions
+  :tests
+  [{:it "union"                   :eval "(clojure.set/union #{1 2} #{2 3})"}
+   {:it "union empty"             :eval "(clojure.set/union #{} #{1})"}
+   {:it "union three"             :eval "(clojure.set/union #{1} #{2} #{3})"}
+   {:it "intersection"            :eval "(clojure.set/intersection #{1 2 3} #{2 3 4})"}
+   {:it "intersection disjoint"   :eval "(clojure.set/intersection #{1 2} #{3 4})"}
+   {:it "intersection three"      :eval "(clojure.set/intersection #{1 2 3} #{2 3 4} #{3 4 5})"}
+   {:it "difference"              :eval "(clojure.set/difference #{1 2 3} #{2})"}
+   {:it "difference none"         :eval "(clojure.set/difference #{1 2 3} #{4 5})"}
+   {:it "difference all"          :eval "(clojure.set/difference #{1 2} #{1 2 3})"}
+   {:it "subset? true"            :eval "(clojure.set/subset? #{1 2} #{1 2 3})"}
+   {:it "subset? false"           :eval "(clojure.set/subset? #{1 4} #{1 2 3})"}
+   {:it "subset? equal"           :eval "(clojure.set/subset? #{1 2} #{1 2})"}
+   {:it "subset? empty"           :eval "(clojure.set/subset? #{} #{1 2})"}
+   {:it "superset? true"          :eval "(clojure.set/superset? #{1 2 3} #{1 2})"}
+   {:it "superset? false"         :eval "(clojure.set/superset? #{1 2} #{1 2 3})"}
+   {:it "index"                   :eval "(clojure.set/index [{:a 1 :b 2} {:a 1 :b 3} {:a 2 :b 4}] [:a])"}
+   {:it "join"                    :eval "(clojure.set/join #{{:a 1 :b 2}} #{{:b 2 :c 3}})"}
+   {:it "join with map"           :eval "(clojure.set/join #{{:a 1}} #{{:b 1}} {:a :b})"}
+   {:it "map-invert"              :eval "(clojure.set/map-invert {:a 1 :b 2})"}
+   {:it "project"                 :eval "(clojure.set/project #{{:a 1 :b 2 :c 3}} [:a :b])"}
+   {:it "rename-keys"             :eval "(clojure.set/rename-keys {:a 1 :b 2} {:a :x :b :y})"}
+   {:it "rename"                  :eval "(clojure.set/rename #{{:a 1 :b 2}} {:a :x})"}
+   {:it "select"                  :eval "(clojure.set/select even? #{1 2 3 4 5})"}]}]

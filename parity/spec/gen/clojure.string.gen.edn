@@ -1,0 +1,103 @@
+[
+{:category :clojure.string.functions,
+ :parametric
+ [{:describe "blank?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.string/blank? %val)"}
+  {:describe "capitalize",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/capitalize %s)"}
+  {:describe "ends-with?",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :substr ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/ends-with? %s %substr)"}
+  {:describe "escape",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :cmap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.string/escape %s %cmap)"}
+  {:describe "includes?",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :substr ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/includes? %s %substr)"}
+  {:describe "index-of",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :value ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/index-of %s %value)"}
+  {:describe "join",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.string/join %coll)"}
+  {:describe "last-index-of",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :value ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/last-index-of %s %value)"}
+  {:describe "lower-case",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/lower-case %s)"}
+  {:describe "re-quote-replacement",
+   :params
+   {:replacement ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/re-quote-replacement %replacement)"}
+  {:describe "replace",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :match ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :replacement ["\"\"" "\"hello\"" "\"hello world\""]},
+   :template "(clojure.string/replace %s %match %replacement)"}
+  {:describe "replace-first",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\""],
+    :match ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :replacement ["\"\"" "\"hello\"" "\"hello world\""]},
+   :template "(clojure.string/replace-first %s %match %replacement)"}
+  {:describe "reverse",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/reverse %s)"}
+  {:describe "split",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.string/split %s %re)"}
+  {:describe "split-lines",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/split-lines %s)"}
+  {:describe "starts-with?",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :substr ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/starts-with? %s %substr)"}
+  {:describe "trim",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/trim %s)"}
+  {:describe "trim-newline",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/trim-newline %s)"}
+  {:describe "triml",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/triml %s)"}
+  {:describe "trimr",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/trimr %s)"}
+  {:describe "upper-case",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.string/upper-case %s)"}]}
+]

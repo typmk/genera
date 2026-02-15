@@ -1,0 +1,13 @@
+;; clojure.data namespace
+;; https://clojure.github.io/clojure/clojure.data-api.html
+
+[{:category :functions
+  :tests
+  [{:it "diff maps same"          :eval "(clojure.data/diff {:a 1 :b 2} {:a 1 :b 2})"}
+   {:it "diff maps differ"        :eval "(clojure.data/diff {:a 1 :b 2} {:a 1 :b 3})"}
+   {:it "diff maps extra"         :eval "(clojure.data/diff {:a 1 :b 2} {:a 1 :c 3})"}
+   {:it "diff vectors"            :eval "(clojure.data/diff [1 2 3] [1 2 4])"}
+   {:it "diff sets"               :eval "(clojure.data/diff #{1 2 3} #{2 3 4})"}
+   {:it "diff nil"                :eval "(clojure.data/diff nil {:a 1})"}
+   {:it "diff nested"             :eval "(clojure.data/diff {:a {:b 1}} {:a {:b 2}})"}
+   {:it "diff empty"              :eval "(clojure.data/diff {} {})"}]}]

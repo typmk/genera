@@ -1,0 +1,82 @@
+[
+{:category :clojure.core.cache.functions,
+ :parametric
+ [{:describe "basic-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/basic-cache-factory %base)"}
+  {:describe "clear-soft-cache!",
+   :params
+   {:cache ["nil" "true" "0"],
+    :rcache ["nil" "true" "0"],
+    :rq ["nil" "true" "0"]},
+   :template
+   "(clojure.core.cache/clear-soft-cache! %cache %rcache %rq)"}
+  {:describe "defcache",
+   :params
+   {:type-name ["nil" "true" "0" "1" "-1"],
+    :fields ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/defcache %type-name %fields)"}
+  {:describe "evict",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :e ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/evict %cache %e)"}
+  {:describe "fifo-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/fifo-cache-factory %base)"}
+  {:describe "has?",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :e ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/has? %cache %e)"}
+  {:describe "hit",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :e ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/hit %cache %e)"}
+  {:describe "lirs-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/lirs-cache-factory %base)"}
+  {:describe "lookup",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :e ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/lookup %cache %e)"}
+  {:describe "lru-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/lru-cache-factory %base)"}
+  {:describe "lu-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/lu-cache-factory %base)"}
+  {:describe "make-reference",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"], :rq ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/make-reference %v %rq)"}
+  {:describe "miss",
+   :params
+   {:cache ["nil" "true" "0"],
+    :e ["nil" "true" "0"],
+    :ret ["nil" "true" "0"]},
+   :template "(clojure.core.cache/miss %cache %e %ret)"}
+  {:describe "seed",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :base ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/seed %cache %base)"}
+  {:describe "soft-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/soft-cache-factory %base)"}
+  {:describe "through",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/through %cache %item)"}
+  {:describe "through-cache",
+   :params
+   {:cache ["nil" "true" "0" "1" "-1"],
+    :item ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.cache/through-cache %cache %item)"}
+  {:describe "ttl-cache-factory",
+   :params {:base ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.cache/ttl-cache-factory %base)"}]}
+]

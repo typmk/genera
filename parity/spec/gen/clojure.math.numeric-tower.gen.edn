@@ -1,0 +1,41 @@
+[
+{:category :clojure.math.numeric-tower.functions,
+ :parametric
+ [{:describe "abs",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/abs %n)"}
+  {:describe "ceil",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/ceil %n)"}
+  {:describe "exact-integer-sqrt",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/exact-integer-sqrt %n)"}
+  {:describe "expt",
+   :params
+   {:base ["nil" "true" "0" "1" "-1"],
+    :pow ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.math.numeric-tower/expt %base %pow)"}
+  {:describe "floor",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/floor %n)"}
+  {:describe "gcd",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/gcd %a %b)"}
+  {:describe "integer-length",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/integer-length %n)"}
+  {:describe "lcm",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"], :b ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/lcm %a %b)"}
+  {:describe "round",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/round %n)"}
+  {:describe "sqrt",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.numeric-tower/sqrt %n)"}
+  {:describe "when-available",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.numeric-tower/when-available %sym)"}]}
+]

@@ -1,0 +1,36 @@
+[
+{:category :clojure.data.priority-map.functions,
+ :parametric
+ [{:describe "apply-keyfn",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.data.priority-map/apply-keyfn %x)"}
+  {:describe "priority->set-of-items",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.priority-map/priority->set-of-items %p)"}
+  {:describe "priority-map-by",
+   :params
+   {:comparator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.priority-map/priority-map-by %comparator)"}
+  {:describe "priority-map-keyfn",
+   :params
+   {:keyfn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.data.priority-map/priority-map-keyfn %keyfn)"}
+  {:describe "priority-map-keyfn-by",
+   :params
+   {:keyfn ["nil" "true" "0" "1" "-1"],
+    :comparator ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.data.priority-map/priority-map-keyfn-by %keyfn %comparator)"}
+  {:describe "rsubseq",
+   :params
+   {:sc ["nil" "true" "0"],
+    :test ["nil" "true" "0"],
+    :key [":a" ":b" ":foo"]},
+   :template "(clojure.data.priority-map/rsubseq %sc %test %key)"}
+  {:describe "subseq",
+   :params
+   {:sc ["nil" "true" "0"],
+    :test ["nil" "true" "0"],
+    :key [":a" ":b" ":foo"]},
+   :template "(clojure.data.priority-map/subseq %sc %test %key)"}]}
+]

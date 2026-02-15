@@ -1,0 +1,180 @@
+[
+{:category :clojure.test.check.generators.functions,
+ :parametric
+ [{:describe "bind",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.test.check.generators/bind %generator %f)"}
+  {:describe "call-gen",
+   :params
+   {:m ["nil" "true" "0"],
+    :rnd ["nil" "true" "0"],
+    :size ["nil" "true" "0"]},
+   :template "(clojure.test.check.generators/call-gen %m %rnd %size)"}
+  {:describe "choose",
+   :params
+   {:lower ["nil" "true" "0" "1" "-1"],
+    :upper ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/choose %lower %upper)"}
+  {:describe "container-type",
+   :params
+   {:inner-type ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.test.check.generators/container-type %inner-type)"}
+  {:describe "double*",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/double* %m)"}
+  {:describe "elements",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.test.check.generators/elements %coll)"}
+  {:describe "fmap",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :gen ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/fmap %f %gen)"}
+  {:describe "frequency",
+   :params
+   {:pairs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/frequency %pairs)"}
+  {:describe "gen-bind",
+   :params
+   {:m ["nil" "true" "0" "1" "-1"], :k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.test.check.generators/gen-bind %m %k)"}
+  {:describe "gen-fmap",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"], :m ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/gen-fmap %k %m)"}
+  {:describe "gen-pure",
+   :params
+   {:value ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/gen-pure %value)"}
+  {:describe "generate",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/generate %generator)"}
+  {:describe "generator?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.test.check.generators/generator? %val)"}
+  {:describe "large-integer*",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/large-integer* %m)"}
+  {:describe "lazy-random-states",
+   :params {:rr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/lazy-random-states %rr)"}
+  {:describe "let",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/let %bindings)"}
+  {:describe "list",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/list %generator)"}
+  {:describe "list-distinct",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/list-distinct %gen)"}
+  {:describe "list-distinct-by",
+   :params
+   {:key-fn ["nil" "true" "0" "1" "-1"],
+    :gen ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.test.check.generators/list-distinct-by %key-fn %gen)"}
+  {:describe "make-size-range-seq",
+   :params
+   {:max-size ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.test.check.generators/make-size-range-seq %max-size)"}
+  {:describe "map",
+   :params
+   {:key-gen ["nil" "true" "0" "1" "-1"],
+    :val-gen ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/map %key-gen %val-gen)"}
+  {:describe "no-shrink",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/no-shrink %gen)"}
+  {:describe "not-empty",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/not-empty %gen)"}
+  {:describe "one-of",
+   :params
+   {:generators ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/one-of %generators)"}
+  {:describe "recursive-gen",
+   :params
+   {:container-gen-fn ["nil" "true" "0" "1" "-1"],
+    :scalar-gen ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.test.check.generators/recursive-gen %container-gen-fn %scalar-gen)"}
+  {:describe "resize",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :generator ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/resize %n %generator)"}
+  {:describe "return",
+   :params
+   {:value ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/return %value)"}
+  {:describe "sample",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/sample %generator)"}
+  {:describe "sample-seq",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/sample-seq %generator)"}
+  {:describe "scale",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :generator ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/scale %f %generator)"}
+  {:describe "set",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/set %gen)"}
+  {:describe "shrink-2",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/shrink-2 %gen)"}
+  {:describe "shuffle",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(clojure.test.check.generators/shuffle %coll)"}
+  {:describe "sized",
+   :params
+   {:sized-gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/sized %sized-gen)"}
+  {:describe "sorted-set",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/sorted-set %gen)"}
+  {:describe "such-that",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :gen ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test.check.generators/such-that %pred %gen)"}
+  {:describe "vector",
+   :params
+   {:generator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/vector %generator)"}
+  {:describe "vector-distinct",
+   :params {:gen ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test.check.generators/vector-distinct %gen)"}
+  {:describe "vector-distinct-by",
+   :params
+   {:key-fn ["nil" "true" "0" "1" "-1"],
+    :gen ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.test.check.generators/vector-distinct-by %key-fn %gen)"}]}
+]

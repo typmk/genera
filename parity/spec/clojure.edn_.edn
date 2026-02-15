@@ -1,0 +1,17 @@
+;; clojure.edn namespace
+;; (file named edn_.edn to avoid confusion with the format itself)
+
+[{:category :functions
+  :tests
+  [{:it "read-string int"         :eval "(clojure.edn/read-string \"42\")"}
+   {:it "read-string keyword"     :eval "(clojure.edn/read-string \":foo\")"}
+   {:it "read-string vector"      :eval "(clojure.edn/read-string \"[1 2 3]\")"}
+   {:it "read-string map"         :eval "(clojure.edn/read-string \"{:a 1 :b 2}\")"}
+   {:it "read-string set"         :eval "(clojure.edn/read-string \"#{1 2 3}\")"}
+   {:it "read-string string"      :eval "(clojure.edn/read-string \"\\\"hello\\\"\")"}
+   {:it "read-string nil"         :eval "(clojure.edn/read-string \"nil\")"}
+   {:it "read-string bool"        :eval "(clojure.edn/read-string \"true\")"}
+   {:it "read-string nested"      :eval "(clojure.edn/read-string \"{:a [1 2] :b #{3}}\")"}
+   {:it "read-string char"        :eval "(clojure.edn/read-string \"\\\\a\")"}
+   {:it "read-string tagged"      :eval "(str (clojure.edn/read-string \"#inst \\\"2024-01-01T00:00:00.000Z\\\"\"))"}
+   {:it "read-string with opts"   :eval "(clojure.edn/read-string {:readers {'parity/tag (fn [v] [:tagged v])}} \"#parity/tag 42\")"}]}]

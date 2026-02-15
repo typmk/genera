@@ -1,0 +1,29 @@
+[
+{:category :clojure.java.process.functions,
+ :parametric
+ [{:describe "exit-ref",
+   :params
+   {:process ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.process/exit-ref %process)"}
+  {:describe "from-file",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.java.process/from-file %f)"}
+  {:describe "io-task",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.java.process/io-task %f)"}
+  {:describe "stderr",
+   :params
+   {:process ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.process/stderr %process)"}
+  {:describe "stdin",
+   :params
+   {:process ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.process/stdin %process)"}
+  {:describe "stdout",
+   :params
+   {:process ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.java.process/stdout %process)"}
+  {:describe "to-file",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(clojure.java.process/to-file %f)"}]}
+]

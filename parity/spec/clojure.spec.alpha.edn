@@ -1,0 +1,76 @@
+;; clojure.spec.alpha namespace
+;; https://clojure.github.io/spec.alpha/
+
+[{:category :predicates
+  :tests
+  [{:it "valid? int"               :eval "(s/valid? int? 42)"}
+   {:it "valid? string"            :eval "(s/valid? string? \"hello\")"}
+   {:it "valid? fail"              :eval "(s/valid? int? \"hello\")"}
+   {:it "valid? keyword"           :eval "(s/valid? keyword? :foo)"}
+   {:it "valid? nil"               :eval "(s/valid? nil? nil)"}
+   {:it "valid? set-as-pred"       :eval "(s/valid? #{:a :b :c} :a)"}
+   {:it "valid? set-fail"          :eval "(s/valid? #{:a :b} :z)"}
+   {:it "valid? regex"             :eval "(s/valid? (re-pattern \"\\\\d+\") \"123\")"}]}
+
+ {:category :conform
+  :tests
+  [{:it "conform match"            :eval "(s/conform int? 42)"}
+   {:it "conform fail"             :eval "(s/conform int? \"hello\")"}
+   {:it "conform or"               :eval "(do (s/def ::parity-num-or-str (s/or :num int? :str string?))
+                                              (s/conform ::parity-num-or-str 42))"}
+   {:it "conform or string"        :eval "(do (s/def ::parity-nos2 (s/or :num int? :str string?))
+                                              (s/conform ::parity-nos2 \"hello\"))"}
+   {:it "unform"                   :eval "(do (s/def ::parity-nos3 (s/or :num int? :str string?))
+                                              (s/unform ::parity-nos3 [:num 42]))"}]}
+
+ {:category :specs
+  :tests
+  [{:it "s/and"                    :eval "(s/valid? (s/and int? even?) 4)"}
+   {:it "s/and fail"               :eval "(s/valid? (s/and int? even?) 3)"}
+   {:it "s/or"                     :eval "(s/valid? (s/or :i int? :s string?) \"hello\")"}
+   {:it "s/nilable"                :eval "(s/valid? (s/nilable int?) nil)"}
+   {:it "s/nilable value"          :eval "(s/valid? (s/nilable int?) 42)"}
+   {:it "s/coll-of"                :eval "(s/valid? (s/coll-of int?) [1 2 3])"}
+   {:it "s/coll-of fail"           :eval "(s/valid? (s/coll-of int?) [1 \"a\" 3])"}
+   {:it "s/map-of"                 :eval "(s/valid? (s/map-of keyword? int?) {:a 1 :b 2})"}
+   {:it "s/tuple"                  :eval "(s/valid? (s/tuple int? string?) [1 \"a\"])"}
+   {:it "s/tuple fail"             :eval "(s/valid? (s/tuple int? string?) [1 2])"}
+   {:it "s/every"                  :eval "(s/valid? (s/every int?) [1 2 3])"}
+   {:it "s/int-in"                 :eval "(s/valid? (s/int-in 0 10) 5)"}
+   {:it "s/int-in fail"            :eval "(s/valid? (s/int-in 0 10) 15)"}]}
+
+ {:category :keys
+  :tests
+  [{:it "s/keys req"               :eval "(do (s/def ::parity-name string?)
+                                              (s/def ::parity-age int?)
+                                              (s/valid? (s/keys :req [::parity-name ::parity-age])
+                                                        {::parity-name \"Alice\" ::parity-age 30}))"}
+   {:it "s/keys opt"               :eval "(do (s/def ::parity-email string?)
+                                              (s/valid? (s/keys :opt [::parity-email])
+                                                        {}))"}
+   {:it "s/keys req-un"            :eval "(s/valid? (s/keys :req-un [::parity-name]) {:name \"Bob\"})"}
+   {:it "s/keys fail"              :eval "(do (s/def ::parity-id int?)
+                                              (s/valid? (s/keys :req [::parity-id]) {}))"}]}
+
+ {:category :sequences
+  :tests
+  [{:it "s/cat"                    :eval "(s/conform (s/cat :num int? :str string?) [1 \"a\"])"}
+   {:it "s/cat fail"               :eval "(s/conform (s/cat :num int? :str string?) [1 2])"}
+   {:it "s/alt"                    :eval "(s/conform (s/alt :num int? :str string?) [42])"}
+   {:it "s/* zero-or-more"         :eval "(s/conform (s/* int?) [1 2 3])"}
+   {:it "s/* empty"                :eval "(s/conform (s/* int?) [])"}
+   {:it "s/+ one-or-more"          :eval "(s/conform (s/+ int?) [1 2 3])"}
+   {:it "s/+ fail empty"           :eval "(s/valid? (s/+ int?) [])"}
+   {:it "s/? optional"             :eval "(s/conform (s/? int?) [42])"}
+   {:it "s/? empty"                :eval "(s/conform (s/? int?) [])"}]}
+
+ {:category :explain
+  :tests
+  [{:it "explain-str fail"         :eval "(some? (s/explain-str int? \"hello\"))"}
+   {:it "explain-data fail"        :eval "(map? (s/explain-data int? \"hello\"))"}
+   {:it "explain-data pass"        :eval "(nil? (s/explain-data int? 42))"}]}
+
+ {:category :generators
+  :tests
+  [{:it "gen exercise"             :eval "(= 5 (count (s/exercise int? 5)))"}
+   {:it "gen exercise-fn"          :eval "(some? (s/exercise string? 3))"}]}]

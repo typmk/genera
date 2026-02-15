@@ -1,0 +1,100 @@
+[
+{:category :clojure.core.unify.functions,
+ :parametric
+ [{:describe "create-var-unification-fn",
+   :params
+   {:want-occurs? ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.unify/create-var-unification-fn %want-occurs?)"}
+  {:describe "extract-lvars",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/extract-lvars %form)"}
+  {:describe "flatten-bindings",
+   :params
+   {:binds ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/flatten-bindings %binds)"}
+  {:describe "ignore-variable?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.unify/ignore-variable? %val)"}
+  {:describe "make-occurs-subst-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/make-occurs-subst-fn %variable-fn)"}
+  {:describe "make-occurs-unifier-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.unify/make-occurs-unifier-fn %variable-fn)"}
+  {:describe "make-occurs-unify-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/make-occurs-unify-fn %variable-fn)"}
+  {:describe "make-subst-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/make-subst-fn %variable-fn)"}
+  {:describe "make-unifier-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/make-unifier-fn %variable-fn)"}
+  {:describe "make-unify-fn",
+   :params
+   {:variable-fn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.unify/make-unify-fn %variable-fn)"}
+  {:describe "subst",
+   :params
+   {:expression ["nil" "true" "0" "1" "-1"],
+    :bindings ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.unify/subst %expression %bindings)"}
+  {:describe "unifier",
+   :params
+   {:expression1 ["nil" "true" "0" "1" "-1"],
+    :expression2 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.unify/unifier %expression1 %expression2)"}
+  {:describe "unifier-",
+   :params
+   {:expression1 ["nil" "true" "0" "1" "-1"],
+    :expression2 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.unify/unifier- %expression1 %expression2)"}
+  {:describe "unify",
+   :params
+   {:expression1 ["nil" "true" "0" "1" "-1"],
+    :expression2 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.unify/unify %expression1 %expression2)"}
+  {:describe "unify-",
+   :params
+   {:expression1 ["nil" "true" "0" "1" "-1"],
+    :expression2 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.unify/unify- %expression1 %expression2)"}
+  {:describe "wildcard?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.unify/wildcard? %val)"}]}
+]

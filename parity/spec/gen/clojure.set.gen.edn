@@ -1,0 +1,60 @@
+[
+{:category :clojure.set.functions,
+ :tests [{:it "union", :eval "(clojure.set/union)"}],
+ :parametric
+ [{:describe "difference",
+   :params
+   {:s1 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/difference %s1)"}
+  {:describe "index",
+   :params
+   {:xrel ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :ks [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.set/index %xrel %ks)"}
+  {:describe "intersection",
+   :params
+   {:s1 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/intersection %s1)"}
+  {:describe "join",
+   :params
+   {:xrel ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :yrel ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/join %xrel %yrel)"}
+  {:describe "map-invert",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.set/map-invert %m)"}
+  {:describe "project",
+   :params
+   {:xrel ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :ks [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.set/project %xrel %ks)"}
+  {:describe "rename",
+   :params
+   {:xrel ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :kmap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.set/rename %xrel %kmap)"}
+  {:describe "rename-keys",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :kmap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.set/rename-keys %map %kmap)"}
+  {:describe "select",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :xset ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/select %pred %xset)"}
+  {:describe "subset?",
+   :params
+   {:set1 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :set2 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/subset? %set1 %set2)"}
+  {:describe "superset?",
+   :params
+   {:set1 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"],
+    :set2 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/superset? %set1 %set2)"}
+  {:describe "union",
+   :params
+   {:s1 ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(clojure.set/union %s1)"}]}
+]

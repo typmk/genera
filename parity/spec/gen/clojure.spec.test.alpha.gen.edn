@@ -1,0 +1,50 @@
+[
+{:category :clojure.spec.test.alpha.functions,
+ :tests
+ [{:it "check", :eval "(clojure.spec.test.alpha/check)"}
+  {:it "checkable-syms",
+   :eval "(clojure.spec.test.alpha/checkable-syms)"}
+  {:it "instrument", :eval "(clojure.spec.test.alpha/instrument)"}
+  {:it "instrumentable-syms",
+   :eval "(clojure.spec.test.alpha/instrumentable-syms)"}
+  {:it "unstrument", :eval "(clojure.spec.test.alpha/unstrument)"}],
+ :parametric
+ [{:describe "abbrev-result",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.spec.test.alpha/abbrev-result %x)"}
+  {:describe "check",
+   :params
+   {:sym-or-syms ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.test.alpha/check %sym-or-syms)"}
+  {:describe "check-fn",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :spec ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.spec.test.alpha/check-fn %f %spec)"}
+  {:describe "checkable-syms",
+   :params {:opts ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.test.alpha/checkable-syms %opts)"}
+  {:describe "enumerate-namespace",
+   :params
+   {:ns-sym-or-syms
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.spec.test.alpha/enumerate-namespace %ns-sym-or-syms)"}
+  {:describe "instrument",
+   :params
+   {:sym-or-syms ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.test.alpha/instrument %sym-or-syms)"}
+  {:describe "instrumentable-syms",
+   :params {:opts ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.test.alpha/instrumentable-syms %opts)"}
+  {:describe "summarize-results",
+   :params
+   {:check-results
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.spec.test.alpha/summarize-results %check-results)"}
+  {:describe "unstrument",
+   :params
+   {:sym-or-syms ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.spec.test.alpha/unstrument %sym-or-syms)"}]}
+]

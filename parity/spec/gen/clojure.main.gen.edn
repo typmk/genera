@@ -1,0 +1,57 @@
+[
+{:category :clojure.main.functions,
+ :tests [{:it "repl-prompt", :eval "(clojure.main/repl-prompt)"}],
+ :parametric
+ [{:describe "demunge",
+   :params
+   {:fn-name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/demunge %fn-name)"}
+  {:describe "err->msg",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/err->msg %e)"}
+  {:describe "ex-str",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/ex-str %m)"}
+  {:describe "ex-triage",
+   :params
+   {:datafied-throwable
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/ex-triage %datafied-throwable)"}
+  {:describe "load-script",
+   :params {:path ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/load-script %path)"}
+  {:describe "renumbering-read",
+   :params
+   {:opts ["nil" "true" "0"],
+    :reader ["nil" "true" "0"],
+    :line-number ["nil" "true" "0"]},
+   :template
+   "(clojure.main/renumbering-read %opts %reader %line-number)"}
+  {:describe "repl-caught",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/repl-caught %e)"}
+  {:describe "repl-exception",
+   :params
+   {:throwable ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/repl-exception %throwable)"}
+  {:describe "repl-read",
+   :params
+   {:request-prompt ["nil" "true" "0" "1" "-1"],
+    :request-exit ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.main/repl-read %request-prompt %request-exit)"}
+  {:describe "report-error",
+   :params {:t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.main/report-error %t)"}
+  {:describe "root-cause",
+   :params {:t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.main/root-cause %t)"}
+  {:describe "skip-if-eol",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.main/skip-if-eol %s)"}
+  {:describe "skip-whitespace",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.main/skip-whitespace %s)"}
+  {:describe "stack-element-str",
+   :params {:el ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.main/stack-element-str %el)"}]}
+]

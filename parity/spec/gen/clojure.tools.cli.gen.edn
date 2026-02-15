@@ -1,0 +1,31 @@
+[
+{:category :clojure.tools.cli.functions,
+ :parametric
+ [{:describe "cli",
+   :params {:args ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.cli/cli %args)"}
+  {:describe "format-lines",
+   :params
+   {:lens ["nil" "true" "0" "1" "-1"],
+    :parts ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.cli/format-lines %lens %parts)"}
+  {:describe "get-default-options",
+   :params
+   {:option-specs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.cli/get-default-options %option-specs)"}
+  {:describe "make-summary-part",
+   :params
+   {:show-defaults? ["nil" "true" "0" "1" "-1"],
+    :spec ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.tools.cli/make-summary-part %show-defaults? %spec)"}
+  {:describe "parse-opts",
+   :params
+   {:args ["nil" "true" "0" "1" "-1"],
+    :option-specs ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.tools.cli/parse-opts %args %option-specs)"}
+  {:describe "summarize",
+   :params
+   {:specs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.tools.cli/summarize %specs)"}]}
+]

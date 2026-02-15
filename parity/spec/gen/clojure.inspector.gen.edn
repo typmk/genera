@@ -1,0 +1,43 @@
+[
+{:category :clojure.inspector.functions,
+ :parametric
+ [{:describe "atom?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.inspector/atom? %val)"}
+  {:describe "collection-tag",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.inspector/collection-tag %x)"}
+  {:describe "inspect",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.inspector/inspect %x)"}
+  {:describe "inspect-table",
+   :params {:data ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.inspector/inspect-table %data)"}
+  {:describe "inspect-tree",
+   :params {:data ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.inspector/inspect-tree %data)"}
+  {:describe "list-model",
+   :params
+   {:provider ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.inspector/list-model %provider)"}
+  {:describe "old-table-model",
+   :params {:data ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.inspector/old-table-model %data)"}
+  {:describe "tree-model",
+   :params {:data ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.inspector/tree-model %data)"}]}
+]

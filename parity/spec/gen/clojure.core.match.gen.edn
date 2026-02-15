@@ -1,0 +1,851 @@
+[
+{:category :clojure.core.match.functions,
+ :tests
+ [{:it "backtrack-expr", :eval "(clojure.core.match/backtrack-expr)"}
+  {:it "backtrack-sym", :eval "(clojure.core.match/backtrack-sym)"}
+  {:it "empty-rows-case", :eval "(clojure.core.match/empty-rows-case)"}
+  {:it "fail-node", :eval "(clojure.core.match/fail-node)"}
+  {:it "get-loop-locals", :eval "(clojure.core.match/get-loop-locals)"}
+  {:it "map-pattern", :eval "(clojure.core.match/map-pattern)"}
+  {:it "wildcard-pattern",
+   :eval "(clojure.core.match/wildcard-pattern)"}],
+ :parametric
+ [{:describe "action-for-row",
+   :params
+   {:m ["nil" "true" "0" "1" "-1"], :j ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/action-for-row %m %j)"}
+  {:describe "all-wildcards?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/all-wildcards? %val)"}
+  {:describe "app-pattern",
+   :params
+   {:p ["nil" "true" "0" "1" "-1"], :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/app-pattern %p %form)"}
+  {:describe "app-pattern-matrix-ocrs",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"], :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/app-pattern-matrix-ocrs %v %form)"}
+  {:describe "app-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/app-pattern? %val)"}
+  {:describe "array-tag",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/array-tag %x)"}
+  {:describe "bind-node",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1"],
+    :node ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/bind-node %bindings %node)"}
+  {:describe "bind-variables",
+   :params {:ocrs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/bind-variables %ocrs)"}
+  {:describe "calc-rest?-and-min-size",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/calc-rest?-and-min-size %rows %env)"}
+  {:describe "cases",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/cases %matrix)"}
+  {:describe "check-matrix-args",
+   :params
+   {:vars ["nil" "true" "0" "1" "-1"],
+    :clauses ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/check-matrix-args %vars %clauses)"}
+  {:describe "check-pattern",
+   :params
+   {:pat ["nil" "true"],
+    :vars ["nil" "true"],
+    :nvars ["nil" "true"],
+    :rownum ["nil" "true"]},
+   :template
+   "(clojure.core.match/check-pattern %pat %vars %nvars %rownum)"}
+  {:describe "choose-column",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/choose-column %matrix)"}
+  {:describe "clj-form",
+   :params
+   {:vars ["nil" "true" "0" "1" "-1"],
+    :clauses ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/clj-form %vars %clauses)"}
+  {:describe "column",
+   :params
+   {:m ["nil" "true" "0" "1" "-1"], :i ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/column %m %i)"}
+  {:describe "column-splitter",
+   :params {:col ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/column-splitter %col)"}
+  {:describe "compile",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/compile %m)"}
+  {:describe "constructor?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/constructor? %val)"}
+  {:describe "constructors-above?",
+   :params
+   {:pm ["nil" "true" "0"], :i ["0" "1" "-1"], :j ["0" "1" "-1"]},
+   :template "(clojure.core.match/constructors-above? %pm %i %j)"}
+  {:describe "dag-clause-to-clj",
+   :params
+   {:occurrence ["nil" "true" "0"],
+    :pattern ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :action ["nil" "true" "0"]},
+   :template
+   "(clojure.core.match/dag-clause-to-clj %occurrence %pattern %action)"}
+  {:describe "default-case",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/default-case %matrix)"}
+  {:describe "default-specialize-matrix",
+   :params
+   {:p ["nil" "true" "0" "1" "-1"],
+    :matrix ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/default-specialize-matrix %p %matrix)"}
+  {:describe "defpred",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/defpred %name)"}
+  {:describe "dim",
+   :params {:pm ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/dim %pm)"}
+  {:describe "drop-nth-bind",
+   :params
+   {:prow ["nil" "true" "0"],
+    :n ["0" "1" "-1"],
+    :ocr ["nil" "true" "0"]},
+   :template "(clojure.core.match/drop-nth-bind %prow %n %ocr)"}
+  {:describe "emit-matrix",
+   :params
+   {:vars ["nil" "true" "0" "1" "-1"],
+    :clauses ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/emit-matrix %vars %clauses)"}
+  {:describe "emit-patterns",
+   :params
+   {:ps ["nil" "true" "0" "1" "-1"], :t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.match/emit-patterns %ps %t)"}
+  {:describe "empty-matrix?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/empty-matrix? %val)"}
+  {:describe "empty-row?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/empty-row? %val)"}
+  {:describe "executable-form",
+   :params {:node ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/executable-form %node)"}
+  {:describe "existential-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/existential-pattern? %val)"}
+  {:describe "expand-matrix",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1"],
+    :col ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/expand-matrix %matrix %col)"}
+  {:describe "expression?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/expression? %val)"}
+  {:describe "find-duplicate-wildcards",
+   :params {:pattern ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.core.match/find-duplicate-wildcards %pattern)"}
+  {:describe "first-column-chosen-case",
+   :params
+   {:matrix ["nil" "true" "0"],
+    :col ["nil" "true" "0"],
+    :ocrs ["nil" "true" "0"]},
+   :template
+   "(clojure.core.match/first-column-chosen-case %matrix %col %ocrs)"}
+  {:describe "first-column?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/first-column? %val)"}
+  {:describe "first-row-empty-case",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :ocr ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/first-row-empty-case %rows %ocr)"}
+  {:describe "first-row-wildcards-case",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :ocrs ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/first-row-wildcards-case %rows %ocrs)"}
+  {:describe "gen-map-pattern-ocr",
+   :params
+   {:ocr ["nil" "true" "0" "1" "-1"],
+    :k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.match/gen-map-pattern-ocr %ocr %k)"}
+  {:describe "get-all-keys",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/get-all-keys %rows %env)"}
+  {:describe "get-ocr-map",
+   :params
+   {:p ["nil" "true" "0" "1" "-1"], :m ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/get-ocr-map %p %m)"}
+  {:describe "group-keywords",
+   :params {:pattern ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.core.match/group-keywords %pattern)"}
+  {:describe "group-rows",
+   :params
+   {:cs ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :rows ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/group-rows %cs %rows)"}
+  {:describe "guard-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/guard-pattern? %val)"}
+  {:describe "height",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/height %m)"}
+  {:describe "leaf-node",
+   :params
+   {:value ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/leaf-node %value)"}
+  {:describe "literal-case-matrix-splitter",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.match/literal-case-matrix-splitter %matrix)"}
+  {:describe "literal-pattern",
+   :params {:l ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/literal-pattern %l)"}
+  {:describe "literal-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/literal-pattern? %val)"}
+  {:describe "map-key-pattern",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/map-key-pattern %p)"}
+  {:describe "map-key-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/map-key-pattern? %val)"}
+  {:describe "map-pattern",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.core.match/map-pattern %m)"}
+  {:describe "map-pattern-matrix-ocr-sym",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/map-pattern-matrix-ocr-sym %k %env)"}
+  {:describe "map-pattern-matrix-ocrs",
+   :params
+   {:ocrs ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/map-pattern-matrix-ocrs %ocrs %env)"}
+  {:describe "map-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/map-pattern? %val)"}
+  {:describe "match",
+   :params {:vars ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/match %vars)"}
+  {:describe "match-let",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/match-let %bindings)"}
+  {:describe "matchm",
+   :params {:vars ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/matchm %vars)"}
+  {:describe "matchv",
+   :params
+   {:type ["nil" "true" "0" "1" "-1"],
+    :vars ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/matchv %type %vars)"}
+  {:describe "matrix-splitter",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/matrix-splitter %matrix)"}
+  {:describe "named-wildcard-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/named-wildcard-pattern? %val)"}
+  {:describe "necessary-column",
+   :params {:pm ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/necessary-column %pm)"}
+  {:describe "non-local-literal-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/non-local-literal-pattern? %val)"}
+  {:describe "occurrences",
+   :params {:pm ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/occurrences %pm)"}
+  {:describe "or-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/or-pattern? %val)"}
+  {:describe "other-column-chosen-case",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1"],
+    :col ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/other-column-chosen-case %matrix %col)"}
+  {:describe "pattern-at",
+   :params
+   {:m ["nil" "true" "0"], :i ["0" "1" "-1"], :j ["0" "1" "-1"]},
+   :template "(clojure.core.match/pattern-at %m %i %j)"}
+  {:describe "pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :ocrs ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/pattern-matrix %rows %ocrs)"}
+  {:describe "pattern-row",
+   :params
+   {:ps ["nil" "true" "0" "1" "-1"],
+    :action ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/pattern-row %ps %action)"}
+  {:describe "pattern-score",
+   :params
+   {:pm ["nil" "true" "0"], :i ["0" "1" "-1"], :j ["0" "1" "-1"]},
+   :template "(clojure.core.match/pattern-score %pm %i %j)"}
+  {:describe "predicate-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/predicate-pattern? %val)"}
+  {:describe "process-vars",
+   :params {:vars ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/process-vars %vars)"}
+  {:describe "pseudo-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/pseudo-pattern? %val)"}
+  {:describe "pseudo-patterns",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1"],
+    :i ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/pseudo-patterns %matrix %i)"}
+  {:describe "recur-present?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/recur-present? %val)"}
+  {:describe "regroup-keywords",
+   :params {:pattern ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.core.match/regroup-keywords %pattern)"}
+  {:describe "rest-pattern",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/rest-pattern %p)"}
+  {:describe "rest-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/rest-pattern? %val)"}
+  {:describe "return-split",
+   :params
+   {:S ["nil" "true" "0" "1" "-1"], :D ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/return-split %S %D)"}
+  {:describe "root-bind-node",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/root-bind-node %matrix)"}
+  {:describe "row",
+   :params
+   {:m ["nil" "true" "0" "1" "-1"], :j ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/row %m %j)"}
+  {:describe "row-bindings",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :ocrs ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/row-bindings %f %ocrs)"}
+  {:describe "row-keys",
+   :params
+   {:row ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/row-keys %row %env)"}
+  {:describe "rows",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/rows %m)"}
+  {:describe "score-column",
+   :params
+   {:i ["0" "1" "-1" "42" "3.14"], :col ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/score-column %i %col)"}
+  {:describe "select",
+   :params {:pm ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/select %pm)"}
+  {:describe "seq-pattern",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.core.match/seq-pattern %s)"}
+  {:describe "seq-pattern-matrix-ocrs",
+   :params
+   {:ocrs ["nil" "true" "0" "1" "-1"],
+    :focr ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/seq-pattern-matrix-ocrs %ocrs %focr)"}
+  {:describe "seq-pattern-matrix-rest-ocrs",
+   :params
+   {:ocrs ["nil" "true" "0" "1" "-1"],
+    :focr ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/seq-pattern-matrix-rest-ocrs %ocrs %focr)"}
+  {:describe "seq-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/seq-pattern? %val)"}
+  {:describe "specialize",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/specialize %matrix)"}
+  {:describe "specialize-app-pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-app-pattern-matrix %rows %form)"}
+  {:describe "specialize-guard-pattern-matrix",
+   :params {:rows ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.match/specialize-guard-pattern-matrix %rows)"}
+  {:describe "specialize-map-key-pattern-matrix",
+   :params {:rows ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.match/specialize-map-key-pattern-matrix %rows)"}
+  {:describe "specialize-map-pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-map-pattern-matrix %rows %env)"}
+  {:describe "specialize-map-pattern-row",
+   :params
+   {:row ["nil" "true" "0" "1" "-1"], :m ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/specialize-map-pattern-row %row %m)"}
+  {:describe "specialize-or-pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0"],
+    :pat ["nil" "true" "0"],
+    :ps ["nil" "true" "0"]},
+   :template
+   "(clojure.core.match/specialize-or-pattern-matrix %rows %pat %ps)"}
+  {:describe "specialize-or-pattern-row",
+   :params
+   {:row ["nil" "true" "0"],
+    :pat ["nil" "true" "0"],
+    :ps ["nil" "true" "0"]},
+   :template
+   "(clojure.core.match/specialize-or-pattern-row %row %pat %ps)"}
+  {:describe "specialize-predicate-pattern-matrix",
+   :params {:rows ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template
+   "(clojure.core.match/specialize-predicate-pattern-matrix %rows)"}
+  {:describe "specialize-seq-pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :focr ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-seq-pattern-matrix %rows %focr)"}
+  {:describe "specialize-seq-pattern-rest-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :focr ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-seq-pattern-rest-matrix %rows %focr)"}
+  {:describe "specialize-seq-pattern-rest-row",
+   :params
+   {:focr ["nil" "true" "0" "1" "-1"],
+    :row ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-seq-pattern-rest-row %focr %row)"}
+  {:describe "specialize-seq-pattern-row",
+   :params
+   {:focr ["nil" "true" "0" "1" "-1"],
+    :row ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-seq-pattern-row %focr %row)"}
+  {:describe "specialize-vector-pattern-matrix",
+   :params
+   {:rows ["nil" "true" "0" "1" "-1"],
+    :env ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-vector-pattern-matrix %rows %env)"}
+  {:describe "specialize-vector-pattern-row",
+   :params
+   {:row ["nil" "true" "0" "1" "-1"], :m ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-vector-pattern-row %row %m)"}
+  {:describe "specialize-vector-pattern-row-non-rest",
+   :params
+   {:row ["nil" "true" "0" "1" "-1"], :m ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/specialize-vector-pattern-row-non-rest %row %m)"}
+  {:describe "split-matrix",
+   :params
+   {:matrix ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/split-matrix %matrix)"}
+  {:describe "switch-node",
+   :params
+   {:occurrence ["nil" "true" "0"],
+    :cases ["nil" "true" "0"],
+    :default ["nil" "true" "0"]},
+   :template
+   "(clojure.core.match/switch-node %occurrence %cases %default)"}
+  {:describe "to-pattern-row",
+   :params
+   {:pat ["nil" "true" "0" "1" "-1"],
+    :action ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/to-pattern-row %pat %action)"}
+  {:describe "update-pattern",
+   :params
+   {:prow ["nil" "true" "0"],
+    :i ["0" "1" "-1"],
+    :p ["nil" "true" "0"]},
+   :template "(clojure.core.match/update-pattern %prow %i %p)"}
+  {:describe "useful-matrix",
+   :params {:pm ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/useful-matrix %pm)"}
+  {:describe "val-at*",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :k [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.match/val-at* %m %k)"}
+  {:describe "vector-pattern-matrix-ocrs",
+   :params
+   {:ocrs ["nil" "true" "0" "1" "-1"], :m ["nil" "true" "0" "1" "-1"]},
+   :template
+   "(clojure.core.match/vector-pattern-matrix-ocrs %ocrs %m)"}
+  {:describe "vector-pattern-ocr-sym",
+   :params
+   {:m ["nil" "true" "0" "1" "-1"], :i ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.core.match/vector-pattern-ocr-sym %m %i)"}
+  {:describe "vector-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/vector-pattern? %val)"}
+  {:describe "vector-type",
+   :params {:t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.core.match/vector-type %t)"}
+  {:describe "warn",
+   :params {:msg ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/warn %msg)"}
+  {:describe "width",
+   :params {:m ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/width %m)"}
+  {:describe "wildcard-or-existential?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/wildcard-or-existential? %val)"}
+  {:describe "wildcard-pattern",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/wildcard-pattern %sym)"}
+  {:describe "wildcard-pattern?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.core.match/wildcard-pattern? %val)"}
+  {:describe "wildcards-and-duplicates",
+   :params
+   {:patterns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.core.match/wildcards-and-duplicates %patterns)"}
+  {:describe "with-tag",
+   :params
+   {:t [":a" ":b" ":foo" ":bar/baz"],
+    :ocr ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.core.match/with-tag %t %ocr)"}
+  {:describe "wrap-values",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.core.match/wrap-values %m)"}]}
+]

@@ -1,0 +1,68 @@
+[
+{:category :clojure.math.combinatorics.functions,
+ :parametric
+ [{:describe "combinations",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"],
+    :t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(clojure.math.combinatorics/combinations %items %t)"}
+  {:describe "count-combinations",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"],
+    :t [":a" ":b" ":foo" ":bar/baz"]},
+   :template
+   "(clojure.math.combinatorics/count-combinations %items %t)"}
+  {:describe "count-permutations",
+   :params {:l ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/count-permutations %l)"}
+  {:describe "count-subsets",
+   :params
+   {:items ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/count-subsets %items)"}
+  {:describe "drop-permutations",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template
+   "(clojure.math.combinatorics/drop-permutations %items %n)"}
+  {:describe "nth-combination",
+   :params
+   {:items ["nil" "true" "0"],
+    :t [":a" ":b" ":foo"],
+    :n ["0" "1" "-1"]},
+   :template
+   "(clojure.math.combinatorics/nth-combination %items %t %n)"}
+  {:describe "nth-permutation",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.combinatorics/nth-permutation %items %n)"}
+  {:describe "nth-subset",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.combinatorics/nth-subset %items %n)"}
+  {:describe "partitions",
+   :params
+   {:items ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/partitions %items)"}
+  {:describe "permutation-index",
+   :params
+   {:items ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/permutation-index %items)"}
+  {:describe "permutations",
+   :params
+   {:items ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/permutations %items)"}
+  {:describe "permuted-combinations",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"],
+    :t [":a" ":b" ":foo" ":bar/baz"]},
+   :template
+   "(clojure.math.combinatorics/permuted-combinations %items %t)"}
+  {:describe "selections",
+   :params
+   {:items ["nil" "true" "0" "1" "-1"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.math.combinatorics/selections %items %n)"}
+  {:describe "subsets",
+   :params
+   {:items ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.math.combinatorics/subsets %items)"}]}
+]

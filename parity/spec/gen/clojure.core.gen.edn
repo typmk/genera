@@ -1,0 +1,2888 @@
+[
+{:category :clojure.core.functions,
+ :tests
+ [{:it "*", :eval "(*)"}
+  {:it "*'", :eval "(*')"}
+  {:it "+", :eval "(+)"}
+  {:it "+'", :eval "(+')"}
+  {:it "all-ns", :eval "(all-ns)"}
+  {:it "and", :eval "(and)"}
+  {:it "array-map", :eval "(array-map)"}
+  {:it "clojure-version", :eval "(clojure-version)"}
+  {:it "comp", :eval "(comp)"}
+  {:it "concat", :eval "(concat)"}
+  {:it "conj", :eval "(conj)"}
+  {:it "conj!", :eval "(conj!)"}
+  {:it "dedupe", :eval "(dedupe)"}
+  {:it "distinct", :eval "(distinct)"}
+  {:it "gensym", :eval "(gensym)"}
+  {:it "get-thread-bindings", :eval "(get-thread-bindings)"}
+  {:it "hash-map", :eval "(hash-map)"}
+  {:it "hash-set", :eval "(hash-set)"}
+  {:it "interleave", :eval "(interleave)"}
+  {:it "into", :eval "(into)"}
+  {:it "loaded-libs", :eval "(loaded-libs)"}
+  {:it "or", :eval "(or)"}
+  {:it "pop-thread-bindings", :eval "(pop-thread-bindings)"}
+  {:it "promise", :eval "(promise)"}
+  {:it "rand", :eval "(rand)"}
+  {:it "random-uuid", :eval "(random-uuid)"}
+  {:it "range", :eval "(range)"}
+  {:it "read+string", :eval "(read+string)"}
+  {:it "release-pending-sends", :eval "(release-pending-sends)"}
+  {:it "str", :eval "(str)"}
+  {:it "vector", :eval "(vector)"}],
+ :parametric
+ [{:describe "*",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(* %x)"}
+  {:describe "*'",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(*' %x)"}
+  {:describe "+",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(+ %x)"}
+  {:describe "+'",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(+' %x)"}
+  {:describe "-",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(- %x)"}
+  {:describe "-'",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(-' %x)"}
+  {:describe "-cache-protocol-fn",
+   :params
+   {:pf ["nil" "true"],
+    :x ["0" "1"],
+    :c ["[]" "[1 2 3]"],
+    :interf ["nil" "true"]},
+   :template "(-cache-protocol-fn %pf %x %c %interf)"}
+  {:describe "-reset-methods",
+   :params
+   {:protocol ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(-reset-methods %protocol)"}
+  {:describe "..",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :form ["nil" "true" "0" "1" "-1"]},
+   :template "(.. %x %form)"}
+  {:describe "/",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(/ %x)"}
+  {:describe "<",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(< %x)"}
+  {:describe "<=",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(<= %x)"}
+  {:describe "=",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(= %x)"}
+  {:describe "==",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(== %x)"}
+  {:describe ">",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(> %x)"}
+  {:describe ">=",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(>= %x)"}
+  {:describe "NaN?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(NaN? %val)"}
+  {:describe "PrintWriter-on",
+   :params
+   {:flush-fn ["nil" "true" "0" "1" "-1"],
+    :close-fn ["nil" "true" "0" "1" "-1"]},
+   :template "(PrintWriter-on %flush-fn %close-fn)"}
+  {:describe "StackTraceElement->vec",
+   :params {:o ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(StackTraceElement->vec %o)"}
+  {:describe "Throwable->map",
+   :params {:o ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(Throwable->map %o)"}
+  {:describe "abs",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(abs %a)"}
+  {:describe "accessor",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :key [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(accessor %s %key)"}
+  {:describe "aclone",
+   :params
+   {:array ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(aclone %array)"}
+  {:describe "add-classpath",
+   :params {:url ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(add-classpath %url)"}
+  {:describe "add-tap",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(add-tap %f)"}
+  {:describe "agent",
+   :params
+   {:state ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(agent %state)"}
+  {:describe "agent-error",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(agent-error %a)"}
+  {:describe "agent-errors",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(agent-errors %a)"}
+  {:describe "aget",
+   :params
+   {:array ["nil" "true" "0" "1" "-1"],
+    :idx ["nil" "true" "0" "1" "-1"]},
+   :template "(aget %array %idx)"}
+  {:describe "alength",
+   :params
+   {:array ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(alength %array)"}
+  {:describe "alias",
+   :params
+   {:alias ["nil" "true" "0" "1" "-1"],
+    :namespace-sym ["nil" "true" "0" "1" "-1"]},
+   :template "(alias %alias %namespace-sym)"}
+  {:describe "alter-meta!",
+   :params
+   {:iref ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(alter-meta! %iref %f)"}
+  {:describe "amap",
+   :params
+   {:a ["0" "1"],
+    :idx ["nil" "true"],
+    :ret ["nil" "true"],
+    :expr ["nil" "true"]},
+   :template "(amap %a %idx %ret %expr)"}
+  {:describe "and",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(and %x)"}
+  {:describe "any?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(any? %val)"}
+  {:describe "apply",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :args ["nil" "true" "0" "1" "-1"]},
+   :template "(apply %f %args)"}
+  {:describe "as->",
+   :params
+   {:expr ["nil" "true" "0" "1" "-1"],
+    :name ["nil" "true" "0" "1" "-1"]},
+   :template "(as-> %expr %name)"}
+  {:describe "aset",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset %array %idx %val)"}
+  {:describe "aset-boolean",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-boolean %array %idx %val)"}
+  {:describe "aset-byte",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-byte %array %idx %val)"}
+  {:describe "aset-char",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-char %array %idx %val)"}
+  {:describe "aset-double",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-double %array %idx %val)"}
+  {:describe "aset-float",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-float %array %idx %val)"}
+  {:describe "aset-int",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-int %array %idx %val)"}
+  {:describe "aset-long",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-long %array %idx %val)"}
+  {:describe "aset-short",
+   :params
+   {:array ["nil" "true" "0"],
+    :idx ["nil" "true" "0"],
+    :val ["nil" "true" "0"]},
+   :template "(aset-short %array %idx %val)"}
+  {:describe "assert",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(assert %x)"}
+  {:describe "assoc",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :key [":a" ":b" ":foo"],
+    :val ["nil" "true" "0"]},
+   :template "(assoc %map %key %val)"}
+  {:describe "assoc!",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)"],
+    :key [":a" ":b" ":foo"],
+    :val ["nil" "true" "0"]},
+   :template "(assoc! %coll %key %val)"}
+  {:describe "assoc-in",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :v2 ["nil" "true" "0"],
+    :v3 ["nil" "true" "0"]},
+   :template "(assoc-in %m %v2 %v3)"}
+  {:describe "associative?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(associative? %val)"}
+  {:describe "atom",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(atom %x)"}
+  {:describe "bean",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(bean %x)"}
+  {:describe "bigdec",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(bigdec %x)"}
+  {:describe "bigint",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(bigint %x)"}
+  {:describe "biginteger",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(biginteger %x)"}
+  {:describe "bit-and",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-and %x %y)"}
+  {:describe "bit-and-not",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-and-not %x %y)"}
+  {:describe "bit-clear",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-clear %x %n)"}
+  {:describe "bit-flip",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-flip %x %n)"}
+  {:describe "bit-not",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-not %x)"}
+  {:describe "bit-or",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-or %x %y)"}
+  {:describe "bit-set",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-set %x %n)"}
+  {:describe "bit-shift-left",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-shift-left %x %n)"}
+  {:describe "bit-shift-right",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-shift-right %x %n)"}
+  {:describe "bit-test",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-test %x %n)"}
+  {:describe "bit-xor",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(bit-xor %x %y)"}
+  {:describe "boolean",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(boolean %x)"}
+  {:describe "boolean-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(boolean-array %size-or-seq)"}
+  {:describe "boolean?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(boolean? %val)"}
+  {:describe "booleans",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(booleans %xs)"}
+  {:describe "bound-fn*",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(bound-fn* %f)"}
+  {:describe "bounded-count",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(bounded-count %n %coll)"}
+  {:describe "butlast",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(butlast %coll)"}
+  {:describe "byte",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(byte %x)"}
+  {:describe "byte-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(byte-array %size-or-seq)"}
+  {:describe "bytes",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(bytes %xs)"}
+  {:describe "bytes?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(bytes? %val)"}
+  {:describe "case",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(case %e)"}
+  {:describe "cast",
+   :params
+   {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(cast %c %x)"}
+  {:describe "cat",
+   :params {:rf ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(cat %rf)"}
+  {:describe "char",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(char %x)"}
+  {:describe "char-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(char-array %size-or-seq)"}
+  {:describe "char?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(char? %val)"}
+  {:describe "chars",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(chars %xs)"}
+  {:describe "chunk",
+   :params {:b ["0" "1" "-1" "42" "3.14"]},
+   :template "(chunk %b)"}
+  {:describe "chunk-append",
+   :params
+   {:b ["0" "1" "-1" "42" "3.14"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(chunk-append %b %x)"}
+  {:describe "chunk-buffer",
+   :params
+   {:capacity ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(chunk-buffer %capacity)"}
+  {:describe "chunk-cons",
+   :params
+   {:chunk ["nil" "true" "0" "1" "-1"],
+    :rest ["nil" "true" "0" "1" "-1"]},
+   :template "(chunk-cons %chunk %rest)"}
+  {:describe "chunk-first",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(chunk-first %s)"}
+  {:describe "chunk-next",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(chunk-next %s)"}
+  {:describe "chunk-rest",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(chunk-rest %s)"}
+  {:describe "chunked-seq?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(chunked-seq? %val)"}
+  {:describe "class?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(class? %val)"}
+  {:describe "clear-agent-errors",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(clear-agent-errors %a)"}
+  {:describe "coll?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(coll? %val)"}
+  {:describe "comp",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(comp %f)"}
+  {:describe "comparator",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(comparator %pred)"}
+  {:describe "compare",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(compare %x %y)"}
+  {:describe "compare-and-set!",
+   :params
+   {:atom ["nil" "true" "0"],
+    :oldval ["nil" "true" "0"],
+    :newval ["nil" "true" "0"]},
+   :template "(compare-and-set! %atom %oldval %newval)"}
+  {:describe "complement",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(complement %f)"}
+  {:describe "completing",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(completing %f)"}
+  {:describe "concat",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(concat %x)"}
+  {:describe "cond->",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(cond-> %expr)"}
+  {:describe "cond->>",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(cond->> %expr)"}
+  {:describe "condp",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :expr ["nil" "true" "0" "1" "-1"]},
+   :template "(condp %pred %expr)"}
+  {:describe "conj",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(conj %coll)"}
+  {:describe "conj!",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(conj! %coll)"}
+  {:describe "cons",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :seq ["nil" "true" "0" "1" "-1"]},
+   :template "(cons %x %seq)"}
+  {:describe "constantly",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(constantly %x)"}
+  {:describe "construct-proxy",
+   :params {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(construct-proxy %c)"}
+  {:describe "contains?",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :key [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(contains? %coll %key)"}
+  {:describe "count",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(count %coll)"}
+  {:describe "counted?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(counted? %val)"}
+  {:describe "create-ns",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(create-ns %sym)"}
+  {:describe "cycle",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(cycle %coll)"}
+  {:describe "dec",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(dec %x)"}
+  {:describe "dec'",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(dec' %x)"}
+  {:describe "decimal?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(decimal? %val)"}
+  {:describe "dedupe",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(dedupe %coll)"}
+  {:describe "definline",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(definline %name)"}
+  {:describe "definterface",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(definterface %name)"}
+  {:describe "defmethod",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1"],
+    :dispatch-val ["nil" "true" "0" "1" "-1"]},
+   :template "(defmethod %multifn %dispatch-val)"}
+  {:describe "defmulti",
+   :params
+   {:name ["nil" "true"],
+    :docstring? ["nil" "true"],
+    :attr-map? ["nil" "true"],
+    :dispatch-fn ["nil" "true"]},
+   :template "(defmulti %name %docstring? %attr-map? %dispatch-fn)"}
+  {:describe "defn-",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(defn- %name)"}
+  {:describe "defonce",
+   :params
+   {:name ["nil" "true" "0" "1" "-1"],
+    :expr ["nil" "true" "0" "1" "-1"]},
+   :template "(defonce %name %expr)"}
+  {:describe "defprotocol",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(defprotocol %name)"}
+  {:describe "defrecord",
+   :params
+   {:name ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(defrecord %name %v)"}
+  {:describe "defstruct",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(defstruct %name)"}
+  {:describe "deftype",
+   :params
+   {:name ["nil" "true" "0" "1" "-1"], :v ["nil" "true" "0" "1" "-1"]},
+   :template "(deftype %name %v)"}
+  {:describe "delay?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(delay? %val)"}
+  {:describe "denominator",
+   :params {:r ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(denominator %r)"}
+  {:describe "deref",
+   :params {:ref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(deref %ref)"}
+  {:describe "destructure",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(destructure %bindings)"}
+  {:describe "disj",
+   :params
+   {:set ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(disj %set)"}
+  {:describe "disj!",
+   :params
+   {:set ["#{}" "#{1 2 3}" "#{:a :b}" "#{{:a 1 :b 2} {:a 3 :b 4}}"]},
+   :template "(disj! %set)"}
+  {:describe "dissoc",
+   :params {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(dissoc %map)"}
+  {:describe "dissoc!",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :key [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(dissoc! %map %key)"}
+  {:describe "distinct",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(distinct %coll)"}
+  {:describe "distinct?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(distinct? %val)"}
+  {:describe "doall",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(doall %coll)"}
+  {:describe "dorun",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(dorun %coll)"}
+  {:describe "doseq",
+   :params
+   {:seq-exprs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(doseq %seq-exprs)"}
+  {:describe "dotimes",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(dotimes %bindings)"}
+  {:describe "doto",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(doto %x)"}
+  {:describe "double",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(double %x)"}
+  {:describe "double-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(double-array %size-or-seq)"}
+  {:describe "double?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(double? %val)"}
+  {:describe "doubles",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(doubles %xs)"}
+  {:describe "drop",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(drop %n)"}
+  {:describe "drop-last",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(drop-last %coll)"}
+  {:describe "drop-while",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(drop-while %pred)"}
+  {:describe "eduction",
+   :params
+   {:xform* ["nil" "true" "0" "1" "-1"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(eduction %xform* %coll)"}
+  {:describe "empty",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(empty %coll)"}
+  {:describe "empty?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(empty? %val)"}
+  {:describe "ensure-reduced",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(ensure-reduced %x)"}
+  {:describe "enumeration-seq",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(enumeration-seq %e)"}
+  {:describe "error-handler",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(error-handler %a)"}
+  {:describe "error-mode",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(error-mode %a)"}
+  {:describe "even?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(even? %val)"}
+  {:describe "every-pred",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(every-pred %p)"}
+  {:describe "every?",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(every? %pred %coll)"}
+  {:describe "ex-cause",
+   :params {:ex ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ex-cause %ex)"}
+  {:describe "ex-data",
+   :params {:ex ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ex-data %ex)"}
+  {:describe "ex-info",
+   :params
+   {:msg ["nil" "true" "0" "1" "-1"],
+    :map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(ex-info %msg %map)"}
+  {:describe "ex-message",
+   :params {:ex ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ex-message %ex)"}
+  {:describe "extend",
+   :params
+   {:atype ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(extend %atype)"}
+  {:describe "extend-protocol",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(extend-protocol %p)"}
+  {:describe "extend-type",
+   :params {:t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(extend-type %t)"}
+  {:describe "extenders",
+   :params
+   {:protocol ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(extenders %protocol)"}
+  {:describe "extends?",
+   :params
+   {:protocol ["nil" "true" "0" "1" "-1"],
+    :atype ["nil" "true" "0" "1" "-1"]},
+   :template "(extends? %protocol %atype)"}
+  {:describe "false?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(false? %val)"}
+  {:describe "ffirst",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(ffirst %x)"}
+  {:describe "file-seq",
+   :params {:dir ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(file-seq %dir)"}
+  {:describe "filter",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(filter %pred)"}
+  {:describe "filterv",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(filterv %pred %coll)"}
+  {:describe "find",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :key [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(find %map %key)"}
+  {:describe "find-ns",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(find-ns %sym)"}
+  {:describe "find-protocol-impl",
+   :params
+   {:protocol ["nil" "true" "0" "1" "-1"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(find-protocol-impl %protocol %x)"}
+  {:describe "find-protocol-method",
+   :params
+   {:protocol ["nil" "true" "0"],
+    :methodk ["nil" "true" "0"],
+    :x ["0" "1" "-1"]},
+   :template "(find-protocol-method %protocol %methodk %x)"}
+  {:describe "find-var",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(find-var %sym)"}
+  {:describe "first",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(first %coll)"}
+  {:describe "flatten",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(flatten %x)"}
+  {:describe "float",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(float %x)"}
+  {:describe "float-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(float-array %size-or-seq)"}
+  {:describe "float?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(float? %val)"}
+  {:describe "floats",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(floats %xs)"}
+  {:describe "fn?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(fn? %val)"}
+  {:describe "fnext",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(fnext %x)"}
+  {:describe "fnil",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(fnil %f %x)"}
+  {:describe "for",
+   :params
+   {:seq-exprs ["nil" "true" "0" "1" "-1"],
+    :body-expr ["nil" "true" "0" "1" "-1"]},
+   :template "(for %seq-exprs %body-expr)"}
+  {:describe "force",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(force %x)"}
+  {:describe "format",
+   :params {:fmt ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(format %fmt)"}
+  {:describe "frequencies",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(frequencies %coll)"}
+  {:describe "future-cancel",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(future-cancel %f)"}
+  {:describe "future-cancelled?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(future-cancelled? %val)"}
+  {:describe "future-done?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(future-done? %val)"}
+  {:describe "future?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(future? %val)"}
+  {:describe "gensym",
+   :params
+   {:prefix-string
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(gensym %prefix-string)"}
+  {:describe "get",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :key [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(get %map %key)"}
+  {:describe "get-in",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :ks [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(get-in %m %ks)"}
+  {:describe "get-method",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1"],
+    :dispatch-val ["nil" "true" "0" "1" "-1"]},
+   :template "(get-method %multifn %dispatch-val)"}
+  {:describe "get-validator",
+   :params {:iref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(get-validator %iref)"}
+  {:describe "group-by",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(group-by %f %coll)"}
+  {:describe "halt-when",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(halt-when %pred)"}
+  {:describe "hash",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(hash %x)"}
+  {:describe "hash-combine",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(hash-combine %x %y)"}
+  {:describe "hash-ordered-coll",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(hash-ordered-coll %coll)"}
+  {:describe "hash-unordered-coll",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(hash-unordered-coll %coll)"}
+  {:describe "ident?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(ident? %val)"}
+  {:describe "identical?",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(identical? %x %y)"}
+  {:describe "identity",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(identity %x)"}
+  {:describe "if-let",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1"],
+    :then ["nil" "true" "0" "1" "-1"]},
+   :template "(if-let %bindings %then)"}
+  {:describe "if-not",
+   :params
+   {:test ["nil" "true" "0" "1" "-1"],
+    :then ["nil" "true" "0" "1" "-1"]},
+   :template "(if-not %test %then)"}
+  {:describe "if-some",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1"],
+    :then ["nil" "true" "0" "1" "-1"]},
+   :template "(if-some %bindings %then)"}
+  {:describe "ifn?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(ifn? %val)"}
+  {:describe "inc",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(inc %x)"}
+  {:describe "inc'",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(inc' %x)"}
+  {:describe "indexed?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(indexed? %val)"}
+  {:describe "infinite?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(infinite? %val)"}
+  {:describe "init-proxy",
+   :params
+   {:proxy ["nil" "true" "0" "1" "-1"],
+    :mappings ["nil" "true" "0" "1" "-1"]},
+   :template "(init-proxy %proxy %mappings)"}
+  {:describe "inst-ms",
+   :params {:inst ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(inst-ms %inst)"}
+  {:describe "inst-ms*",
+   :params {:inst ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(inst-ms* %inst)"}
+  {:describe "inst?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(inst? %val)"}
+  {:describe "instance?",
+   :params
+   {:c ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(instance? %c %x)"}
+  {:describe "int",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(int %x)"}
+  {:describe "int-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(int-array %size-or-seq)"}
+  {:describe "int?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(int? %val)"}
+  {:describe "integer?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(integer? %val)"}
+  {:describe "interleave",
+   :params {:c1 ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(interleave %c1)"}
+  {:describe "interpose",
+   :params {:sep ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(interpose %sep)"}
+  {:describe "into",
+   :params {:to ["0" "1" "-1" "42" "3.14"]},
+   :template "(into %to)"}
+  {:describe "into-array",
+   :params {:aseq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(into-array %aseq)"}
+  {:describe "ints",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ints %xs)"}
+  {:describe "iterate",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(iterate %f %x)"}
+  {:describe "iteration",
+   :params {:step ["0" "1" "-1" "42" "3.14"]},
+   :template "(iteration %step)"}
+  {:describe "iterator-seq",
+   :params {:iter ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(iterator-seq %iter)"}
+  {:describe "juxt",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(juxt %f)"}
+  {:describe "keep",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(keep %f)"}
+  {:describe "keep-indexed",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(keep-indexed %f)"}
+  {:describe "key",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(key %e)"}
+  {:describe "keys",
+   :params {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(keys %map)"}
+  {:describe "keyword",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(keyword %name)"}
+  {:describe "keyword?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(keyword? %val)"}
+  {:describe "last",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(last %coll)"}
+  {:describe "let",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(let %bindings)"}
+  {:describe "letfn",
+   :params
+   {:fnspecs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(letfn %fnspecs)"}
+  {:describe "line-seq",
+   :params {:rdr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(line-seq %rdr)"}
+  {:describe "list*",
+   :params {:args ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(list* %args)"}
+  {:describe "list?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(list? %val)"}
+  {:describe "long",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(long %x)"}
+  {:describe "long-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(long-array %size-or-seq)"}
+  {:describe "longs",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(longs %xs)"}
+  {:describe "loop",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(loop %bindings)"}
+  {:describe "make-array",
+   :params
+   {:type ["nil" "true" "0" "1" "-1"],
+    :len ["nil" "true" "0" "1" "-1"]},
+   :template "(make-array %type %len)"}
+  {:describe "map",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(map %f)"}
+  {:describe "map-entry?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(map-entry? %val)"}
+  {:describe "map-indexed",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(map-indexed %f)"}
+  {:describe "map?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(map? %val)"}
+  {:describe "mapcat",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(mapcat %f)"}
+  {:describe "mapv",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(mapv %f %coll)"}
+  {:describe "max",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(max %x)"}
+  {:describe "max-key",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(max-key %k %x)"}
+  {:describe "memfn",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(memfn %name)"}
+  {:describe "memoize",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(memoize %f)"}
+  {:describe "merge-with",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(merge-with %f)"}
+  {:describe "meta",
+   :params {:obj ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(meta %obj)"}
+  {:describe "method-sig",
+   :params {:meth ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(method-sig %meth)"}
+  {:describe "methods",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(methods %multifn)"}
+  {:describe "min",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(min %x)"}
+  {:describe "min-key",
+   :params
+   {:k [":a" ":b" ":foo" ":bar/baz"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(min-key %k %x)"}
+  {:describe "mix-collection-hash",
+   :params
+   {:hash-basis ["nil" "true" "0" "1" "-1"],
+    :count ["nil" "true" "0" "1" "-1"]},
+   :template "(mix-collection-hash %hash-basis %count)"}
+  {:describe "mod",
+   :params
+   {:num ["0" "1" "-1" "42" "3.14"], :div ["nil" "true" "0" "1" "-1"]},
+   :template "(mod %num %div)"}
+  {:describe "munge",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(munge %s)"}
+  {:describe "name",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(name %x)"}
+  {:describe "namespace",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(namespace %x)"}
+  {:describe "namespace-munge",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(namespace-munge %ns)"}
+  {:describe "nat-int?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(nat-int? %val)"}
+  {:describe "neg-int?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(neg-int? %val)"}
+  {:describe "neg?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(neg? %val)"}
+  {:describe "next",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(next %coll)"}
+  {:describe "nfirst",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(nfirst %x)"}
+  {:describe "nil?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(nil? %val)"}
+  {:describe "nnext",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(nnext %x)"}
+  {:describe "not",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(not %x)"}
+  {:describe "not-any?",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(not-any? %pred %coll)"}
+  {:describe "not-empty",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(not-empty %coll)"}
+  {:describe "not-every?",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(not-every? %pred %coll)"}
+  {:describe "not=",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(not= %x)"}
+  {:describe "ns",
+   :params
+   {:name ["nil" "true"],
+    :docstring? ["nil" "true"],
+    :attr-map? ["nil" "true"],
+    :references* ["nil" "true"]},
+   :template "(ns %name %docstring? %attr-map? %references*)"}
+  {:describe "ns-aliases",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-aliases %ns)"}
+  {:describe "ns-imports",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-imports %ns)"}
+  {:describe "ns-interns",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-interns %ns)"}
+  {:describe "ns-map",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-map %ns)"}
+  {:describe "ns-name",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-name %ns)"}
+  {:describe "ns-publics",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-publics %ns)"}
+  {:describe "ns-refers",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ns-refers %ns)"}
+  {:describe "ns-resolve",
+   :params
+   {:ns ["nil" "true" "0" "1" "-1"], :sym ["nil" "true" "0" "1" "-1"]},
+   :template "(ns-resolve %ns %sym)"}
+  {:describe "nth",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :index ["0" "1" "-1" "42" "3.14"]},
+   :template "(nth %coll %index)"}
+  {:describe "nthnext",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(nthnext %coll %n)"}
+  {:describe "nthrest",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"],
+    :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(nthrest %coll %n)"}
+  {:describe "num",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(num %x)"}
+  {:describe "number?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(number? %val)"}
+  {:describe "numerator",
+   :params {:r ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(numerator %r)"}
+  {:describe "object-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(object-array %size-or-seq)"}
+  {:describe "odd?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(odd? %val)"}
+  {:describe "or",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(or %x)"}
+  {:describe "parse-boolean",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(parse-boolean %s)"}
+  {:describe "parse-double",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(parse-double %s)"}
+  {:describe "parse-long",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(parse-long %s)"}
+  {:describe "parse-uuid",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(parse-uuid %s)"}
+  {:describe "partial",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(partial %f)"}
+  {:describe "partition",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(partition %n %coll)"}
+  {:describe "partition-all",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(partition-all %n)"}
+  {:describe "partition-by",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(partition-by %f)"}
+  {:describe "partitionv",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(partitionv %n %coll)"}
+  {:describe "partitionv-all",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(partitionv-all %n)"}
+  {:describe "peek",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(peek %coll)"}
+  {:describe "persistent!",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(persistent! %coll)"}
+  {:describe "pop",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(pop %coll)"}
+  {:describe "pop!",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(pop! %coll)"}
+  {:describe "pos-int?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(pos-int? %val)"}
+  {:describe "pos?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(pos? %val)"}
+  {:describe "prefer-method",
+   :params
+   {:multifn ["nil" "true" "0"],
+    :dispatch-val-x ["nil" "true" "0"],
+    :dispatch-val-y ["nil" "true" "0"]},
+   :template
+   "(prefer-method %multifn %dispatch-val-x %dispatch-val-y)"}
+  {:describe "prefers",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(prefers %multifn)"}
+  {:describe "print-ctor",
+   :params
+   {:o ["nil" "true" "0"],
+    :print-args ["nil" "true" "0"],
+    :w ["nil" "true" "0"]},
+   :template "(print-ctor %o %print-args %w)"}
+  {:describe "print-simple",
+   :params
+   {:o ["nil" "true" "0" "1" "-1"], :w ["nil" "true" "0" "1" "-1"]},
+   :template "(print-simple %o %w)"}
+  {:describe "proxy",
+   :params
+   {:class-and-interfaces ["nil" "true" "0" "1" "-1"],
+    :args ["nil" "true" "0" "1" "-1"]},
+   :template "(proxy %class-and-interfaces %args)"}
+  {:describe "proxy-call-with-super",
+   :params
+   {:call ["nil" "true" "0"],
+    :this ["nil" "true" "0"],
+    :meth ["nil" "true" "0"]},
+   :template "(proxy-call-with-super %call %this %meth)"}
+  {:describe "proxy-mappings",
+   :params
+   {:proxy ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(proxy-mappings %proxy)"}
+  {:describe "proxy-name",
+   :params
+   {:super ["nil" "true" "0" "1" "-1"],
+    :interfaces ["nil" "true" "0" "1" "-1"]},
+   :template "(proxy-name %super %interfaces)"}
+  {:describe "proxy-super",
+   :params {:meth ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(proxy-super %meth)"}
+  {:describe "push-thread-bindings",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(push-thread-bindings %bindings)"}
+  {:describe "qualified-ident?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(qualified-ident? %val)"}
+  {:describe "qualified-keyword?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(qualified-keyword? %val)"}
+  {:describe "qualified-symbol?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(qualified-symbol? %val)"}
+  {:describe "quot",
+   :params
+   {:num ["0" "1" "-1" "42" "3.14"], :div ["nil" "true" "0" "1" "-1"]},
+   :template "(quot %num %div)"}
+  {:describe "rand",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(rand %n)"}
+  {:describe "rand-int",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(rand-int %n)"}
+  {:describe "rand-nth",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(rand-nth %coll)"}
+  {:describe "random-sample",
+   :params {:prob ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(random-sample %prob)"}
+  {:describe "range",
+   :params {:end ["0" "1" "-1" "42" "3.14"]},
+   :template "(range %end)"}
+  {:describe "ratio?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(ratio? %val)"}
+  {:describe "rational?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(rational? %val)"}
+  {:describe "rationalize",
+   :params {:num ["0" "1" "-1" "42" "3.14"]},
+   :template "(rationalize %num)"}
+  {:describe "re-find",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(re-find %m)"}
+  {:describe "re-groups",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(re-groups %m)"}
+  {:describe "re-matcher",
+   :params
+   {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(re-matcher %re %s)"}
+  {:describe "re-matches",
+   :params
+   {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(re-matches %re %s)"}
+  {:describe "re-pattern",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(re-pattern %s)"}
+  {:describe "re-seq",
+   :params
+   {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(re-seq %re %s)"}
+  {:describe "read+string",
+   :params
+   {:stream ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(read+string %stream)"}
+  {:describe "reader-conditional",
+   :params
+   {:form ["nil" "true" "0" "1" "-1"],
+    :splicing? ["nil" "true" "0" "1" "-1"]},
+   :template "(reader-conditional %form %splicing?)"}
+  {:describe "reader-conditional?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(reader-conditional? %val)"}
+  {:describe "realized?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(realized? %val)"}
+  {:describe "record?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(record? %val)"}
+  {:describe "reduce",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(reduce %f %coll)"}
+  {:describe "reduce-kv",
+   :params
+   {:f ["inc" "dec" "identity"],
+    :init ["0" "1" "-1"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)"]},
+   :template "(reduce-kv %f %init %coll)"}
+  {:describe "reduced",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(reduced %x)"}
+  {:describe "reduced?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(reduced? %val)"}
+  {:describe "reductions",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(reductions %f %coll)"}
+  {:describe "ref",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(ref %x)"}
+  {:describe "ref-history-count",
+   :params {:ref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ref-history-count %ref)"}
+  {:describe "ref-max-history",
+   :params {:ref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ref-max-history %ref)"}
+  {:describe "ref-min-history",
+   :params {:ref ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(ref-min-history %ref)"}
+  {:describe "rem",
+   :params
+   {:num ["0" "1" "-1" "42" "3.14"], :div ["nil" "true" "0" "1" "-1"]},
+   :template "(rem %num %div)"}
+  {:describe "remove",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(remove %pred)"}
+  {:describe "remove-all-methods",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(remove-all-methods %multifn)"}
+  {:describe "remove-method",
+   :params
+   {:multifn ["nil" "true" "0" "1" "-1"],
+    :dispatch-val ["nil" "true" "0" "1" "-1"]},
+   :template "(remove-method %multifn %dispatch-val)"}
+  {:describe "remove-tap",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(remove-tap %f)"}
+  {:describe "repeat",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(repeat %x)"}
+  {:describe "repeatedly",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(repeatedly %f)"}
+  {:describe "replace",
+   :params {:smap ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(replace %smap)"}
+  {:describe "replicate",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"], :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(replicate %n %x)"}
+  {:describe "requiring-resolve",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(requiring-resolve %sym)"}
+  {:describe "reset-meta!",
+   :params
+   {:iref ["nil" "true" "0" "1" "-1"],
+    :metadata-map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(reset-meta! %iref %metadata-map)"}
+  {:describe "resolve",
+   :params {:sym ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(resolve %sym)"}
+  {:describe "rest",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(rest %coll)"}
+  {:describe "resultset-seq",
+   :params {:rs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(resultset-seq %rs)"}
+  {:describe "reverse",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(reverse %coll)"}
+  {:describe "reversible?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(reversible? %val)"}
+  {:describe "rseq",
+   :params {:rev ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(rseq %rev)"}
+  {:describe "rsubseq",
+   :params
+   {:sc ["nil" "true" "0"],
+    :test ["nil" "true" "0"],
+    :key [":a" ":b" ":foo"]},
+   :template "(rsubseq %sc %test %key)"}
+  {:describe "run!",
+   :params
+   {:proc ["nil" "true" "0" "1" "-1"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(run! %proc %coll)"}
+  {:describe "satisfies?",
+   :params
+   {:protocol ["nil" "true" "0" "1" "-1"],
+    :x ["0" "1" "-1" "42" "3.14"]},
+   :template "(satisfies? %protocol %x)"}
+  {:describe "second",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(second %x)"}
+  {:describe "select-keys",
+   :params
+   {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :keyseq ["nil" "true" "0" "1" "-1"]},
+   :template "(select-keys %map %keyseq)"}
+  {:describe "seq",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(seq %coll)"}
+  {:describe "seq-to-map-for-destructuring",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(seq-to-map-for-destructuring %s)"}
+  {:describe "seq?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(seq? %val)"}
+  {:describe "seqable?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(seqable? %val)"}
+  {:describe "seque",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(seque %s)"}
+  {:describe "sequence",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(sequence %coll)"}
+  {:describe "sequential?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(sequential? %val)"}
+  {:describe "set",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(set %coll)"}
+  {:describe "set-error-handler!",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :handler-fn ["nil" "true" "0" "1" "-1"]},
+   :template "(set-error-handler! %a %handler-fn)"}
+  {:describe "set-error-mode!",
+   :params
+   {:a ["0" "1" "-1" "42" "3.14"],
+    :mode-keyword ["nil" "true" "0" "1" "-1"]},
+   :template "(set-error-mode! %a %mode-keyword)"}
+  {:describe "set?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(set? %val)"}
+  {:describe "short",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(short %x)"}
+  {:describe "short-array",
+   :params
+   {:size-or-seq ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(short-array %size-or-seq)"}
+  {:describe "shorts",
+   :params {:xs ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(shorts %xs)"}
+  {:describe "shuffle",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(shuffle %coll)"}
+  {:describe "simple-ident?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(simple-ident? %val)"}
+  {:describe "simple-keyword?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(simple-keyword? %val)"}
+  {:describe "simple-symbol?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(simple-symbol? %val)"}
+  {:describe "some",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(some %pred %coll)"}
+  {:describe "some->",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(some-> %expr)"}
+  {:describe "some->>",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(some->> %expr)"}
+  {:describe "some-fn",
+   :params {:p ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(some-fn %p)"}
+  {:describe "some?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(some? %val)"}
+  {:describe "sort",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(sort %coll)"}
+  {:describe "sort-by",
+   :params
+   {:keyfn ["nil" "true" "0" "1" "-1"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(sort-by %keyfn %coll)"}
+  {:describe "sorted-map-by",
+   :params
+   {:comparator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(sorted-map-by %comparator)"}
+  {:describe "sorted-set-by",
+   :params
+   {:comparator ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(sorted-set-by %comparator)"}
+  {:describe "sorted?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(sorted? %val)"}
+  {:describe "split-at",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(split-at %n %coll)"}
+  {:describe "split-with",
+   :params
+   {:pred ["inc" "dec" "identity" "str" "keyword"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(split-with %pred %coll)"}
+  {:describe "splitv-at",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(splitv-at %n %coll)"}
+  {:describe "str",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(str %x)"}
+  {:describe "stream-into!",
+   :params
+   {:to ["0" "1" "-1" "42" "3.14"],
+    :stream ["nil" "true" "0" "1" "-1"]},
+   :template "(stream-into! %to %stream)"}
+  {:describe "stream-reduce!",
+   :params
+   {:f ["inc" "dec" "identity" "str" "keyword"],
+    :s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(stream-reduce! %f %s)"}
+  {:describe "stream-seq!",
+   :params
+   {:stream ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(stream-seq! %stream)"}
+  {:describe "stream-transduce!",
+   :params
+   {:xform ["(map inc)" "(filter even?)" "(take 3)"],
+    :f ["inc" "dec" "identity"],
+    :stream ["nil" "true" "0"]},
+   :template "(stream-transduce! %xform %f %stream)"}
+  {:describe "string?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(string? %val)"}
+  {:describe "struct",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(struct %s)"}
+  {:describe "struct-map",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(struct-map %s)"}
+  {:describe "subs",
+   :params
+   {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""],
+    :start ["0" "1" "-1" "42" "3.14"]},
+   :template "(subs %s %start)"}
+  {:describe "subseq",
+   :params
+   {:sc ["nil" "true" "0"],
+    :test ["nil" "true" "0"],
+    :key [":a" ":b" ":foo"]},
+   :template "(subseq %sc %test %key)"}
+  {:describe "subvec",
+   :params
+   {:v ["nil" "true" "0" "1" "-1"], :start ["0" "1" "-1" "42" "3.14"]},
+   :template "(subvec %v %start)"}
+  {:describe "symbol",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(symbol %name)"}
+  {:describe "symbol?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(symbol? %val)"}
+  {:describe "sync",
+   :params
+   {:flags-ignored-for-now
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(sync %flags-ignored-for-now)"}
+  {:describe "tagged-literal",
+   :params
+   {:tag [":a" ":b" ":foo" ":bar/baz"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(tagged-literal %tag %form)"}
+  {:describe "tagged-literal?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(tagged-literal? %val)"}
+  {:describe "take",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(take %n)"}
+  {:describe "take-last",
+   :params
+   {:n ["0" "1" "-1" "42" "3.14"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(take-last %n %coll)"}
+  {:describe "take-nth",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(take-nth %n)"}
+  {:describe "take-while",
+   :params {:pred ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(take-while %pred)"}
+  {:describe "tap>",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(tap> %x)"}
+  {:describe "test",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(test %v)"}
+  {:describe "the-ns",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(the-ns %x)"}
+  {:describe "time",
+   :params {:expr ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(time %expr)"}
+  {:describe "to-array",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(to-array %coll)"}
+  {:describe "to-array-2d",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(to-array-2d %coll)"}
+  {:describe "trampoline",
+   :params {:f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(trampoline %f)"}
+  {:describe "transduce",
+   :params
+   {:xform ["(map inc)" "(filter even?)" "(take 3)"],
+    :f ["inc" "dec" "identity"],
+    :coll ["[]" "[1 2 3]" "'(1 2 3)"]},
+   :template "(transduce %xform %f %coll)"}
+  {:describe "transient",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(transient %coll)"}
+  {:describe "tree-seq",
+   :params
+   {:branch? ["nil" "true" "0"],
+    :children ["nil" "true" "0"],
+    :root ["nil" "true" "0"]},
+   :template "(tree-seq %branch? %children %root)"}
+  {:describe "true?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(true? %val)"}
+  {:describe "unchecked-add",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-add %x %y)"}
+  {:describe "unchecked-add-int",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-add-int %x %y)"}
+  {:describe "unchecked-byte",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-byte %x)"}
+  {:describe "unchecked-char",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-char %x)"}
+  {:describe "unchecked-dec",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-dec %x)"}
+  {:describe "unchecked-dec-int",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-dec-int %x)"}
+  {:describe "unchecked-divide-int",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-divide-int %x %y)"}
+  {:describe "unchecked-double",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-double %x)"}
+  {:describe "unchecked-float",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-float %x)"}
+  {:describe "unchecked-inc",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-inc %x)"}
+  {:describe "unchecked-inc-int",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-inc-int %x)"}
+  {:describe "unchecked-int",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-int %x)"}
+  {:describe "unchecked-long",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-long %x)"}
+  {:describe "unchecked-multiply",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-multiply %x %y)"}
+  {:describe "unchecked-multiply-int",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-multiply-int %x %y)"}
+  {:describe "unchecked-negate",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-negate %x)"}
+  {:describe "unchecked-negate-int",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-negate-int %x)"}
+  {:describe "unchecked-remainder-int",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-remainder-int %x %y)"}
+  {:describe "unchecked-short",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-short %x)"}
+  {:describe "unchecked-subtract",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-subtract %x %y)"}
+  {:describe "unchecked-subtract-int",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :y ["0" "1" "-1" "42" "3.14"]},
+   :template "(unchecked-subtract-int %x %y)"}
+  {:describe "unreduced",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(unreduced %x)"}
+  {:describe "unsigned-bit-shift-right",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :n ["0" "1" "-1" "42" "3.14"]},
+   :template "(unsigned-bit-shift-right %x %n)"}
+  {:describe "update",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :k [":a" ":b" ":foo"],
+    :f ["inc" "dec" "identity"]},
+   :template "(update %m %k %f)"}
+  {:describe "update-in",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :ks [":a" ":b" ":foo"],
+    :f ["inc" "dec" "identity"]},
+   :template "(update-in %m %ks %f)"}
+  {:describe "update-keys",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(update-keys %m %f)"}
+  {:describe "update-proxy",
+   :params
+   {:proxy ["nil" "true" "0" "1" "-1"],
+    :mappings ["nil" "true" "0" "1" "-1"]},
+   :template "(update-proxy %proxy %mappings)"}
+  {:describe "update-vals",
+   :params
+   {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(update-vals %m %f)"}
+  {:describe "uri?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(uri? %val)"}
+  {:describe "uuid?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(uuid? %val)"}
+  {:describe "val",
+   :params {:e ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(val %e)"}
+  {:describe "vals",
+   :params {:map ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(vals %map)"}
+  {:describe "var-get",
+   :params {:x ["0" "1" "-1" "42" "3.14"]},
+   :template "(var-get %x)"}
+  {:describe "var-set",
+   :params
+   {:x ["0" "1" "-1" "42" "3.14"], :val ["nil" "true" "0" "1" "-1"]},
+   :template "(var-set %x %val)"}
+  {:describe "var?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(var? %val)"}
+  {:describe "vary-meta",
+   :params
+   {:obj ["nil" "true" "0" "1" "-1"],
+    :f ["inc" "dec" "identity" "str" "keyword"]},
+   :template "(vary-meta %obj %f)"}
+  {:describe "vec",
+   :params
+   {:coll ["[]" "[1 2 3]" "'(1 2 3)" "{:a 1 :b 2}" "#{1 2 3}"]},
+   :template "(vec %coll)"}
+  {:describe "vector",
+   :params {:a ["0" "1" "-1" "42" "3.14"]},
+   :template "(vector %a)"}
+  {:describe "vector-of",
+   :params {:t [":a" ":b" ":foo" ":bar/baz"]},
+   :template "(vector-of %t)"}
+  {:describe "vector?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(vector? %val)"}
+  {:describe "volatile!",
+   :params {:val ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(volatile! %val)"}
+  {:describe "volatile?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(volatile? %val)"}
+  {:describe "when",
+   :params {:test ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(when %test)"}
+  {:describe "when-first",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(when-first %bindings)"}
+  {:describe "when-let",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(when-let %bindings)"}
+  {:describe "when-not",
+   :params {:test ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(when-not %test)"}
+  {:describe "when-some",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(when-some %bindings)"}
+  {:describe "while",
+   :params {:test ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(while %test)"}
+  {:describe "with-in-str",
+   :params {:s ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(with-in-str %s)"}
+  {:describe "with-local-vars",
+   :params
+   {:name-vals-vec
+    ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(with-local-vars %name-vals-vec)"}
+  {:describe "with-meta",
+   :params
+   {:obj ["nil" "true" "0" "1" "-1"],
+    :m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(with-meta %obj %m)"}
+  {:describe "with-open",
+   :params
+   {:bindings ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(with-open %bindings)"}
+  {:describe "with-precision",
+   :params
+   {:precision ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(with-precision %precision)"}
+  {:describe "xml-seq",
+   :params {:root ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(xml-seq %root)"}
+  {:describe "zero?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(zero? %val)"}
+  {:describe "zipmap",
+   :params
+   {:keys [":a" ":b" ":foo" ":bar/baz"],
+    :vals ["nil" "true" "0" "1" "-1"]},
+   :template "(zipmap %keys %vals)"}]}
+]

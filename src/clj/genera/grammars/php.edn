@@ -1,0 +1,60 @@
+;; php.edn — PHP grammar for genera's PHP emitter
+;;
+;; Keywords, types, operators.
+;; Used by lang/php.clj for PHP code generation.
+
+{:meta {:version 1
+        :description "PHP 8.4 grammar — stub for PHP emitter"
+        :status :stub}
+
+ ;; ================================================================
+ ;; Keywords
+ ;; ================================================================
+
+ :keywords
+ #{abstract and array as break callable case catch class clone
+   const continue declare default do echo else elseif empty
+   enddeclare endfor endforeach endif endswitch endwhile eval
+   exit extends final finally fn for foreach function global
+   goto if implements include include_once instanceof insteadof
+   interface isset list match namespace new or print private
+   protected public readonly require require_once return static
+   switch throw trait try unset use var while xor yield
+   ;; PHP 8.x
+   enum fiber never true false null}
+
+ ;; ================================================================
+ ;; Types
+ ;; ================================================================
+
+ :types
+ {:scalar #{:int :float :string :bool}
+  :compound #{:array :object :callable :iterable}
+  :special #{:null :void :never :mixed :self :parent :static}
+  :union {:syntax "A|B"}
+  :intersection {:syntax "A&B"}
+  :nullable {:prefix "?"}}
+
+ ;; ================================================================
+ ;; Operator precedence (1=highest)
+ ;; ================================================================
+
+ :operators
+ {:clone-new    {:prec 1  :ops ["clone" "new"]}
+  :power        {:prec 2  :assoc :right :ops ["**"]}
+  :unary        {:prec 3  :ops ["+" "-" "~" "++" "--" "(type)" "@"]}
+  :instanceof   {:prec 4  :ops ["instanceof"]}
+  :not          {:prec 5  :ops ["!"]}
+  :mult         {:prec 6  :assoc :left :ops ["*" "/" "%"]}
+  :add          {:prec 7  :assoc :left :ops ["+" "-" "."]}
+  :shift        {:prec 8  :assoc :left :ops ["<<" ">>"]}
+  :comparison   {:prec 9  :ops ["<" "<=" ">" ">=" "<=>"]}
+  :equality     {:prec 10 :ops ["==" "!=" "===" "!=="]}
+  :bitand       {:prec 11 :ops ["&"]}
+  :bitxor       {:prec 12 :ops ["^"]}
+  :bitor        {:prec 13 :ops ["|"]}
+  :logand       {:prec 14 :ops ["&&"]}
+  :logor        {:prec 15 :ops ["||"]}
+  :null-coal    {:prec 16 :assoc :right :ops ["??"]}
+  :ternary      {:prec 17 :assoc :left :ops ["?:"]}
+  :assignment   {:prec 18 :assoc :right :ops ["=" "+=" "-=" ".=" "??="]}}}

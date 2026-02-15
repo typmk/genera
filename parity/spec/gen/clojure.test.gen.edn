@@ -1,0 +1,127 @@
+[
+{:category :clojure.test.functions,
+ :tests
+ [{:it "run-all-tests", :eval "(clojure.test/run-all-tests)"}
+  {:it "run-tests", :eval "(clojure.test/run-tests)"}
+  {:it "testing-contexts-str",
+   :eval "(clojure.test/testing-contexts-str)"}],
+ :parametric
+ [{:describe "are",
+   :params
+   {:argv ["nil" "true" "0" "1" "-1"],
+    :expr ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test/are %argv %expr)"}
+  {:describe "assert-any",
+   :params
+   {:msg ["nil" "true" "0" "1" "-1"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test/assert-any %msg %form)"}
+  {:describe "assert-predicate",
+   :params
+   {:msg ["nil" "true" "0" "1" "-1"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test/assert-predicate %msg %form)"}
+  {:describe "compose-fixtures",
+   :params
+   {:f1 ["nil" "true" "0" "1" "-1"], :f2 ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test/compose-fixtures %f1 %f2)"}
+  {:describe "deftest",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/deftest %name)"}
+  {:describe "deftest-",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/deftest- %name)"}
+  {:describe "do-report",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.test/do-report %m)"}
+  {:describe "file-position",
+   :params {:n ["0" "1" "-1" "42" "3.14"]},
+   :template "(clojure.test/file-position %n)"}
+  {:describe "function?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.test/function? %val)"}
+  {:describe "get-possibly-unbound-var",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/get-possibly-unbound-var %v)"}
+  {:describe "inc-report-counter",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/inc-report-counter %name)"}
+  {:describe "is",
+   :params {:form ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/is %form)"}
+  {:describe "join-fixtures",
+   :params
+   {:fixtures ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/join-fixtures %fixtures)"}
+  {:describe "run-all-tests",
+   :params {:re ["#\"\\\\d+\"" "#\"[a-z]+\"" "#\"hello\""]},
+   :template "(clojure.test/run-all-tests %re)"}
+  {:describe "run-test",
+   :params
+   {:test-symbol ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/run-test %test-symbol)"}
+  {:describe "run-test-var",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/run-test-var %v)"}
+  {:describe "set-test",
+   :params {:name ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/set-test %name)"}
+  {:describe "successful?",
+   :params
+   {:val
+    ["nil"
+     "true"
+     "0"
+     "1"
+     "-1"
+     "42"
+     "3.14"
+     "\"hello\""
+     ":a"
+     "[]"
+     "[1 2]"
+     "{:a 1}"
+     "#{1}"]},
+   :template "(clojure.test/successful? %val)"}
+  {:describe "test-all-vars",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/test-all-vars %ns)"}
+  {:describe "test-ns",
+   :params {:ns ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/test-ns %ns)"}
+  {:describe "test-var",
+   :params {:v ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/test-var %v)"}
+  {:describe "test-vars",
+   :params {:vars ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/test-vars %vars)"}
+  {:describe "testing",
+   :params {:string ["\"\"" "\"hello\"" "\"hello world\"" "\"abc\""]},
+   :template "(clojure.test/testing %string)"}
+  {:describe "testing-vars-str",
+   :params {:m ["{}" "{:a 1}" "{:a 1 :b 2 :c 3}"]},
+   :template "(clojure.test/testing-vars-str %m)"}
+  {:describe "try-expr",
+   :params
+   {:msg ["nil" "true" "0" "1" "-1"],
+    :form ["nil" "true" "0" "1" "-1"]},
+   :template "(clojure.test/try-expr %msg %form)"}
+  {:describe "with-test",
+   :params
+   {:definition ["nil" "true" "0" "1" "-1" "42" "3.14" "\"hello\""]},
+   :template "(clojure.test/with-test %definition)"}]}
+]

@@ -1,0 +1,13 @@
+;; clojure.pprint namespace
+;; https://clojure.github.io/clojure/clojure.pprint-api.html
+
+[{:category :functions
+  :tests
+  [{:it "pprint to string"        :eval "(with-out-str (clojure.pprint/pprint {:a 1 :b 2}))"}
+   {:it "pprint vector"           :eval "(clojure.string/trim (with-out-str (clojure.pprint/pprint [1 2 3])))"}
+   {:it "pprint nested"           :eval "(some? (with-out-str (clojure.pprint/pprint {:a [1 2] :b {:c 3}})))"}
+   {:it "cl-format nil"           :eval "(clojure.pprint/cl-format nil \"~d items\" 42)"}
+   {:it "cl-format decimal"       :eval "(clojure.pprint/cl-format nil \"~,2f\" 3.14159)"}
+   {:it "cl-format padding"       :eval "(clojure.pprint/cl-format nil \"~5d\" 42)"}
+   {:it "print-table"             :eval "(some? (with-out-str (clojure.pprint/print-table [{:a 1 :b 2} {:a 3 :b 4}])))"}
+   {:it "print-table keys"        :eval "(some? (with-out-str (clojure.pprint/print-table [:a] [{:a 1 :b 2}])))"}]}]
