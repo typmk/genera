@@ -65,8 +65,21 @@
                     (recur (gn-next c) (inc count))))]
           (* n SIZE_CONS))
 
-      ;; Vec literal: pvec handle
-      (= k NK_VEC) 20    ;; sizeof(CPVec)
+      ;; Vec literal: pvec handle (but NOT binding vectors in let/loop)
+      (= k NK_VEC)
+        (let [p (gn-parent id)]
+          (if (and (not (= p 0))
+                   (= (gn-kind p) NK_LIST)
+                   (let [fc (gn-child p)]
+                     (and (not (= fc 0))
+                          (= (gn-kind fc) NK_IDENT)
+                          (or (= (gn-sym fc) SYM_LET)
+                              (= (gn-sym fc) SYM_LOOP)
+                              (= (gn-sym fc) SYM_FN)
+                              (= (gn-sym fc) SYM_DEFN)
+                              (= (gn-sym fc) SYM_DEFMACRO)))))
+            0            ;; binding/param vector — no runtime alloc
+            20))         ;; data vector — sizeof(CPVec)
 
       ;; Map literal: pmap handle
       (= k NK_MAP) 12    ;; sizeof(CPMap)
@@ -147,3 +160,13 @@
                  (not (view? V_PURE i)))
         (view-set! V_DYNAMIC i))
       (recur (inc i)))))
+
+;; ================================================================
+;; Entry point: run all alloc passes
+;; ================================================================
+
+(defn analyze-alloc! []
+  (let [n (gn-count)]
+    (clj-pass-alloc n)
+    (clj-pass-scope-alloc n)
+    (clj-pass-dynamic n)))

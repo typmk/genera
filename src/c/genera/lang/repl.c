@@ -134,13 +134,21 @@ static void cmd_eval(Str args) {
     ARGS_STR(args, buf, 4096);
     obs_reset();
     tap_on();
-    // Eval all forms (not just first)
+    // Eval all forms — Clojure eval when available, C eval during bootstrap
     Gram *g = world_step(buf, true);
     g_signal = SIGNAL_NONE; g_depth = 0;
     Val result = NIL;
     u32 c = g->nodes[0].child;
+    Val clj_fn;
+    bool use_clj = env_get(g_global_env, INTERN("clj-eval-node"), &clj_fn);
     while (c) {
-        result = eval_node(g, c, g_global_env);
+        if (use_clj) {
+            Val args = cons_new(val_int(c),
+                       cons_new(val_int((i64)(u64)g_global_env), NIL));
+            result = apply_fn(clj_fn, args);
+        } else {
+            result = eval_node(g, c, g_global_env);
+        }
         if (g_signal) break;
         c = g->nodes[c].next;
     }

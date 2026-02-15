@@ -1001,19 +1001,9 @@ static void test_runtime_views(void) {
     it_eq_i64("count-5", counts[5], 1);
     it_eq_i64("count-0", counts[0], 0);
 
-    // JIT compilation produces trace events
-    tap_reset(); tap_on();
-    jit_run("(+ 1 2)");
-    tap_off();
-    u32 jit_events = trace_count_kind(TK_JIT);
-    it("jit-traced", jit_events > 0);
-
-    // Build bitmask from JIT trace using g_world (same IDs as jit_run)
-    Gram *gj = &g_world.gram;
-    u64 *m_jit = bm_new(gj->mw);
-    tap_to_bitmask(TK_JIT, m_jit, gj->mw);
-    u32 hit_nodes = bm_pop(m_jit, gj->mw);
-    it("jit-nodes-hit", hit_nodes > 0);
+    // JIT compilation works through Clojure compiler
+    i64 jit_result = clj_jit_run("(+ 1 2)");
+    it("jit-runs", jit_result == 3);
 }
 
 // ============================================================================
@@ -1152,252 +1142,6 @@ static void register_test_builtins(void) {
 // Each (is expected actual) evaluates both sides and compares via print_val.
 // Each (group "name") starts a new test group.
 // ============================================================================
-
-static const char *T_ASSERT =
-    // eval: basic
-    "(group \"eval: basic\")\n"
-    "(is 42 42)\n"
-    "(is -7 -7)\n"
-    "(is true true)\n"
-    "(is nil nil)\n"
-    "(is 6 (+ 1 2 3))\n"
-    "(is 1 (if true 1 2))\n"
-    "(is 2 (if false 1 2))\n"
-    "(is 30 (let [x 10 y 20] (+ x y)))\n"
-    "(is 25 ((fn [x] (* x x)) 5))\n"
-    "(defn sq [x] (* x x)) (is 49 (sq 7))\n"
-    "(is 3 (and 1 2 3))\n"
-    "(is 5 (or false nil 5))\n"
-    // collections
-    "(group \"collections\")\n"
-    "(is [1 2 3] [1 2 3])\n"
-    "(is [] [])\n"
-    "(is [[1 2] [3 4]] [[1 2] [3 4]])\n"
-    "(is {:a 1 :b 2} {:a 1 :b 2})\n"
-    "(is {} {})\n"
-    "(is :foo :foo)\n"
-    "(is 1 (get {:a 1 :b 2} :a))\n"
-    "(is 20 (get [10 20 30] 1))\n"
-    "(is nil (get {:a 1} :z))\n"
-    "(is 2 (get (assoc {:a 1} :b 2) :b))\n"
-    "(is 99 (get (assoc [10 20 30] 1 99) 1))\n"
-    "(is [1 2 3] (conj [1 2] 3))\n"
-    "(is 1 (first (conj (list 2 3) 1)))\n"
-    "(is 30 (nth [10 20 30] 2))\n"
-    "(is 20 (nth (list 10 20 30) 1))\n"
-    "(is 3 (count [1 2 3]))\n"
-    "(is 2 (count {:a 1 :b 2}))\n"
-    "(is 4 (count (list 1 2 3 4)))\n"
-    "(is [1 2 3] (vec (list 1 2 3)))\n"
-    "(is true (empty? []))\n"
-    "(is false (empty? [1]))\n"
-    // collections: advanced
-    "(group \"collections: advanced\")\n"
-    "(is 3 (count (keys {:a 1 :b 2 :c 3})))\n"
-    "(is 3 (count (vals {:a 1 :b 2 :c 3})))\n"
-    "(is true (contains? {:a 1} :a))\n"
-    "(is false (contains? {:a 1} :b))\n"
-    "(is true (vector? [1 2]))\n"
-    "(is true (map? {:a 1}))\n"
-    "(is true (keyword? :foo))\n"
-    "(is false (vector? 42))\n"
-    "(is [1 2 3] (into [] (list 1 2 3)))\n"
-    "(is 10 (get (hash-map :x 10 :y 20) :x))\n"
-    // core forms
-    "(group \"core forms\")\n"
-    "(is \"yes\" (cond (< 5 3) \"no\" (> 5 3) \"yes\"))\n"
-    "(is 42 (cond false 1 :else 42))\n"
-    "(is nil (cond false 1))\n"
-    "(is 42 (when (> 5 3) 42))\n"
-    "(is nil (when (< 5 3) 42))\n"
-    "(is 3 (when true 1 2 3))\n"
-    "(is \"hello world\" (str \"hello\" \" \" \"world\"))\n"
-    "(is \"x=42\" (str \"x=\" 42))\n"
-    "(is 5 (count (range 5)))\n"
-    "(is 0 (first (range 5)))\n"
-    "(is 3 (first (range 3 7)))\n"
-    "(is 4 (count (range 3 7)))\n"
-    "(is 45 (loop [i 0 s 0] (if (= i 10) s (recur (inc i) (+ s i)))))\n"
-    "(is [0 1 2 3 4] (loop [v [] i 0] (if (= i 5) v (recur (conj v i) (inc i)))))\n"
-    "(is 3 (loop [i 0 t 0] (if (= i 3) t (recur (inc i) (+ t (loop [j 0 s 0] (if (= j i) s (recur (inc j) (+ s 1)))))))))\n"
-    "(is 42 (inc 41))\n"
-    "(is 42 (dec 43))\n"
-    "(is true (zero? 0))\n"
-    "(is true (pos? 5))\n"
-    "(is true (neg? -3))\n"
-    "(is 4.0 (+ 1.5 2.5))\n"
-    "(is 7.0 (* 2 3.5))\n"
-    "(is true (< 1.5 2.0))\n"
-    // coll protocol
-    "(group \"coll protocol\")\n"
-    "(is 10 (first [10 20 30]))\n"
-    "(is 20 (first (rest [10 20 30])))\n"
-    "(is true (nil? (first [])))\n"
-    "(is 45 (reduce + 0 (range 10)))\n"
-    "(is 6 (first (map (fn [x] (* x 2)) (list 3 4 5))))\n"
-    "(is 3 (count (filter (fn [x] (> x 2)) (list 1 2 3 4 5))))\n"
-    // transient
-    "(group \"transient\")\n"
-    "(is 3 (let [m {:a 1 :b 2}] (let [t (transient m)] (let [t2 (assoc! t :c 3)] (get (persistent! t2) :c)))))\n"
-    "(is nil (let [m {:a 1 :b 2}] (let [t (transient m)] (assoc! t :c 3) (get m :c))))\n"
-    "(is 3 (let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (count (persistent! t))))\n"
-    "(is 99 (let [t (transient {:a 1})] (assoc! t :a 99) (get (persistent! t) :a)))\n"
-    "(is 42 (let [t (transient {})] (assoc! t :x 42) (let [p (persistent! t)] (get p :x))))\n"
-    "(is 17 (let [t (transient {})] (assoc! t :a 1) (assoc! t :b 2) (assoc! t :c 3) (assoc! t :d 4) (assoc! t :e 5) (assoc! t :f 6) (assoc! t :g 7) (assoc! t :h 8) (assoc! t :i 9) (assoc! t :j 10) (assoc! t :k 11) (assoc! t :l 12) (assoc! t :m 13) (assoc! t :n 14) (assoc! t :o 15) (assoc! t :p 16) (assoc! t :q 17) (count (persistent! t))))\n"
-    "(is 2 (get (assoc {:a 1} :b 2) :b))\n"
-    "(is 1 (let [t (transient {})] (assoc! t :x 1) (get (persistent! t) :x)))\n"
-    "(is 1 (let [t (transient {})] (assoc! t :v [1 2 3]) (first (get (persistent! t) :v))))\n"
-    "(is 3 (let [m (persistent! (let [t (transient {:a 1})] (assoc! t :b 2) t))] (+ (get m :a) (get m :b))))\n"
-    // hof+pvec
-    "(group \"hof+pvec\")\n"
-    "(is true (vector? (range 5)))\n"
-    "(is 2 (get (range 5) 2))\n"
-    "(is 45 (reduce + 0 (range 10)))\n"
-    "(is 4950 (reduce + 0 (range 100)))\n"
-    "(is 6 (first (map (fn [x] (* x 2)) [3 4 5])))\n"
-    "(is 30 (reduce + 0 (map (fn [x] (* x x)) (range 5))))\n"
-    "(is 3 (count (filter (fn [x] (> x 2)) [1 2 3 4 5])))\n"
-    "(is 49 (count (filter (fn [x] (> x 50)) (range 100))))\n"
-    "(is 5 (count (into [] (range 5))))\n"
-    "(is 20 (reduce + 0 (filter (fn [x] (= 0 (mod x 2))) (range 10))))\n"
-    // macros
-    "(group \"macros\")\n"
-    "(defmacro my-when [t & body] (list 'if t (cons 'do body)))\n"
-    "(is true (macro? my-when))\n"
-    "(is false (macro? +))\n"
-    "(is 42 (my-when true 42))\n"
-    "(is nil (my-when false 42))\n"
-    "(is 3 (my-when (> 5 3) 1 2 3))\n"
-    "(defmacro my-unless [t & body] (list 'if t nil (cons 'do body)))\n"
-    "(is 42 (my-unless false 42))\n"
-    "(is nil (my-unless true 42))\n"
-    // macroexpand-1
-    "(is (list 'if true (list 'do 42)) (macroexpand-1 (list 'my-when true 42)))\n"
-    // cond as macro
-    "(defmacro my-cond [& cs] (if (nil? cs) nil (list 'if (first cs) (first (rest cs)) (cons 'my-cond (rest (rest cs))))))\n"
-    "(is \"yes\" (my-cond (< 5 3) \"no\" (> 5 3) \"yes\"))\n"
-    "(is 42 (my-cond false 1 :else 42))\n"
-    "(is nil (my-cond false 1))\n"
-    // gensym
-    "(let [g1 (gensym) g2 (gensym)] (is false (= g1 g2)))\n"
-    // nested macro
-    "(is 3 (my-when true (my-when true 3)))\n"
-    // macro with let
-    "(defmacro my-let1 [name val & body] (list 'let [name val] (cons 'do body)))\n"
-    "(is 42 (my-let1 x 42 x))\n"
-    // syntax-quote
-    "(is (list 1 2 3) `(1 2 3))\n"
-    "(let [x 42] (is (list 1 42 3) `(1 ~x 3)))\n"
-    "(let [xs (list 2 3)] (is (list 1 2 3 4) `(1 ~@xs 4)))\n"
-    "(let [x 1 y 2] (is [1 2 3] `[~x ~y 3]))\n"
-    "(let [xs (list 2 3)] (is [1 2 3 4] `[1 ~@xs 4]))\n"
-    "(let [v 42] (is {:a 42} `{:a ~v}))\n"
-    // syntax-quote macros
-    "(defmacro sq-when [t & body] `(if ~t (do ~@body)))\n"
-    "(is 42 (sq-when true 42))\n"
-    "(is nil (sq-when false 42))\n"
-    "(is 3 (sq-when true 1 2 3))\n"
-    "(defmacro sq-unless [t & body] `(if ~t nil (do ~@body)))\n"
-    "(is 42 (sq-unless false 42))\n"
-    "(is nil (sq-unless true 42))\n"
-    // threading macro with syntax-quote
-    "(defmacro my-> [x & forms] (if (empty? forms) x (let [f (first forms)] `(my-> (~f ~x) ~@(rest forms)))))\n"
-    "(is 7 (my-> 5 inc inc))\n"
-    "(is 3 (my-> 5 dec dec))\n"
-    // analyze=true: constant folding + dead branch
-    "(group \"analyze=true\")\n"
-    "(is 7 (+ (* 2 3) 1))\n"
-    "(is 42 (if true 42 (/ 1 0)))\n"
-    "(def x (+ 10 20)) (is 30 x)\n"
-    // clj hamt — self-hosted HAMT via Mem primitives
-    "(group \"clj hamt\")\n"
-    "(is 0 (clj-pmap-count (clj-pmap-empty)))\n"
-    "(is 1 (clj-pmap-count (clj-pmap-put (clj-pmap-empty) 42 100)))\n"
-    "(def _hm1 (clj-pmap-put (clj-pmap-empty) 42 100))\n"
-    "(is 100 (clj-pmap-get _hm1 42))\n"
-    "(is nil (clj-pmap-get _hm1 99))\n"
-    "(def _hm2 (clj-pmap-put _hm1 99 200))\n"
-    "(is 2 (clj-pmap-count _hm2))\n"
-    "(is 100 (clj-pmap-get _hm2 42))\n"
-    "(is 200 (clj-pmap-get _hm2 99))\n"
-    "(is nil (clj-pmap-get _hm1 99))\n"  // immutability
-    "(def _hm3 (clj-pmap-put _hm2 42 999))\n"
-    "(is 999 (clj-pmap-get _hm3 42))\n"
-    "(is 2 (clj-pmap-count _hm3))\n"
-    "(def _hm_big (loop [i 0 m (clj-pmap-empty)] (if (< i 20) (recur (+ i 1) (clj-pmap-put m i (* i 10))) m)))\n"
-    "(is 20 (clj-pmap-count _hm_big))\n"
-    "(is 0 (clj-pmap-get _hm_big 0))\n"
-    "(is 50 (clj-pmap-get _hm_big 5))\n"
-    "(is 190 (clj-pmap-get _hm_big 19))\n"
-    "(is nil (clj-pmap-get _hm_big 20))\n"
-    "(def _hm_100 (loop [i 0 m (clj-pmap-empty)] (if (< i 100) (recur (+ i 1) (clj-pmap-put m i (* i 7))) m)))\n"
-    "(is 100 (clj-pmap-count _hm_100))\n"
-    "(is 0 (clj-pmap-get _hm_100 0))\n"
-    "(is 350 (clj-pmap-get _hm_100 50))\n"
-    "(is 693 (clj-pmap-get _hm_100 99))\n"
-    "(is nil (clj-pmap-get _hm_100 100))\n"
-    // clj pvec — self-hosted persistent vector via Mem primitives
-    "(group \"clj pvec\")\n"
-    "(is 0 (clj-pvec-count (clj-pvec-empty)))\n"
-    "(def _pv1 (clj-pvec-append (clj-pvec-empty) 42))\n"
-    "(is 1 (clj-pvec-count _pv1))\n"
-    "(is 42 (clj-pvec-get _pv1 0))\n"
-    "(def _pv5 (loop [i 0 v (clj-pvec-empty)] (if (< i 5) (recur (+ i 1) (clj-pvec-append v (* i 10))) v)))\n"
-    "(is 5 (clj-pvec-count _pv5))\n"
-    "(is 0 (clj-pvec-get _pv5 0))\n"
-    "(is 40 (clj-pvec-get _pv5 4))\n"
-    "(is nil (clj-pvec-get _pv5 5))\n"
-    "(def _pv5b (clj-pvec-append _pv5 99))\n"
-    "(is 5 (clj-pvec-count _pv5))\n"   // immutability
-    "(is 6 (clj-pvec-count _pv5b))\n"
-    "(def _pv33 (loop [i 0 v (clj-pvec-empty)] (if (< i 33) (recur (+ i 1) (clj-pvec-append v (* i 3))) v)))\n"
-    "(is 33 (clj-pvec-count _pv33))\n"
-    "(is 0 (clj-pvec-get _pv33 0))\n"
-    "(is 93 (clj-pvec-get _pv33 31))\n"
-    "(is 96 (clj-pvec-get _pv33 32))\n"
-    "(def _pv100 (loop [i 0 v (clj-pvec-empty)] (if (< i 100) (recur (+ i 1) (clj-pvec-append v (* i 7))) v)))\n"
-    "(is 100 (clj-pvec-count _pv100))\n"
-    "(is 0 (clj-pvec-get _pv100 0))\n"
-    "(is 350 (clj-pvec-get _pv100 50))\n"
-    "(is 693 (clj-pvec-get _pv100 99))\n"
-    "(def _pv1k (loop [i 0 v (clj-pvec-empty)] (if (< i 1000) (recur (+ i 1) (clj-pvec-append v i)) v)))\n"
-    "(is 1000 (clj-pvec-count _pv1k))\n"
-    "(is 0 (clj-pvec-get _pv1k 0))\n"
-    "(is 500 (clj-pvec-get _pv1k 500))\n"
-    "(is 999 (clj-pvec-get _pv1k 999))\n"
-    "(is nil (clj-pvec-get _pv1k 1000))\n"
-    // clj cons+stdlib — self-hosted cons cells + stdlib
-    "(group \"clj cons+stdlib\")\n"
-    "(def _cc (clj-cons 42 99))\n"
-    "(is 42 (clj-car _cc))\n"
-    "(is 99 (clj-cdr _cc))\n"
-    "(def _cc2 (clj-cons 1 (clj-cons 2 (clj-cons 3 0))))\n"
-    "(is 1 (clj-car _cc2))\n"
-    "(is 2 (clj-car (clj-cdr _cc2)))\n"
-    "(is 20 (second [10 20 30]))\n"
-    "(is 3 (count (take 3 [1 2 3 4 5])))\n"
-    "(is 30 (first (drop 2 [10 20 30 40])))\n"
-    "(is 4 (some (fn [x] (if (> x 3) x nil)) [1 2 3 4 5]))\n"
-    "(is nil (some (fn [x] (if (> x 10) x nil)) [1 2 3]))\n"
-    "(is true (every? pos? [1 2 3]))\n"
-    "(is false (every? pos? [1 -2 3]))\n"
-    "(is 42 (identity 42))\n"
-    "(is 7 ((constantly 7) 1 2 3))\n"
-    "(is true ((complement nil?) 42))\n"
-    "(is 2 (count (partition 2 [1 2 3 4 5])))\n"
-    "(is 6 (count (interleave [1 2 3] [:a :b :c])))\n"
-    "(is 2 (get (zipmap [:a :b] [1 2]) :b))\n"
-    "(is 3 (get (frequencies [:a :b :a :c :b :a]) :a))\n"
-    "(is 2 (count (get (group-by (fn [x] (if (> x 2) :big :small)) [1 2 3 4]) :big)))\n"
-    "(is 6 (count (mapcat (fn [x] [x x]) [1 2 3])))\n"
-    "(is 4 (count (distinct [:a :b :a :c :b :d])))\n"
-;
-
-static void run_assert_tests(const char *src) {
-    g_signal = SIGNAL_NONE; g_depth = 0;
-    eval_string(src, g_global_env);
-    if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
-}
 
 // Error-path tests (signal/overflow — can't use assertions)
 static void test_error_cases(void) {
@@ -1592,40 +1336,6 @@ static void test_engine(void) {
     TREG("describe!", bi_describe_t);
     TREG("it!", bi_it_t);
     #undef TREG
-
-    // Define comparison test in Clojure:
-    // parse → C analyze → snapshot → clear → Clojure analyze → compare
-    engine_eval(
-        "(defn test-compare [src]"
-        "  (world-parse! src)"
-        "  (c-analyze!)"
-        "  (views-snapshot!)"
-        "  (views-clear!)"
-        "  (clj-pass-scope)"
-        "  (clj-pass-type (gn-count))"
-        "  (clj-pass-flow)"
-        "  (it! src (views-match?)))"
-    );
-
-    // ---- Clojure passes vs C: all logic in Clojure ----
-    engine_eval("(describe! \"clj passes\")");
-    static const char *clj_tests[] = {
-        "(test-compare \"(+ 1 2)\")",
-        "(test-compare \"(defn f [x] (+ x 1))\")",
-        "(test-compare \"(let [a 1 b 2] (+ a b))\")",
-        "(test-compare \"(if true 42 99)\")",
-        "(test-compare \"(do (def x 10) (+ x 1))\")",
-        "(test-compare \"(fn [a b] (* a b))\")",
-        "(test-compare \"(loop [i 0] (if (>= i 10) i (recur (inc i))))\")",
-        "(test-compare \"(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))\")",
-        "(test-compare \"(when false 42)\")",
-        "(test-compare \"(+ (* 2 3) (- 10 4))\")",
-        "(test-compare \"(cond (< 5 3) 0 (> 5 3) 1)\")",
-    };
-    for (u32 ti = 0; ti < sizeof(clj_tests) / sizeof(clj_tests[0]); ti++) {
-        g_signal = SIGNAL_NONE;
-        engine_eval(clj_tests[ti]);
-    }
 }
 
 // ============================================================================
@@ -1640,7 +1350,7 @@ typedef struct { const char *name; const char *src; i64 exp; } JitCase;
 static void run_jit_suite(const JitCase *t, u32 n) {
     describe("x86 jit");
     for (u32 i = 0; i < n; i++)
-        it_eq_i64(t[i].name, jit_run(t[i].src), t[i].exp);
+        it_eq_i64(t[i].name, clj_jit_run(t[i].src), t[i].exp);
 }
 
 static void run_cc_suite(const EvalCase *t, u32 n) {
@@ -1776,10 +1486,31 @@ static int run_all_tests(void) {
     // Engine (Clojure ↔ GNode bridge)
     test_engine();
 
-    // Self-checking eval tests (programs in the language)
+    // Self-checking eval tests — Clojure files are THE tests
     register_test_builtins();
-    run_assert_tests(T_ASSERT);
     test_error_cases();
+
+    // Clojure test suite — load each file with signal reset
+    {
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval_file("src/clj/test/core.clj");
+        if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+    }
+    {
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval_file("src/clj/test/eval.clj");
+        if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+    }
+    {
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval_file("src/clj/test/passes.clj");
+        if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+    }
+    {
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval_file("src/clj/test/alloc.clj");
+        if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); }
+    }
 
     // New builtins: str-parent, store64! aliases, view constants
     {

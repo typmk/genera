@@ -878,10 +878,22 @@ static Val eval_string(const char *s, Env *env) {
     Gram *g = world_step(s, true);
     Val result = NIL;
     u32 c = g->nodes[0].child;
-    while (c) {
-        result = eval_node(g, c, env);
-        if (g_signal) break;
-        c = g->nodes[c].next;
+    // After bootstrap: Clojure is the evaluator
+    Val clj_fn;
+    if (env_get(g_global_env, INTERN("clj-eval-node"), &clj_fn)) {
+        while (c) {
+            Val args = cons_new(val_int(c),
+                       cons_new(val_int((i64)(u64)env), NIL));
+            result = apply_fn(clj_fn, args);
+            if (g_signal) break;
+            c = g->nodes[c].next;
+        }
+    } else {
+        while (c) {
+            result = eval_node(g, c, env);
+            if (g_signal) break;
+            c = g->nodes[c].next;
+        }
     }
     return result;
 }
@@ -1302,16 +1314,83 @@ static Val bi_mem_base(Val a) {
     return val_int((i64)(u64)g_mem_pool[idx].base);
 }
 
-// Raw memory ops (absolute pointer) — for JIT interop
-static Val bi_load64(Val a)  { return val_int(*(i64 *)(u64)val_as_int(car(a))); }
-static Val bi_load32(Val a)  { return val_int((i64)*(u32 *)(u64)val_as_int(car(a))); }
-static Val bi_load8(Val a)   { return val_int((i64)*(u8 *)(u64)val_as_int(car(a))); }
-static Val bi_store64(Val a) { *(i64 *)(u64)val_as_int(car(a)) = val_as_int(car(cdr(a))); return NIL; }
-static Val bi_store32(Val a) { *(u32 *)(u64)val_as_int(car(a)) = (u32)val_as_int(car(cdr(a))); return NIL; }
-static Val bi_store8(Val a)  { *(u8 *)(u64)val_as_int(car(a)) = (u8)val_as_int(car(cdr(a))); return NIL; }
+// Raw memory ops — support (load addr) and (load base offset)
+// Clojure code uses (load32 mem-ptr MEM_USED) throughout std/mem.clj, rt/*.clj
+static Val bi_load64(Val a)  {
+    i64 addr = val_as_int(car(a));
+    if (!val_is_nil(cdr(a))) addr += val_as_int(car(cdr(a)));
+    return val_int(*(i64 *)(u64)addr);
+}
+static Val bi_load32(Val a)  {
+    i64 addr = val_as_int(car(a));
+    if (!val_is_nil(cdr(a))) addr += val_as_int(car(cdr(a)));
+    return val_int((i64)*(u32 *)(u64)addr);
+}
+static Val bi_load8(Val a)   {
+    i64 addr = val_as_int(car(a));
+    if (!val_is_nil(cdr(a))) addr += val_as_int(car(cdr(a)));
+    return val_int((i64)*(u8 *)(u64)addr);
+}
+// store: (store addr val) or (store base offset val)
+static Val bi_store64(Val a) {
+    i64 addr = val_as_int(car(a));
+    Val rest = cdr(a);
+    Val v;
+    if (!val_is_nil(cdr(rest))) { addr += val_as_int(car(rest)); v = car(cdr(rest)); }
+    else { v = car(rest); }
+    *(i64 *)(u64)addr = val_as_int(v);
+    return NIL;
+}
+static Val bi_store32(Val a) {
+    i64 addr = val_as_int(car(a));
+    Val rest = cdr(a);
+    Val v;
+    if (!val_is_nil(cdr(rest))) { addr += val_as_int(car(rest)); v = car(cdr(rest)); }
+    else { v = car(rest); }
+    *(u32 *)(u64)addr = (u32)val_as_int(v);
+    return NIL;
+}
+static Val bi_store8(Val a)  {
+    i64 addr = val_as_int(car(a));
+    Val rest = cdr(a);
+    Val v;
+    if (!val_is_nil(cdr(rest))) { addr += val_as_int(car(rest)); v = car(cdr(rest)); }
+    else { v = car(rest); }
+    *(u8 *)(u64)addr = (u8)val_as_int(v);
+    return NIL;
+}
 // Source access — gram source pointer + length
 static Val bi_gram_src_ptr(Val a) { (void)a; return val_int((i64)(u64)g_world.gram.src); }
 static Val bi_gram_src_len(Val a) { (void)a; return val_int((i64)g_world.gram.src_len); }
+
+// ============================================================================
+// 5c'. Syscall builtins — Clojure makes direct syscalls
+//
+// Four builtins so the Clojure layer can allocate memory, do I/O, and exit.
+// During bootstrap: interpreted. After JIT: compiled to inline syscall.
+// ============================================================================
+
+static Val bi_sys_write(Val a) {
+    int fd   = (int)val_as_int(car(a));
+    void *buf = (void *)(u64)val_as_int(car(cdr(a)));
+    u64 len  = (u64)val_as_int(car(cdr(cdr(a))));
+    return val_int(sys_write(fd, buf, len));
+}
+static Val bi_sys_read(Val a) {
+    int fd   = (int)val_as_int(car(a));
+    void *buf = (void *)(u64)val_as_int(car(cdr(a)));
+    u64 len  = (u64)val_as_int(car(cdr(cdr(a))));
+    return val_int(sys_read(fd, buf, len));
+}
+static Val bi_sys_mmap(Val a) {
+    u64 len = (u64)val_as_int(car(a));
+    void *p = sys_alloc(len);
+    return p ? val_int((i64)(u64)p) : NIL;
+}
+static Val bi_sys_exit(Val a) {
+    sys_exit((int)val_as_int(car(a)));
+    return NIL;
+}
 
 // ============================================================================
 // 5d. Output Buffer — shared with cc.c
@@ -1617,6 +1696,242 @@ static Val bi_out_str(Val args) {
 }
 
 // ============================================================================
+// 8b. Bridge builtins — expose grammar/eval/emit to Clojure
+// ============================================================================
+
+// --- Grammar index bitmask ops ---
+static Val bi_kind_set(Val a) {
+    u32 k = (u32)val_as_int(car(a));
+    u32 id = (u32)val_as_int(car(cdr(a)));
+    Gram *g = &g_world.gram;
+    if (k < NK_COUNT && id < g->n) BM_SET(g->m[k], id);
+    return NIL;
+}
+static Val bi_kind_q(Val a) {
+    u32 k = (u32)val_as_int(car(a));
+    u32 id = (u32)val_as_int(car(cdr(a)));
+    Gram *g = &g_world.gram;
+    return val_bool(k < NK_COUNT && id < g->n && BM_GET(g->m[k], id));
+}
+static Val bi_group_set(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    if (id < g->n) BM_SET(g->m_group, id);
+    return NIL;
+}
+static Val bi_group_q(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    return val_bool(id < g->n && BM_GET(g->m_group, id));
+}
+static Val bi_leaf_set(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    if (id < g->n) BM_SET(g->m_leaf, id);
+    return NIL;
+}
+static Val bi_leaf_q(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    return val_bool(id < g->n && BM_GET(g->m_leaf, id));
+}
+static Val bi_first_set(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    if (id < g->n) BM_SET(g->m_first, id);
+    return NIL;
+}
+static Val bi_first_q(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    return val_bool(id < g->n && BM_GET(g->m_first, id));
+}
+
+// --- Eval bridge ---
+static Val bi_entity_to_val(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    if (id >= g->n) return NIL;
+    return entity_to_val(g, id);
+}
+static Val bi_gn_parse_num_val(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Gram *g = &g_world.gram;
+    if (id >= g->n) return NIL;
+    return gn_parse_num(g, id);
+}
+static Val bi_clj_eval(Val a) {
+    Val form = car(a);
+    return eval(form, g_global_env);
+}
+static Val bi_clj_apply(Val a) {
+    Val fn = car(a);
+    Val args = car(cdr(a));
+    return apply_fn(fn, args);
+}
+static Val bi_env_create(Val a) {
+    // (env-create!) → child of global env
+    // (env-create! parent-env) → child of given env
+    Val parent_v = car(a);
+    Env *parent = (parent_v == NIL) ? g_global_env : (Env *)(u64)val_as_int(parent_v);
+    Env *e = env_create(&g_req, parent);
+    return val_int((i64)(u64)e);
+}
+static Val bi_global_env(Val a) {
+    (void)a;
+    return val_int((i64)(u64)g_global_env);
+}
+static Val bi_c_eval_node(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Env *e = (Env *)(u64)val_as_int(car(cdr(a)));
+    return eval_node(&g_world.gram, id, e);
+}
+// Compare C eval_node vs Clojure clj-eval-node via print_val
+static Val bi_eval_node_match(Val a) {
+    u32 id = (u32)val_as_int(car(a));
+    Env *env = (Env *)(u64)val_as_int(car(cdr(a)));
+    // C eval
+    Val c_result = eval_node(&g_world.gram, id, env);
+    const char *c_s = print_val(c_result);
+    char c_buf[4096];
+    u32 len = (u32)strlen(c_s);
+    if (len >= sizeof(c_buf)) len = sizeof(c_buf) - 1;
+    memcpy(c_buf, c_s, len); c_buf[len] = 0;
+    // Clojure eval — look up clj-eval-node and call it
+    Val fn;
+    if (!env_get(g_global_env, INTERN("clj-eval-node"), &fn)) return val_false();
+    Val args = cons_new(val_int(id), cons_new(val_int((i64)(u64)env), NIL));
+    Val clj_result = apply_fn(fn, args);
+    const char *clj_s = print_val(clj_result);
+    return val_bool(strcmp(c_buf, clj_s) == 0);
+}
+static Val bi_env_set(Val a) {
+    Env *e = (Env *)(u64)val_as_int(car(a));
+    StrId name = (StrId)val_as_int(car(cdr(a)));
+    Val value = car(cdr(cdr(a)));
+    env_set(e, name, value);
+    return NIL;
+}
+static Val bi_env_get_fn(Val a) {
+    Env *e = (Env *)(u64)val_as_int(car(a));
+    StrId name = (StrId)val_as_int(car(cdr(a)));
+    Val result;
+    if (env_get(e, name, &result)) return result;
+    return NIL;
+}
+
+// --- Test infrastructure ---
+// Forward declarations (defined in jit.c/cc.c, included after eval.c)
+static i64 jit_run(const char *source);
+static i64 clj_jit_run(const char *source);
+static void cc_emit(const char *source);
+
+// NOTE: jit_run/clj_jit_run/cc_emit reset g_req which destroys live eval data.
+// These builtins CANNOT be safely called from within Clojure eval.
+// They exist for future use when arena isolation is implemented.
+// For now, JIT/CC tests remain C-level (test.c).
+static Val bi_jit_run(Val a) {
+    Val src_val = car(a);
+    if (!val_is_str(src_val)) return val_int(0);
+    Str *s = val_as_str(src_val);
+    char buf[4096];
+    u32 len = s->len < 4095 ? s->len : 4095;
+    memcpy(buf, s->data, len); buf[len] = 0;
+    return val_int(jit_run(buf));
+}
+static Val bi_clj_jit_run(Val a) {
+    Val src_val = car(a);
+    if (!val_is_str(src_val)) return val_int(0);
+    Str *s = val_as_str(src_val);
+    char buf[4096];
+    u32 len = s->len < 4095 ? s->len : 4095;
+    memcpy(buf, s->data, len); buf[len] = 0;
+    return val_int(clj_jit_run(buf));
+}
+static Val bi_cc_emit(Val a) {
+    Val src_val = car(a);
+    if (!val_is_str(src_val)) {
+        Str *sp = arena_push(&g_req, Str);
+        *sp = (Str){(u8 *)"", 0};
+        return val_str(sp);
+    }
+    Str *s = val_as_str(src_val);
+    char buf[4096];
+    u32 len = s->len < 4095 ? s->len : 4095;
+    memcpy(buf, s->data, len); buf[len] = 0;
+    arena_reset(&g_req);
+    cc_emit(buf);
+    Str *sp = arena_push(&g_req, Str);
+    *sp = str_dup(&g_req, (Str){(u8 *)g_out.buf, g_out.pos});
+    return val_str(sp);
+}
+
+// --- Index ops: clear structural bitmasks ---
+static Val bi_index_clear(Val a) {
+    (void)a;
+    Gram *g = &g_world.gram;
+    u32 mw = (g->n + 63) / 64;
+    g->mw = mw;
+    for (u32 k = 0; k < NK_COUNT; k++) memset(g->m[k], 0, mw * 8);
+    memset(g->m_group, 0, mw * 8);
+    memset(g->m_leaf,  0, mw * 8);
+    memset(g->m_first, 0, mw * 8);
+    return NIL;
+}
+
+// --- Index comparison: snapshot/compare structural bitmasks ---
+static u64 *g_snap_m[NK_COUNT];
+static u64 *g_snap_m_group, *g_snap_m_leaf, *g_snap_m_first;
+static u32 g_snap_idx_mw;
+
+static Val bi_index_snapshot(Val a) {
+    (void)a;
+    Gram *g = &g_world.gram;
+    g_snap_idx_mw = g->mw;
+    for (u32 k = 0; k < NK_COUNT; k++) {
+        g_snap_m[k] = (u64 *)arena_alloc(&g_temp, g->mw * 8, 8);
+        memcpy(g_snap_m[k], g->m[k], g->mw * 8);
+    }
+    g_snap_m_group = (u64 *)arena_alloc(&g_temp, g->mw * 8, 8);
+    g_snap_m_leaf  = (u64 *)arena_alloc(&g_temp, g->mw * 8, 8);
+    g_snap_m_first = (u64 *)arena_alloc(&g_temp, g->mw * 8, 8);
+    memcpy(g_snap_m_group, g->m_group, g->mw * 8);
+    memcpy(g_snap_m_leaf,  g->m_leaf,  g->mw * 8);
+    memcpy(g_snap_m_first, g->m_first, g->mw * 8);
+    return NIL;
+}
+
+static Val bi_index_match(Val a) {
+    (void)a;
+    Gram *g = &g_world.gram;
+    bool ok = true;
+    for (u32 k = 0; k < NK_COUNT; k++)
+        if (memcmp(g_snap_m[k], g->m[k], g_snap_idx_mw * 8)) ok = false;
+    if (memcmp(g_snap_m_group, g->m_group, g_snap_idx_mw * 8)) ok = false;
+    if (memcmp(g_snap_m_leaf,  g->m_leaf,  g_snap_idx_mw * 8)) ok = false;
+    if (memcmp(g_snap_m_first, g->m_first, g_snap_idx_mw * 8)) ok = false;
+    if (!ok) {
+        for (u32 i = 0; i < g->n; i++) {
+            for (u32 k = 0; k < NK_COUNT; k++)
+                if (BM_GET(g_snap_m[k], i) != BM_GET(g->m[k], i))
+                    pf("  n%d m[%d]: c=%d clj=%d\n", i, k,
+                       (int)BM_GET(g_snap_m[k], i), (int)BM_GET(g->m[k], i));
+            if (BM_GET(g_snap_m_group, i) != BM_GET(g->m_group, i))
+                pf("  n%d m_group: c=%d clj=%d\n", i,
+                   (int)BM_GET(g_snap_m_group, i), (int)BM_GET(g->m_group, i));
+            if (BM_GET(g_snap_m_leaf, i) != BM_GET(g->m_leaf, i))
+                pf("  n%d m_leaf: c=%d clj=%d\n", i,
+                   (int)BM_GET(g_snap_m_leaf, i), (int)BM_GET(g->m_leaf, i));
+            if (BM_GET(g_snap_m_first, i) != BM_GET(g->m_first, i))
+                pf("  n%d m_first: c=%d clj=%d\n", i,
+                   (int)BM_GET(g_snap_m_first, i), (int)BM_GET(g->m_first, i));
+        }
+    }
+    arena_reset(&g_temp);
+    return val_bool(ok);
+}
+
+// ============================================================================
 // 8. Register builtins + init
 // ============================================================================
 
@@ -1697,6 +2012,32 @@ static void register_builtins(Env *env) {
     REG("out-reset", bi_out_reset);  REG("out-str", bi_out_str);
     REG("str-intern", bi_str_intern);
     REG("str-parent", bi_str_parent);
+    // Bridge: grammar index bitmask ops
+    REG("kind-set!", bi_kind_set);    REG("kind?", bi_kind_q);
+    REG("group-set!", bi_group_set);  REG("group?", bi_group_q);
+    REG("leaf-set!", bi_leaf_set);    REG("leaf?", bi_leaf_q);
+    REG("first-set!", bi_first_set);  REG("first?", bi_first_q);
+    REG("index-clear!", bi_index_clear);
+    REG("index-snapshot!", bi_index_snapshot);
+    REG("index-match?", bi_index_match);
+    // Bridge: eval
+    REG("entity-to-val", bi_entity_to_val);
+    REG("gn-parse-num-val", bi_gn_parse_num_val);
+    REG("clj-eval", bi_clj_eval);
+    REG("clj-apply", bi_clj_apply);
+    REG("env-create!", bi_env_create);
+    REG("env-set!", bi_env_set);
+    REG("env-get", bi_env_get_fn);
+    REG("global-env", bi_global_env);
+    REG("c-eval-node", bi_c_eval_node);
+    REG("eval-node-match?", bi_eval_node_match);
+    // Bridge: test infrastructure
+    REG("jit-run", bi_jit_run);
+    REG("clj-jit-run", bi_clj_jit_run);
+    REG("cc-emit", bi_cc_emit);
+    // Syscall builtins — Clojure makes direct syscalls
+    REG("sys-write", bi_sys_write);  REG("sys-read", bi_sys_read);
+    REG("sys-mmap", bi_sys_mmap);    REG("sys-exit", bi_sys_exit);
     #undef REG
 
     // Engine constants
@@ -1714,6 +2055,7 @@ static void register_builtins(Env *env) {
     CON("NK_IDENT", NK_IDENT);   CON("NK_NUM", NK_NUM);
     CON("NK_STR", NK_STR_NODE);  CON("NK_OP", NK_OP);
     CON("NK_KW", NK_KW);
+    CON("NK_COUNT", NK_COUNT);
     // Engine constants: view indices
     CON("V_DEF", V_DEF);         CON("V_REF", V_REF);
     CON("V_CALL", V_CALL);       CON("V_TAIL", V_TAIL);

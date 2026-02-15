@@ -304,20 +304,10 @@ static int cli_run(int argc, char **argv) {
         const char *src = argv[2];
         FileData f = sys_read_file(src, alloc_for_file);
         const char *code = f.data ? f.data : src;
-        // Compile with tracing — uses g_world internally
-        tap_reset(); tap_on();
         i64 result = jit_run(code);
-        tap_off();
-        // Use the world gram that jit_run populated (same GNode IDs)
         Gram *g = &g_world.gram;
-        // Build runtime view from trace
-        u64 *m_hit = bm_new(g->mw);
-        tap_to_bitmask(TK_JIT, m_hit, g->mw);
-        u32 *counts = (u32 *)arena_alloc(&g_perm, g->n * sizeof(u32), 4);
-        memset(counts, 0, g->n * sizeof(u32));
-        tap_hit_counts(TK_JIT, counts, g->n);
-        // Show annotated source + result
-        gram_annotate(g, m_hit, counts);
+        // Show structure + result (trace detail requires interpreter eval)
+        gram_render_outline(g);
         pfc(C_DIM); pf("  result: "); pfc(C_RESET);
         pf("%lld\n", (long long)result);
         if (f.data) sys_free(f.data, f.len + 1);
@@ -460,6 +450,10 @@ static int cli_run(int argc, char **argv) {
         const char *code = f.data ? f.data : src;
         // Parse source into world gram (gn-* builtins read from g_world.gram)
         world_step(code, true);
+        // Run alloc analysis (V_ALLOC, V_SCOPE, V_DYNAMIC)
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval("(analyze-alloc!)");
+        if (g_signal) g_signal = SIGNAL_NONE;
         // Call Clojure emitter via engine_eval (preserves g_world.gram)
         g_signal = SIGNAL_NONE; g_depth = 0;
         engine_eval("(emit-php-program)");
@@ -470,8 +464,25 @@ static int cli_run(int argc, char **argv) {
         return 0;
     }
 
+    if (strcmp(cmd, "clj") == 0) {
+        if (argc < 3) { pf("usage: gna clj <source|file>\n"); return 1; }
+        const char *src = argv[2];
+        FileData f = sys_read_file(src, alloc_for_file);
+        const char *code = f.data ? f.data : src;
+        world_step(code, true);
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval("(analyze-alloc!)");
+        if (g_signal) g_signal = SIGNAL_NONE;
+        g_signal = SIGNAL_NONE; g_depth = 0;
+        engine_eval("(clj-program)");
+        if (g_signal) { g_signal = SIGNAL_NONE; print_flush(); if (f.data) sys_free(f.data, f.len + 1); return 1; }
+        if (g_out.buf && g_out.pos > 0) sys_write(1, g_out.buf, g_out.pos);
+        if (f.data) sys_free(f.data, f.len + 1);
+        return 0;
+    }
+
     pf("unknown command: %s\n", cmd);
-    pf("usage: gna [test|bench|watch|eval|jit|emit|run|check|parse|render|trace|tap|observe|obs|save|load|php] [args]\n");
+    pf("usage: gna [test|bench|watch|eval|jit|emit|run|check|parse|render|trace|tap|observe|obs|save|load|php|clj] [args]\n");
     return 1;
 }
 

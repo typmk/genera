@@ -220,32 +220,26 @@ static void bench_grammar(void) {
 // ============================================================================
 
 static void bench_jit(void) {
-    pf("\n--- jit ---\n");
+    pf("\n--- jit (clj compiler) ---\n");
     const char *fib_src = "(defn fib [n] (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2))))) (fib 35)";
-    u32 entry = compile_program(fib_src);
-    JitFn0 fn = (JitFn0)(g_code.code + entry);
-
-    i64 result = fn();
+    i64 result = clj_jit_run(fib_src);
     pf("  fib(35) = %lld %s\n", (long long)result, result == 9227465 ? "OK" : "WRONG");
 
+    // Re-run the compiled code (entry was just compiled)
     u32 N = 5;
     u64 best = ~(u64)0;
+    JitFn0 fn = (JitFn0)(g_code.code + 0); // need to find entry
+    // Re-compile once to get stable entry
+    result = clj_jit_run(fib_src);
+    // The last compiled entry — scan back for the actual entry by re-executing
     for (u32 i = 0; i < N; i++) {
         u64 t0 = now_ns();
-        i64 r = fn();
+        i64 r = clj_jit_run(fib_src);
         u64 t1 = now_ns();
         SINK(r);
         if (t1 - t0 < best) best = t1 - t0;
     }
-    pf("  fib(35) JIT:       "); buf_f1(&g_print_buf, (f64)best / 1e6); pf(" ms\n");
-
-    N = 10000;
-    u64 t0 = now_ns();
-    for (u32 i = 0; i < N; i++) compile_program(fib_src);
-    u64 t1 = now_ns();
-    pf("  compile fib:       "); buf_f1(&g_print_buf, (f64)(t1 - t0) / (N * 1e3)); pf(" us\n");
-
-    compile_program(fib_src);
+    pf("  fib(35) compile+run: "); buf_f1(&g_print_buf, (f64)best / 1e6); pf(" ms\n");
     pf("  code size:         %u bytes\n", g_code.pos);
 }
 

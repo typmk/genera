@@ -469,6 +469,10 @@ static void emg_program(u32 *defn_ids, u32 n_defns,
 // cc_emit — parse source and emit C to g_out (no GCC)
 static void cc_emit(const char *source) {
     Gram *g = world_step(source, true);
+    // Run alloc analysis (V_ALLOC, V_SCOPE, V_DYNAMIC)
+    g_signal = SIGNAL_NONE; g_depth = 0;
+    engine_eval("(analyze-alloc!)");
+    if (g_signal) g_signal = SIGNAL_NONE;
     g_cc = g;
 
     u32 defn_ids[256]; u32 n_defns = 0;
